@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Contact{% endblock %}
+{% block content %}
+<h1>Contact</h1>
+<form id="contact">
+  <input name="name" placeholder="Name" required />
+  <input name="email" type="email" placeholder="Email" required />
+  <textarea name="message" placeholder="Message" required></textarea>
+  <button type="submit">Send</button>
+</form>
+<p id="status"></p>
+<script>
+document.getElementById('contact').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const res = await fetch('/api/contact', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: f.name.value, email: f.email.value, message: f.message.value
+    })
+  });
+  const json = await res.json();
+  document.getElementById('status').textContent = json.ok ? 'Sent.' : (json.error || 'Error');
+});
+</script>
+{% endblock %}

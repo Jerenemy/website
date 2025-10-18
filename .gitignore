@@ -1,0 +1,19 @@
+*
+# except
+!.gitignore
+!.pyproject.toml
+!README.md
+!app/
+!app/blueprints
+!app/blueprints/api
+!app/blueprints/api/__init__.py
+!app/blueprints/api/routes.py
+!app/blueprints/public
+!app/blueprints/public/__init__.py
+!app/blueprints/public/routes.py
+!app/templates
+!app/templates/*
+!app/static
+!app/static/css
+!app/static/css/site.css
+!app/static/game

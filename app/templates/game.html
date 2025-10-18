@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Game{% endblock %}
+{% block content %}
+<h1>Game</h1>
+<p>(Drop your WASM/loader assets in <code>/static/game/</code> and include them here.)</p>
+
+<section id="leaderboard">
+  <h2>Leaderboard</h2>
+  <pre id="lb">Loading…</pre>
+</section>
+
+<script>
+(async function(){
+  const r = await fetch('/api/leaderboard');
+  const data = await r.json();
+  document.getElementById('lb').textContent = JSON.stringify(data,null,2);
+})();
+</script>
+{% endblock %}
