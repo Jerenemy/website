@@ -1,8 +1,14 @@
-:root { --max: 900px; --pad: 16px; font-family: system-ui, sans-serif; }
-body { margin: 0; }
-.container { max-width: var(--max); margin: 0 auto; padding: var(--pad); }
-.site-header { display: flex; gap: 16px; justify-content: space-between; align-items: center;
-  padding: 12px var(--pad); border-bottom: 1px solid #ddd; position: sticky; top: 0; background: #fff; }
-.site-nav a { margin-left: 12px; text-decoration: none; color: #333; }
-h1 { margin-top: 24px; }
-input, textarea, button { display: block; width: 100%; margin: 8px 0; padding: 8px; }
+/* smooth scroll + sticky header, but kept out of base.html */
+html { scroll-behavior: smooth; }
+:root { --max: 1000px; --pad: 16px; --headerH: 64px; }
+body { margin: 0; font-family: system-ui, sans-serif; }
+.container { max-width: var(--max); margin: 0 auto; padding: 0 var(--pad) var(--pad); }
+
+/* nav */
+.site-header { position: sticky; top: 0; height: var(--headerH);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--pad); background: #fff; border-bottom: 1px solid #eaeaea; z-index: 10; }
+.site-nav a { margin-left: 12px; text-decoration: none; color: #333; padding: 6px 8px; }
+
+/* section anchors won’t hide under sticky header */
+section { scroll-margin-top: calc(var(--headerH) + 12px); padding: 64px 0; }

@@ -21,10 +21,16 @@
 # templates
 !app/templates
 !app/templates/*
+# templates sections
+!app/templates/sections/
+!app/templates/sections/*
 # static
 !app/static
 # static css
 !app/static/css
 !app/static/css/site.css
+# static js
+!/app/static/js
+!/app/static/js/contact.js
 # static game
 !app/static/game
