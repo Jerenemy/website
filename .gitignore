@@ -4,17 +4,27 @@
 !pyproject.toml
 !README.md
 !__init__.py
+# app
 !app/
+!app/config.py
+!app/extensions.py
+# blueprints
 !app/blueprints
+# blueprints api
 !app/blueprints/api
 !app/blueprints/api/__init__.py
 !app/blueprints/api/routes.py
+# blueprints public
 !app/blueprints/public
 !app/blueprints/public/__init__.py
 !app/blueprints/public/routes.py
+# templates
 !app/templates
 !app/templates/*
+# static
 !app/static
+# static css
 !app/static/css
 !app/static/css/site.css
+# static game
 !app/static/game

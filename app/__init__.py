@@ -1,9 +1,16 @@
 from flask import Flask
 from .blueprints.public import bp as public_bp
 from .blueprints.api import bp as api_bp
+from .extensions import mail
+from .config import Config
+
 
 def create_app():
     app = Flask(__name__)
+    app.config.from_object(Config)
+    # register blueprints
     app.register_blueprint(public_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
+    # initialize extensions
+    mail.init_app(app)
     return app
