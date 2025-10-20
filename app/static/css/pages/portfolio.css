@@ -1,0 +1,58 @@
+/* Section padding + centering */
+.projects {
+  padding: var(--section-pad, clamp(1.5rem, 4vw, 3rem)) 0;
+}
+
+/* Responsive grid that centers within page */
+.projects__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+  max-width: var(--max, 1100px);
+  margin: 0 auto;            /* centers grid area */
+  padding: clamp(1.5rem, 4vw, 3rem) var(--pad, 1rem);
+}
+
+/* Project card (solid by default; add .glassy to frost it) */
+.project-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--card-border, #eaeaea);
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  overflow: hidden;           /* round image corners at top */
+}
+
+/* Clickable media area */
+.project-card a {
+  display: block;
+}
+
+/* Image: fill width, keep ratio, crop nicely */
+.project-card__img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+
+/* Text area */
+.project-card__body {
+  padding: 0.9rem 1rem 1.25rem;
+  text-align: center;
+}
+
+.project-card__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.project-card__desc {
+  margin: 0;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* If you want a bit more width on large screens, bump the minmax: 
+   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); */

@@ -118,3 +118,28 @@
 .brand a:hover {
     color: var(--accent, #ae4ff7);
 }
+
+
+/* Full-width heading section */
+.heading {
+    width: 100%;
+    background: var(--heading-bg, #f2f2f2); /* light gray */
+    padding: clamp(1.5rem, 4vw, 3rem) 0;
+
+    display: flex;
+    justify-content: center;               /* center inner oval */
+    align-items: center;
+}
+
+/* Inner oval text container */
+.heading__title {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    border-radius: 9999px;                 /* <-- long oval shape */
+    background: var(--heading-inner-bg, #fff);
+    color: var(--heading-text, #111);
+    font-size: clamp(1.5rem, 2.5vw, 2rem);
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}

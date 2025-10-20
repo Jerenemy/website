@@ -1,10 +1,75 @@
-<section id="portfolio">
-  <h2>Portfolio</h2>
-  <a href="{{ url_for('static', filename='img/posters/poster-full.jpg') }}"
-     class="glightbox"
-     data-title="My Project Poster">
-    <img src="{{ url_for('static', filename='img/posters/poster-thumb.jpg') }}"
-         alt="My Project Poster"
-         style="max-width: 300px; border-radius: 8px;" />
-  </a>
+<section id="portfolio" class="projects">
+  <!-- Heading bar -->
+  <div class="heading glassy">
+    <div class="heading__title glassy">Portfolio</div>
+  </div>
+
+  <!-- Projects grid -->
+  <div class="projects__grid">
+    <!-- Project 1 -->
+    <article class="project-card glassy">
+      <a
+        href="{{ url_for('static', filename='img/posters/poster-full.jpg') }}"
+        class="glightbox"
+        data-gallery="portfolio"
+        data-title="My Project Poster"
+      >
+        <img
+          src="{{ url_for('static', filename='img/posters/poster-thumb.jpg') }}"
+          alt="My Project Poster"
+          class="project-card__img"
+        />
+      </a>
+      <div class="project-card__body">
+        <h3 class="project-card__title">My Project Poster</h3>
+        <p class="project-card__desc">
+          A short, one-sentence description of the project goes here.
+        </p>
+      </div>
+    </article>
+
+    <!-- Project 2 -->
+    <article class="project-card glassy">
+      <a
+        href="{{ url_for('static', filename='img/posters/poster-full.jpg') }}"
+        class="glightbox"
+        data-gallery="portfolio"
+        data-title="My Project Poster"
+      >
+        <img
+          src="{{ url_for('static', filename='img/posters/poster-thumb.jpg') }}"
+          alt="My Project Poster"
+          class="project-card__img"
+        />
+      </a>
+      <div class="project-card__body">
+        <h3 class="project-card__title">My Project Poster</h3>
+        <p class="project-card__desc">
+          A short, one-sentence description of the project goes here.
+        </p>
+      </div>
+    </article>
+
+    <!-- Project 3 -->
+    <article class="project-card glassy">
+      <a
+        href="{{ url_for('static', filename='img/posters/poster-full.jpg') }}"
+        class="glightbox"
+        data-gallery="portfolio"
+        data-title="My Project Poster"
+      >
+        <img
+          src="{{ url_for('static', filename='img/posters/poster-thumb.jpg') }}"
+          alt="My Project Poster"
+          class="project-card__img"
+        />
+      </a>
+      <div class="project-card__body">
+        <h3 class="project-card__title">My Project Poster</h3>
+        <p class="project-card__desc">
+          A short, one-sentence description of the project goes here.
+        </p>
+      </div>
+    </article>
+  </div>
 </section>
