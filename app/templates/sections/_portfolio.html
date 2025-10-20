@@ -1,5 +1,10 @@
-<!-- templates/sections/_portfolio.html -->
 <section id="portfolio">
   <h2>Portfolio</h2>
-  <p>Projects go here.</p>
+  <a href="{{ url_for('static', filename='img/posters/poster-full.jpg') }}"
+     class="glightbox"
+     data-title="My Project Poster">
+    <img src="{{ url_for('static', filename='img/posters/poster-thumb.jpg') }}"
+         alt="My Project Poster"
+         style="max-width: 300px; border-radius: 8px;" />
+  </a>
 </section>

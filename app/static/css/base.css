@@ -1,0 +1,48 @@
+:root {
+    --bg: #555555;
+    --fg: #111111;
+    --accent: #4fc3f7;
+    --radius: 0.75rem;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    --transition: 0.3s ease;
+    --max: 1000px; 
+    --pad: 16px; 
+    --headerH: 64px;
+    /* glass */
+    --glass-bg: rgba(255,255,255,0.12);
+    --glass-border: rgba(255,255,255,0.25);
+    --glass-blur: 10px;
+    --glass-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    /* button */
+    --btn-bg-hover: rgba(255,255,255,0.50);
+}
+
+[data-theme="dark"] {
+    --bg: #111111;
+    --fg: #ffffff;
+    --glass-bg: rgba(255,255,255,0.08);
+    --glass-border: rgba(255,255,255,0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* smooth scroll + sticky header, but kept out of base.html */
+html { 
+    scroll-behavior: smooth; 
+}
+
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  margin: 0;
+}
+/* section anchors won’t hide under sticky header */
+section { 
+    scroll-margin-top: calc(var(--headerH) + 12px); 
+    padding: 64px 0; 
+}
+

@@ -1,0 +1,30 @@
+/* visual utility you can add anywhere */
+.glassy {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--glass-shadow);
+  /* helps avoid weird borders on translucent elements */
+  background-clip: padding-box;
+}
+
+/* stronger variant if you want it */
+.glassy--strong {
+  --glass-bg: rgba(255,255,255,0.2);
+  --glass-blur: 14px;
+}
+
+/* graceful fallback if blur isn’t supported */
+@supports not (backdrop-filter: blur(1px)) {
+  .glassy {
+    background: rgba(255,255,255,0.85);
+    border-color: rgba(0,0,0,0.05);
+  }
+}
+
+.surface-solid {
+  background: #fff;
+  border-bottom: 1px solid #eaeaea;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+}

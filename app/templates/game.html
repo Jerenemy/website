@@ -9,11 +9,5 @@
   <pre id="lb">Loading…</pre>
 </section>
 
-<script>
-(async function(){
-  const r = await fetch('/api/leaderboard');
-  const data = await r.json();
-  document.getElementById('lb').textContent = JSON.stringify(data,null,2);
-})();
-</script>
+<script src="{{ url_for('static', filename='js/leaderboard.js') }}"></script>
 {% endblock %}

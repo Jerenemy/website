@@ -1,16 +1,23 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{% block title %}Portfolio{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{% block title %}Portfolio{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/home.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/contact.css') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/glightbox/glightbox.min.css') }}">
 </head>
 <body>
-  {% include "_nav.html" %}
-  <main class="container">
+    {% include "_nav.html" %}
     {% block content %}{% endblock %}
-  </main>
-  {% block scripts %}{% endblock %}
+    {% block scripts %}
+        <script src="{{ url_for('static', filename='vendor/glightbox/glightbox.min.js') }}"></script>
+    {% endblock %}
 </body>
 </html>

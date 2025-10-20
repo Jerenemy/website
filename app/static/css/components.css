@@ -1,0 +1,120 @@
+/* Base button — structure only */
+.btn {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.15s ease;
+}
+
+/* Basic look (non-glass) */
+.btn {
+    background: var(--btn-bg, #fff);
+    color: var(--btn-fg, #111);
+    border: 1px solid var(--btn-border, #ccc);
+}
+
+.btn:hover {
+    background: var(--btn-bg-hover, #eee);
+}
+
+/* Optional: variant if you want accent-colored buttons */
+.btn--accent {
+    --btn-bg: var(--accent, #4fc3f7);
+    --btn-fg: #fff;
+    --btn-border: var(--accent, #4fc3f7);
+}
+.btn--accent:hover {
+    --btn-bg-hover: #38bdf8;
+}
+
+
+.card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+}
+
+.container { 
+    max-width: var(--max); 
+    margin: 0 auto; 
+    padding: 0 
+    var(--pad) 
+    var(--pad); 
+}
+
+/* nav */
+/* base structure, no visuals */
+.site-header {
+  position: sticky;
+  top: 0;
+  height: var(--headerH);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--pad);
+  z-index: 10;
+}
+
+/* Glassy navbar variant */
+.nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem var(--pad);
+
+    /* solid background */
+    background: var(--nav-bg, #fff);
+    border-bottom: 1px solid var(--nav-border, #eaeaea);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 0 0 16px 16px;
+}
+
+/* optional: make links inside glass-nav readable */
+.nav a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    margin: 0 0.75rem;
+    transition: color 0.3s ease;
+}
+
+.nav a:hover {
+    color: var(--accent, #4fc3f7);
+}
+
+
+/* Regular text container */
+.text-container {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    padding: clamp(1rem, 2vw, 2rem);
+    border-radius: 16px;
+
+    /* solid background and clean edge */
+    background: var(--text-bg, #fff);
+    border: 1px solid var(--text-border, #eaeaea);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    color: var(--text-fg, #111);
+}
+
+.brand {
+  color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    margin: 0 0.75rem;
+    transition: color 0.3s ease;
+}
+
+.brand a:hover {
+    color: var(--accent, #ae4ff7);
+}

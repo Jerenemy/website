@@ -28,9 +28,15 @@
 !app/static
 # static css
 !app/static/css
-!app/static/css/site.css
+!app/static/css/*
+!app/static/css/pages
+!app/static/css/pages/*
+# static vendor
+!app/static/vendor
+!app/static/vendor/glightbox
+!app/static/vendor/glightbox/*
 # static js
 !/app/static/js
-!/app/static/js/contact.js
+!/app/static/js/*
 # static game
 !app/static/game

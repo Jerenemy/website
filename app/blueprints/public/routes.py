@@ -1,4 +1,4 @@
-from flask import render_template
+from flask import render_template, send_from_directory, current_app
 from . import bp
 
 @bp.get("/")
@@ -18,3 +18,12 @@ def game():
 @bp.get("/blog")
 def blog():
     return render_template("blog.html")
+
+@bp.get("/resume")
+def resume():
+    # serves the file from static/files/
+    return send_from_directory(
+        current_app.static_folder + "/files",
+        "resume.pdf",
+        mimetype="application/pdf"
+    )

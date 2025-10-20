@@ -1,0 +1,38 @@
+/* 1) Pure layout-only hero */
+.hero {
+  position: relative;
+  min-height: var(--hero-min-h, 85vh);
+  display: grid;
+  align-items: center;
+  padding: var(--hero-pad, clamp(1.5rem, 5vw, 6rem));
+  color: var(--hero-fg, #fff);
+
+  /* background via custom property so each page can set it */
+  background: var(--hero-bg, none) center/cover no-repeat;
+}
+
+/* 2) Optional gradient overlay (attach only when needed) */
+.hero.has-overlay::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--hero-overlay,
+    linear-gradient(90deg,
+      rgba(0,0,0,.55) 0%,
+      rgba(0,0,0,.30) 50%,
+      rgba(0,0,0,.10) 100%)
+  );
+  pointer-events: none;
+}
+
+/* 3) Content block = layout only; visuals come from .glassy */
+.hero__content {
+  position: relative;
+  z-index: 1; /* keep above overlay */
+  max-width: var(--hero-content-max, 50%);
+  padding: var(--hero-content-pad, clamp(1rem, 2vw, 2rem));
+  border-radius: var(--hero-content-radius, 16px);
+}
+
+/* (optional) quick align helpers */
+.hero__content--left  { margin-right: auto; }
+.hero__content--right { margin-left:  auto; }

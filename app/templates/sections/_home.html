@@ -1,5 +1,13 @@
-<!-- templates/sections/_home.html -->
-<section id="home">
-  <h2>Home</h2>
-  <p>Short intro.</p>
+<section id="home" class="hero has-overlay" style="--hero-bg: url('../../img/home-bg.jpg')">
+  <div class="hero__content glassy hero__content--left">
+    <h1>Jeremy Zay</h1>
+    <p>
+      I am an undergraduate student at Wesleyan University, pursuing a triple-major in Computer Science,
+      Mathematics, and College of Integrative Sciences. My research in the Thayer Lab focuses on using
+      machine learning techniques, including diffusion, to design small drug-like molecules aimed at
+      restoring mutant p53.
+    </p>
+    <a class="btn glassy" href="{{ url_for('public.resume') }}" target="_blank" rel="noopener">Resume</a><br>
+    <a class="btn glassy" href="#contact" target="_blank" rel="noopener">Contact</a>
+  </div>
 </section>

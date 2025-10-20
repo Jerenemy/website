@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Your Name — Portfolio{% endblock %}
+{% block title %}JZ{% endblock %}
 {% block content %}
   {% include "sections/_home.html" %}
   {% include "sections/_portfolio.html" %}
@@ -7,4 +7,12 @@
 {% endblock %}
 {% block scripts %}
   <!-- Optional: page-specific scripts, or leave empty -->
+  {{ super() }}
+  <script>
+    const lightbox = GLightbox({
+      selector: '.glightbox',
+      touchNavigation: true,
+      zoomable: true
+    });
+  </script>
 {% endblock %}
