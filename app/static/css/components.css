@@ -119,6 +119,28 @@
     color: var(--accent, #ae4ff7);
 }
 
+.social-links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.social-links a {
+  color: #fff;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.social-links a:hover {
+  color: var(--accent, #4fc3f7);
+  transform: translateY(-2px);
+}
+
+.social-links svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+
 
 /* Full-width heading section */
 .heading {
