@@ -1,13 +1,30 @@
 {% extends "base.html" %}
 {% block title %}Game{% endblock %}
 {% block content %}
-<h1>Game</h1>
-<p>(Drop your WASM/loader assets in <code>/static/game/</code> and include them here.)</p>
+
+<div class="heading glassy">
+  <div class="heading__title glassy">Game</div>
+</div>
+
+<section class="blog-text-container glassy" style="text-align: center;">
+  <p>Click below to play the game in a new tab.</p>
+  <button id="startGameBtn" class="btn glassy">Start Game</button>
+</section>
 
 <section id="leaderboard">
-  <h2>Leaderboard</h2>
+  <div class="heading glassy">
+    <div class="heading__title glassy">Leaderboard</div>
+  </div>
   <pre id="lb">Loading…</pre>
 </section>
 
 <script src="{{ url_for('static', filename='js/leaderboard.js') }}"></script>
+
+<script>
+  document.getElementById("startGameBtn").addEventListener("click", () => {
+    // open the WebAssembly game in a new tab
+    window.open("{{ url_for('static', filename='game/index.html') }}", "_blank");
+  });
+</script>
+
 {% endblock %}

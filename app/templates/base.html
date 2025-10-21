@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/home.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/contact.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/portfolio.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/blog.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/game.css') }}">
 
 
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/glightbox/glightbox.min.css') }}">
@@ -19,6 +21,7 @@
     {% include "_nav.html" %}
     {% block content %}{% endblock %}
     {% block scripts %}
+        <script src="{{ url_for('static', filename='js/base.js') }}"></script>
         <script src="{{ url_for('static', filename='vendor/glightbox/glightbox.min.js') }}"></script>
     {% endblock %}
 </body>

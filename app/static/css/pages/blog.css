@@ -1,0 +1,11 @@
+.blog-text-container {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: var(--text-margin, clamp(2rem, 4vw, 4rem)) auto; /* centers + top/bottom padding */
+    padding: clamp(1rem, 2vw, 2rem);
+    border-radius: 16px;
+
+    /* solid background and clean edge */
+    color: var(--text-fg, #111);
+}
