@@ -36,3 +36,18 @@
 /* (optional) quick align helpers */
 .hero__content--left  { margin-right: auto; }
 .hero__content--right { margin-left:  auto; }
+
+@media (max-width: 768px) {
+  .hero__content {
+    width: 50%;
+    max-width: none;
+  }
+
+  .hero__content p {
+    display: none;
+  }
+
+  .hero {
+    background-position: 75% center;
+  }
+}
