@@ -101,7 +101,7 @@
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.35);
-    color: inherit;
+    color: #fff; /* make hamburger bars white */
     cursor: pointer;
     transition: background 0.25s ease, transform 0.2s ease;
 }

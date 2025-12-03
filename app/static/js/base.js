@@ -36,6 +36,27 @@ window.addEventListener("DOMContentLoaded", () => {
     setCollapsed(!isCollapsed);
   });
 
+  const collapseIfMobile = () => {
+    if (!mq.matches && nav.dataset.collapsed === "false") {
+      setCollapsed(true);
+    }
+  };
+
+  // click outside nav/toggle collapses on mobile
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const clickedInsideNav = nav.contains(target) || toggle.contains(target);
+    if (!clickedInsideNav) {
+      collapseIfMobile();
+    }
+  });
+
+  // scrolling collapses on mobile
+  document.addEventListener("scroll", () => {
+    collapseIfMobile();
+  }, { passive: true });
+
   nav.addEventListener("click", (event) => {
     if (event.target instanceof Element && event.target.matches("a")) {
       if (!mq.matches) {
