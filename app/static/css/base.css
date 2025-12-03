@@ -35,7 +35,7 @@ html {
 
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono';
   background: var(--bg);
   color: var(--fg);
   margin: 0;

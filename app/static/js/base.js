@@ -1,4 +1,4 @@
-document.documentElement.setAttribute("data-theme", "dark");
+document.documentElement.setAttribute("data-theme", "light");
 
 window.addEventListener("DOMContentLoaded", () => {
   const toggle = document.querySelector(".nav-toggle");
