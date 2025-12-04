@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from dotenv import load_dotenv
 from .blueprints.public import bp as public_bp
@@ -7,7 +8,9 @@ from .config import Config
 
 
 def create_app():
-    load_dotenv()  # Load .env values for local/dev deployments
+    # Load .env explicitly relative to the project root so it works even if cwd differs.
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    load_dotenv(os.path.join(project_root, ".env"))
     app = Flask(__name__)
     app.config.from_object(Config)
 
