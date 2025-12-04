@@ -46,5 +46,6 @@ poetry run flask --app app:create_app run --debug
 
 ## Development Notes
 - The contact route requires working SMTP credentials; without them it will 500.
-- Adjust `MAIL_*` variables in `.env` or your shell to match your mail provider.
+- Adjust `MAIL_*` variables in `.env` or your shell to match your mail provider. The app loads `.env` explicitly from the project root, and `Config` will inject missing keys from `.env` into `os.environ` as a fallback (helps when supervisor/gunicorn starts with a different cwd).
+- For production, set `MAIL_*` in your process manager (e.g., `environment=` in supervisor) if you prefer not to rely on `.env` file loading.
 - Use `poetry run` before commands to ensure the virtualenv is active.
