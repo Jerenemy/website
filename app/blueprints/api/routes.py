@@ -3,6 +3,18 @@ from flask_mail import Message
 from ...extensions import mail
 from . import bp
 
+@bp.get("/debug/mail")
+def debug_mail():
+    """Temporary debug endpoint to inspect mail config presence. Remove after troubleshooting."""
+    cfg = current_app.config
+    return {
+        "MAIL_SERVER": cfg.get("MAIL_SERVER"),
+        "MAIL_PORT": cfg.get("MAIL_PORT"),
+        "MAIL_USE_TLS": cfg.get("MAIL_USE_TLS"),
+        "MAIL_USERNAME_present": bool(cfg.get("MAIL_USERNAME")),
+        "MAIL_DEFAULT_SENDER_present": bool(cfg.get("MAIL_DEFAULT_SENDER")),
+    }
+
 @bp.post("/contact")
 def api_contact():
     data = request.get_json() or {}
