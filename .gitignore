@@ -40,3 +40,11 @@
 !/app/static/js/*
 # static game
 !app/static/game
+# static images
+!app/static/img
+!app/static/img/*
+!app/static/img/projects
+!app/static/img/projects/*
+# files
+!app/static/files
+!app/static/files/*
