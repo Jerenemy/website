@@ -27,3 +27,22 @@ def resume():
         "resume.pdf",
         mimetype="application/pdf"
     )
+    
+@bp.get("/poster-rl-2024")
+def poster_rl_2024():
+    # serves the file from static/files/
+    return send_from_directory(
+        current_app.static_folder + "/files",
+        "poster-rl-2024.pdf",
+        mimetype="application/pdf"
+    )
+    
+@bp.get("/poster-diffusion-2025")
+def poster_diffusion_2025():
+    # serves the file from static/files/
+    return send_from_directory(
+        current_app.static_folder + "/files",
+        "poster-diffusion-2025.pdf",
+        mimetype="application/pdf"
+    )
+    

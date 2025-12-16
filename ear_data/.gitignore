@@ -1,0 +1,4 @@
+# Heavy assets live here but are not tracked.
+*
+!.gitignore
+!README.md

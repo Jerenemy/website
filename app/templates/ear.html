@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Ear — Audio/Visual Retrieval{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/ear.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="ear-shell">
+  <header class="ear-hero container">
+    <p class="ear-eyebrow">Research demo</p>
+    <h1>Ear: Audio / Visual Retrieval</h1>
+    <p class="ear-lede">
+      Upload an image or audio clip (or record live) to search the demo dataset across modalities.
+      Results are the nearest neighbors in a shared embedding space—no manual labels or classifiers.
+    </p>
+    <div id="ear-banner" class="ear-alert {% if not ear_error %}hidden{% endif %}">
+      <strong>Backend notice:</strong>
+      <span id="ear-banner-text">
+        {% if ear_error %}{{ ear_error }}{% else %}Backend warming up{% endif %}
+      </span>
+    </div>
+  </header>
+
+  <section class="container ear-grid">
+    <div class="ear-panel">
+      <div class="ear-panel__head">
+        <div>
+          <p class="ear-eyebrow">Start a query</p>
+          <h2>Upload or record</h2>
+        </div>
+        <p class="ear-hint">We support images (JPG/PNG) and audio (WAV/MP3/WEBM/MP4/M4A).</p>
+      </div>
+
+      <div class="action-row">
+        <label class="ear-btn ear-btn--ghost">
+          📂 Upload image
+          <input type="file" id="imageInput" accept="image/*">
+        </label>
+        <label class="ear-btn ear-btn--ghost">
+          📂 Upload audio
+          <input type="file" id="audioInput" accept="audio/*">
+        </label>
+      </div>
+
+      <div class="action-row">
+        <button class="ear-btn ear-btn--primary" id="btn-camera">📷 Use camera</button>
+        <button class="ear-btn ear-btn--primary" id="btn-mic">🎙️ Record audio</button>
+      </div>
+
+      <div id="preview-area" class="ear-preview hidden">
+        <div class="ear-preview__title">Query preview</div>
+        <div id="preview-content"></div>
+        <div class="spinner hidden" id="loader" aria-label="Loading"></div>
+        <p id="error-msg" class="ear-error hidden"></p>
+      </div>
+    </div>
+
+    <aside class="ear-notes">
+      <h3>How it works</h3>
+      <ul>
+        <li>ResNet-50 encodes images, Wav2Vec 2.0 encodes audio.</li>
+        <li>Projection heads map both to a shared 512-d space.</li>
+        <li>Search returns the closest samples from the indexed dataset.</li>
+        <li>GPU is used if available; otherwise CPU handles everything.</li>
+      </ul>
+    </aside>
+  </section>
+
+  <section id="results-wrapper" class="ear-results container hidden" aria-live="polite">
+    <div class="ear-results__head">
+      <div>
+        <p class="ear-eyebrow">Results</p>
+        <h2>Nearest neighbors</h2>
+      </div>
+      <p class="ear-hint">Top 5 within the same modality and top 5 across modalities.</p>
+    </div>
+
+    <div class="columns-container">
+      <div class="results-column">
+        <div class="column-header">Same modality<span id="same-header-sub"></span></div>
+        <div class="results-list" id="col-same"></div>
+      </div>
+      <div class="results-column">
+        <div class="column-header">Cross modality<span id="cross-header-sub"></span></div>
+        <div class="results-list" id="col-cross"></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="media-overlay" class="ear-overlay hidden" aria-hidden="true">
+    <div class="overlay-card" id="overlay-camera">
+      <h3>Take photo</h3>
+      <video id="camera-stream" autoplay playsinline></video>
+      <div class="overlay-actions">
+        <button class="ear-btn ear-btn--primary" id="btn-capture">📸 Capture</button>
+        <button class="ear-btn ear-btn--ghost" id="btn-cancel-camera">Cancel</button>
+      </div>
+    </div>
+
+    <div class="overlay-card" id="overlay-mic">
+      <h3>Record audio</h3>
+      <div class="audio-wave">
+        <div class="recording-dot"></div>
+        <span>Recording…</span>
+      </div>
+      <div class="overlay-actions">
+        <button class="ear-btn ear-btn--danger" id="btn-stop">⏹️ Stop &amp; search</button>
+        <button class="ear-btn ear-btn--ghost" id="btn-cancel-mic">Cancel</button>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    window.EAR_CONFIG = {
+      queryUrl: "{{ url_for('ear.query_endpoint') }}",
+      dataPrefix: "{{ url_for('ear.serve_data', filename='') }}",
+      engineError: {{ ear_error|tojson }},
+    };
+  </script>
+  <script src="{{ url_for('static', filename='js/ear.js') }}"></script>
+{% endblock %}
