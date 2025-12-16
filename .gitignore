@@ -1,7 +1,7 @@
 *
 # except
 !.gitignore
-!pyproject.toml
+# !pyproject.toml # removed so doesnt conflict with server's
 !README.md
 !__init__.py
 # app
@@ -18,13 +18,13 @@
 !app/blueprints/public
 !app/blueprints/public/__init__.py
 !app/blueprints/public/routes.py
-!app/blueprints/ear
-!app/blueprints/ear/__init__.py
-!app/blueprints/ear/routes.py
+# !app/blueprints/ear
+# !app/blueprints/ear/__init__.py
+# !app/blueprints/ear/routes.py
 # ear backend
-!app/ear
-!app/ear/__init__.py
-!app/ear/engine.py
+# !app/ear
+# !app/ear/__init__.py
+# !app/ear/engine.py
 # templates
 !app/templates
 !app/templates/*
@@ -55,7 +55,7 @@
 # files
 !app/static/files
 !app/static/files/*
-# ear data
-!ear_data
-!ear_data/.gitignore
-!ear_data/README.md
+# projects
+!projects/
+!projects/ear/
+!projects/ear/service.py
