@@ -58,4 +58,4 @@
 # projects
 !projects/
 !projects/ear/
-!projects/ear/service.py
+!projects/ear/*
