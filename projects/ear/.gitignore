@@ -1,0 +1,5 @@
+*
+!.gitignore
+!service.py
+!docu/
+!docu/*

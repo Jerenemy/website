@@ -1,5 +1,7 @@
 import os
 import glob
+import soundfile as sf  # <--- Add this
+import subprocess  # <--- ADD THIS
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -284,7 +286,16 @@ HTML_TEMPLATE = """
         }
 
         const formData = new FormData();
-        const fname = fileName || (type === 'image' ? 'capture.jpg' : `recording.${audioExtension}`);
+        // If it's a file upload (blob.name exists), use that name. 
+        // Otherwise (recording/camera), generate a name.
+        let fname = fileName;
+        if (!fname) {
+            if (blob.name) {
+                fname = blob.name;
+            } else {
+                fname = type === 'image' ? 'capture.jpg' : `recording.${audioExtension}`;
+            }
+        }
         formData.append('file', blob, fname);
 
         try {
@@ -414,12 +425,44 @@ def query_endpoint():
             tensor = img_transforms(img).unsqueeze(0).to(device)
             query_emb = model.encode_image(tensor)
             
-        elif filename.lower().endswith(('.wav', '.mp3', '.webm', '.mp4', '.m4a')):
+        elif filename.lower().endswith(('.wav', '.mp3', '.webm', '.mp4', '.m4a', '.ogg')):
             query_type = "audio"
-            wav, sr = torchaudio.load(filepath)
+            
+            # 1. CONVERT: Use system FFmpeg to normalize to 16kHz Mono WAV
+            # This fixes "Format not recognised" (especially for webm)
+            temp_wav = filepath + ".converted.wav"
+            try:
+                subprocess.run([
+                    "ffmpeg", 
+                    "-i", filepath,       # Input file
+                    "-ar", "16000",       # Resample to 16000 Hz
+                    "-ac", "1",           # Downmix to Mono
+                    "-y",                 # Overwrite output
+                    temp_wav
+                ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError:
+                return jsonify({'error': 'Audio conversion failed (FFmpeg error)'}), 400
+
+            # 2. LOAD: Read the clean WAV file
+            # We use soundfile instead of torchaudio to be safe
+            data, sr = sf.read(temp_wav, dtype='float32')
+            wav = torch.from_numpy(data).float()
+            
+            # Cleanup the temp file now that we have the data in memory
+            if os.path.exists(temp_wav):
+                os.remove(temp_wav)
+
+            # 3. FORMAT: Ensure shape is (Channels, Time)
+            if wav.ndim == 1:
+                wav = wav.unsqueeze(0)
+            else:
+                wav = wav.t()
+
+            # 4. PREPARE: Trim and move to device
             max_frames = int(sr * MAX_AUDIO_SEC)
-            if wav.shape[1] > max_frames: wav = wav[:, :max_frames]
-            if wav.shape[0] > 1: wav = wav.mean(dim=0, keepdim=True)
+            if wav.shape[1] > max_frames: 
+                wav = wav[:, :max_frames]
+            
             wav = wav.to(device)
             query_emb = model.encode_audio(wav, sr)
         else:
