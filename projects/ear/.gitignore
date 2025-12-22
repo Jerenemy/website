@@ -3,3 +3,5 @@
 !service.py
 !docu/
 !docu/*
+!templates
+!templates/*
