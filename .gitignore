@@ -10,14 +10,12 @@
 !app/extensions.py
 # blueprints
 !app/blueprints
+# blueprints admin
+!app/blueprints/admin
 # blueprints api
 !app/blueprints/api
-!app/blueprints/api/__init__.py
-!app/blueprints/api/routes.py
 # blueprints public
 !app/blueprints/public
-!app/blueprints/public/__init__.py
-!app/blueprints/public/routes.py
 # templates
 !app/templates
 !app/templates/*
@@ -54,3 +52,7 @@
 !projects/
 !projects/ear/
 !projects/ear/*
+# data
+!data/
+# portfolio
+!portfolio/

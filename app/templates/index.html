@@ -9,6 +9,13 @@
   <!-- Optional: page-specific scripts, or leave empty -->
   {{ super() }}
   <script>
+    document.querySelectorAll('[data-description-id]').forEach((link) => {
+      const desc = document.getElementById(link.dataset.descriptionId);
+      if (desc) {
+        link.setAttribute('data-description', desc.innerHTML.trim());
+      }
+    });
+
     const lightbox = GLightbox({
       selector: '.glightbox',
       touchNavigation: true,

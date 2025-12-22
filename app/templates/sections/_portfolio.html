@@ -6,92 +6,30 @@
 
   <!-- Projects grid -->
   <div class="projects__grid">
-    <!-- Project 0 -->
-    <article class="project-card glassy">
-      <a
-        href="{{ url_for('static', filename='img/projects/poster-10-29-25-jeremy-zay-full.png') }}"
-        class="glightbox"
-        data-gallery="portfolio"
-        data-description="This poster focuses on using diffusion models for structure-conditioned molecular generation. The project combines SE(3)-equivariant networks, pocket-aware conditioning, and guided sampling to steer the generative process toward molecules predicted to bind the Y220C variant of p53. It highlights how diffusion architectures can integrate spatial protein features, optimize chemical properties during sampling, and outperform traditional RL-based tuning approaches for targeted drug-design tasks."
-    >
-        <img
-            src="{{ url_for('static', filename='img/projects/poster-10-29-25-jeremy-zay-thumb.png') }}"
-            alt="Diffusion"
+    {% for item in portfolio_items %}
+      <article class="project-card glassy">
+        <a
+          href="{{ url_for('static', filename=item.image_full) }}"
+          class="glightbox"
+          data-gallery="portfolio"
+          data-description-id="desc-{{ item.id }}"
+        >
+          <img
+            src="{{ url_for('static', filename=item.image_thumb) }}"
+            alt="{{ item.image_alt | e }}"
             class="project-card__img"
-        />
-      </a>
-      <div class="project-card__body">
-        <h3 class="project-card__title">Diffusion</h3>
-        <p class="project-card__desc">
-          I used diffusion models to generate drug-like molecules that bind to the Y220C mutant of p53, and I presented this work at the ACS Nerd Conference and the Wesleyan Biophysics Retreat.
-        </p>
-      </div>
-    </article>
-
-    <!-- Project 1 -->
-    <article class="project-card glassy">
-      <a
-        href="{{ url_for('static', filename='img/projects/poster-full.jpg') }}"
-        class="glightbox"
-        data-gallery="portfolio"
-        data-description="This poster presents a reinforcement-learning framework for generating small molecules guided by molecular dynamics simulations of the p53 Y220C mutant. The workflow combines MD-derived structural insights, docking-based reward functions, and an actor-critic RL model to steer generation toward allosteric effectors with favorable binding profiles. By integrating simulation data with RL-driven optimization, the project explores how feedback from protein conformational behavior can shape molecular design policies and improve targeted allosteric reactivation strategies."
-    >
-        <img
-            src="{{ url_for('static', filename='img/projects/poster-thumb.jpg') }}"
-            alt="Molecular Dynamics Simulations of p53 Poster"
-            class="project-card__img"
-        />
-      </a>
-      <div class="project-card__body">
-        <h3 class="project-card__title">Reinforcement Learning</h3>
-        <p class="project-card__desc">
-          I used reinforcement learning fine-tuning to generate molecules that bind to mutant p53, and presented my poster at the UC Merced Mercury Conference and Wesleyan Biophysics Retreat.
-        </p>
-      </div>
-    </article>
-
-    <!-- Project 2 -->
-    <article class="project-card glassy">
-      <a
-        href="{{ url_for('static', filename='img/projects/asteroids-full.png') }}"
-        class="glightbox"
-        data-gallery="portfolio"
-        data-description="My dad grew up playing this game on arcade machines in a bowling alley, so I decided to recreate it for him in Python. Try to beat my high score!"
-      >
-        <img
-          src="{{ url_for('static', filename='img/projects/asteroids-full.png') }}"
-          alt="My Project Poster"
-          class="project-card__img"
-        />
-      </a>
-      <div class="project-card__body">
-        <h3 class="project-card__title">Asteroids</h3>
-        <p class="project-card__desc">
-          I recreated the 1980s arcade game Asteroids from scratch using PyGame in Python. Do you think you can beat my high score?
-        </p>
-      </div>
-    </article>
-
-    <!-- Project 3 -->
-    <article class="project-card glassy">
-      <a
-        href="{{ url_for('static', filename='img/projects/zaychess-full.png') }}"
-        class="glightbox"
-        data-gallery="portfolio"
-        data-description="Click here to download on the MacOS app store, or download the Zaychess .jar or the .app (for MacOS) right <a href='/zaychess'>here</a>."
-      >
-        <img
-          src="{{ url_for('static', filename='img/projects/zaychess-thumb.png') }}"
-          alt="My Project Poster"
-          class="project-card__img"
-        />
-      </a>
-      <div class="project-card__body">
-        <h3 class="project-card__title">Zaychess</h3>
-        <p class="project-card__desc">
-          I created a <a href='/zaychess' style="display: inline;">java Chess app</a> integrated with a powerful AI engine. You can try to beat the AI, but you won't succeed. 
-        </p>
-      </div>
-    </article>
+          />
+        </a>
+        <div class="project-card__body">
+          <h3 class="project-card__title">{{ item.title }}</h3>
+          <p class="project-card__desc">{{ item.short_desc | safe }}</p>
+        </div>
+        <div id="desc-{{ item.id }}" class="project-card__lightbox-desc" hidden>
+          {{ item.long_desc | safe }}
+        </div>
+      </article>
+    {% else %}
+      <p class="projects__empty">No portfolio items yet.</p>
+    {% endfor %}
   </div>
 </section>

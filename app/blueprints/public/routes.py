@@ -1,9 +1,13 @@
 from flask import render_template, send_from_directory, current_app
+
+from ...portfolio import get_portfolio_store
 from . import bp
 
 @bp.get("/")
 def index():
-    return render_template("index.html")
+    store = get_portfolio_store()
+    items = store.list_items()
+    return render_template("index.html", portfolio_items=items)
 
 # # later: presentations
 # @bp.get("/presentations")

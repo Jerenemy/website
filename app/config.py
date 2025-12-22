@@ -19,3 +19,26 @@ class Config:
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", MAIL_USERNAME)
     EAR_BASE_DIR = os.getenv("EAR_BASE_DIR")
+
+    SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(32).hex())
+    ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
+    ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+    PORTFOLIO_DATA_PATH = os.getenv(
+        "PORTFOLIO_DATA_PATH",
+        os.path.join(_project_root, "app", "data", "portfolio.json"),
+    )
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+
+    _max_upload_mb = int(os.getenv("MAX_UPLOAD_MB", "6"))
+    MAX_CONTENT_LENGTH = _max_upload_mb * 1024 * 1024
+    ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+    UPLOADS_DIR = os.getenv(
+        "UPLOADS_DIR",
+        os.path.join(_project_root, "app", "static", "img", "uploads"),
+    )
+    UPLOADS_THUMBS_DIR = os.getenv(
+        "UPLOADS_THUMBS_DIR",
+        os.path.join(_project_root, "app", "static", "img", "uploads", "thumbs"),
+    )

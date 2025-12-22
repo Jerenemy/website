@@ -3,6 +3,7 @@ from flask import Flask, redirect # <--- Add 'redirect' here
 from dotenv import load_dotenv
 from .blueprints.public import bp as public_bp
 from .blueprints.api import bp as api_bp
+from .blueprints.admin import bp as admin_bp
 # from .blueprints.ear import bp as ear_bp
 from .extensions import mail
 from .config import Config
@@ -28,6 +29,7 @@ def create_app():
     # register blueprints
     app.register_blueprint(public_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
+    app.register_blueprint(admin_bp, url_prefix="/admin")
     # app.register_blueprint(ear_bp, url_prefix="/ear")
     # --- ADD THIS BLOCK ---
     # In production, Nginx handles this. 
