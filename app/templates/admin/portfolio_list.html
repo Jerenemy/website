@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Portfolio Admin{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+{% block content %}
+<section id="admin" class="admin">
+  <div class="admin__panel glassy">
+    <div class="admin__header">
+      <h1 class="admin__title">Portfolio Admin</h1>
+      <div class="admin__actions">
+        <a class="admin-button" href="{{ url_for('admin.portfolio_new') }}">New Item</a>
+        <form method="post" action="{{ url_for('admin.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="admin-button admin-button--ghost" type="submit">Log out</button>
+        </form>
+      </div>
+    </div>
+
+    {% include "admin/_flash.html" %}
+
+    <div class="admin-table__wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Order</th>
+            <th>Published</th>
+            <th class="admin-table__actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              <td>{{ item.title }}</td>
+              <td>{{ item.sort_order }}</td>
+              <td>{{ "Yes" if item.is_published else "No" }}</td>
+              <td class="admin-table__actions">
+                <a class="admin-link" href="{{ url_for('admin.portfolio_edit', item_id=item.id) }}">Edit</a>
+                <form method="post" action="{{ url_for('admin.portfolio_delete', item_id=item.id) }}" class="js-delete-form" data-title="{{ item.title | e }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button class="admin-link admin-link--danger" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4">No portfolio items yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    document.querySelectorAll('.js-delete-form').forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        const title = form.dataset.title || 'this item';
+        const message = 'Delete \"' + title + '\"? This cannot be undone.';
+        if (!window.confirm(message)) {
+          event.preventDefault();
+        }
+      });
+    });
+  </script>
+{% endblock %}

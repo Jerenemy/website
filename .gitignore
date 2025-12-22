@@ -19,6 +19,9 @@
 # templates
 !app/templates
 !app/templates/*
+# templates admin
+!app/templates/admin/
+!app/templates/admin/*
 # templates sections
 !app/templates/sections/
 !app/templates/sections/*

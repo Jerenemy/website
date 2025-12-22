@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}{{ form_title }}{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+{% block content %}
+<section id="admin" class="admin">
+  <div class="admin__panel glassy">
+    <div class="admin__header">
+      <h1 class="admin__title">{{ form_title }}</h1>
+      <a class="admin-link" href="{{ url_for('admin.portfolio_list') }}">Back to list</a>
+    </div>
+
+    {% include "admin/_flash.html" %}
+
+    <form method="post" action="{{ form_action }}" class="admin-form" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <label class="admin-form__label" for="title">Title</label>
+      <input class="admin-form__input" type="text" id="title" name="title" value="{{ item.title | e }}" required>
+
+      <label class="admin-form__label" for="short_desc">Card Description</label>
+      <textarea class="admin-form__input admin-form__textarea" id="short_desc" name="short_desc" rows="4" required>{{ item.short_desc | safe }}</textarea>
+      <div class="admin-form__hint">HTML is allowed for links in the card description.</div>
+
+      <label class="admin-form__label" for="long_desc">Lightbox Description</label>
+      <textarea class="admin-form__input admin-form__textarea" id="long_desc" name="long_desc" rows="6" required>{{ item.long_desc | safe }}</textarea>
+      <div class="admin-form__hint">HTML is allowed. Keep markup simple for best results.</div>
+
+      <div class="admin-form__section">
+        <h2 class="admin-form__subtitle">Images</h2>
+        <div class="admin-form__hint">
+          Allowed types: {{ allowed_extensions | join(", ") }}. Max {{ max_upload_mb }} MB per file.
+        </div>
+      </div>
+
+      <label class="admin-form__label" for="image_full_file">Upload Full Image</label>
+      <input class="admin-form__input" type="file" id="image_full_file" name="image_full_file" accept=".jpg,.jpeg,.png,.webp,image/*">
+      <div class="admin-form__hint">Optional. If provided, the path field below will be replaced.</div>
+
+      <label class="admin-form__label" for="image_full">Full Image Path</label>
+      <input class="admin-form__input" type="text" id="image_full" name="image_full" value="{{ item.image_full | e }}">
+      <div class="admin-form__hint">Relative to /static, e.g. img/projects/poster-full.png</div>
+
+      <label class="admin-form__checkbox" for="auto_thumbnail">
+        <input type="checkbox" id="auto_thumbnail" name="auto_thumbnail" {% if auto_thumbnail_default %}checked{% endif %}>
+        Auto-generate thumbnail from full image
+      </label>
+      <div class="admin-form__hint">When on, thumbnail uploads are ignored; existing thumbnail paths are kept unless you upload a new full image.</div>
+
+      <label class="admin-form__label" for="image_thumb_file">Upload Thumbnail</label>
+      <input class="admin-form__input" type="file" id="image_thumb_file" name="image_thumb_file" accept=".jpg,.jpeg,.png,.webp,image/*">
+
+      <label class="admin-form__label" for="image_thumb">Thumbnail Image Path</label>
+      <input class="admin-form__input" type="text" id="image_thumb" name="image_thumb" value="{{ item.image_thumb | e }}">
+
+      <label class="admin-form__label" for="image_alt">Image Alt Text</label>
+      <input class="admin-form__input" type="text" id="image_alt" name="image_alt" value="{{ item.image_alt | e }}" required>
+
+      <label class="admin-form__label" for="sort_order">Sort Order</label>
+      <input class="admin-form__input" type="number" id="sort_order" name="sort_order" value="{{ item.sort_order | e }}">
+      <div class="admin-form__hint">Lower numbers appear first.</div>
+
+      <label class="admin-form__checkbox">
+        <input type="checkbox" name="is_published" {% if item.is_published %}checked{% endif %}>
+        Published
+      </label>
+
+      <div class="admin-form__row">
+        <button class="admin-button" type="button" id="preview-button">Show Preview</button>
+        <button class="admin-button" type="submit">{{ submit_label }}</button>
+      </div>
+    </form>
+
+    <div class="admin-preview" id="admin-preview" hidden>
+      <h2 class="admin-form__subtitle">Preview</h2>
+      <div id="admin-preview-errors" class="admin-preview__errors"></div>
+      <article class="project-card glassy">
+        <a href="#" id="admin-preview-link">
+          <img id="admin-preview-image" src="" alt="" class="project-card__img" />
+        </a>
+        <div class="project-card__body">
+          <h3 class="project-card__title" id="admin-preview-title"></h3>
+          <p class="project-card__desc" id="admin-preview-desc"></p>
+        </div>
+      </article>
+      <div class="admin-preview__lightbox" id="admin-preview-lightbox"></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    const previewButton = document.getElementById('preview-button');
+    const previewContainer = document.getElementById('admin-preview');
+    const previewErrors = document.getElementById('admin-preview-errors');
+    const previewTitle = document.getElementById('admin-preview-title');
+    const previewDesc = document.getElementById('admin-preview-desc');
+    const previewImage = document.getElementById('admin-preview-image');
+    const previewLink = document.getElementById('admin-preview-link');
+    const previewLightbox = document.getElementById('admin-preview-lightbox');
+
+    const staticBase = "{{ url_for('static', filename='') }}";
+    const autoThumbnail = document.getElementById('auto_thumbnail');
+    const fullPathInput = document.getElementById('image_full');
+    const thumbPathInput = document.getElementById('image_thumb');
+    const fullFileInput = document.getElementById('image_full_file');
+    const thumbFileInput = document.getElementById('image_thumb_file');
+
+    const titleInput = document.getElementById('title');
+    const shortDescInput = document.getElementById('short_desc');
+    const longDescInput = document.getElementById('long_desc');
+    const altInput = document.getElementById('image_alt');
+
+    const toStaticUrl = (value) => {
+      if (!value) return '';
+      if (value.startsWith('http') || value.startsWith('/')) {
+        return value;
+      }
+      return `${staticBase}${value}`;
+    };
+
+    const getFileUrl = (fileInput) => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return '';
+      return URL.createObjectURL(file);
+    };
+
+    const showErrors = (messages) => {
+      previewErrors.textContent = '';
+      if (!messages.length) return;
+      const list = document.createElement('ul');
+      messages.forEach((message) => {
+        const item = document.createElement('li');
+        item.textContent = message;
+        list.appendChild(item);
+      });
+      previewErrors.appendChild(list);
+    };
+
+    const gatherPreviewImage = () => {
+      if (!autoThumbnail.checked) {
+        return getFileUrl(thumbFileInput) || toStaticUrl(thumbPathInput.value.trim());
+      }
+      return (
+        getFileUrl(fullFileInput) ||
+        toStaticUrl(thumbPathInput.value.trim()) ||
+        toStaticUrl(fullPathInput.value.trim())
+      );
+    };
+
+    previewButton.addEventListener('click', () => {
+      const errors = [];
+      const title = titleInput.value.trim();
+      const shortDesc = shortDescInput.value.trim();
+      const longDesc = longDescInput.value.trim();
+      const altText = altInput.value.trim();
+      const fullPath = fullPathInput.value.trim();
+      const thumbPath = thumbPathInput.value.trim();
+      const fullFile = fullFileInput.files && fullFileInput.files[0];
+      const thumbFile = thumbFileInput.files && thumbFileInput.files[0];
+
+      if (!title) errors.push('Title is required.');
+      if (!shortDesc) errors.push('Card description is required.');
+      if (!longDesc) errors.push('Lightbox description is required.');
+      if (!altText) errors.push('Image alt text is required.');
+
+      if (!fullFile && !fullPath) {
+        errors.push('Full image (upload or path) is required.');
+      }
+
+      if (!autoThumbnail.checked && !thumbFile && !thumbPath) {
+        errors.push('Thumbnail image is required when auto thumbnail is off.');
+      }
+
+      if (errors.length) {
+        showErrors(errors);
+        previewContainer.hidden = false;
+        return;
+      }
+
+      showErrors([]);
+      previewTitle.textContent = title;
+      previewDesc.innerHTML = shortDesc;
+      previewImage.alt = altText;
+      previewImage.src = gatherPreviewImage();
+      previewLink.href = fullFile ? getFileUrl(fullFileInput) : toStaticUrl(fullPath);
+      previewLightbox.innerHTML = `<strong>Lightbox description:</strong> ${longDesc}`;
+
+      previewContainer.hidden = false;
+    });
+
+    const toggleThumbInputs = () => {
+      const disabled = autoThumbnail.checked;
+      thumbFileInput.disabled = disabled;
+      thumbPathInput.readOnly = disabled;
+    };
+
+    autoThumbnail.addEventListener('change', toggleThumbInputs);
+    toggleThumbInputs();
+  </script>
+{% endblock %}

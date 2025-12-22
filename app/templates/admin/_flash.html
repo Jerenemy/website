@@ -1,0 +1,9 @@
+{% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+    <ul class="admin-flash">
+      {% for category, message in messages %}
+        <li class="admin-flash__item admin-flash__item--{{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}

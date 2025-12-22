@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Admin Login{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+{% block content %}
+<section id="admin" class="admin">
+  <div class="admin__panel glassy">
+    <h1 class="admin__title">Admin Login</h1>
+    {% include "admin/_flash.html" %}
+    <form method="post" class="admin-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label class="admin-form__label" for="username">Username</label>
+      <input class="admin-form__input" type="text" id="username" name="username" autocomplete="username" required>
+
+      <label class="admin-form__label" for="password">Password</label>
+      <input class="admin-form__input" type="password" id="password" name="password" autocomplete="current-password" required>
+
+      <button class="admin-button" type="submit">Log in</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
