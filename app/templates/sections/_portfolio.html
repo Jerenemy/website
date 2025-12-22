@@ -78,7 +78,7 @@
         href="{{ url_for('static', filename='img/projects/zaychess-full.png') }}"
         class="glightbox"
         data-gallery="portfolio"
-        data-description="Click here to download on the MacOS app store, or download the Zaychess .jar or the .app (for MacOS) right here."
+        data-description="Click here to download on the MacOS app store, or download the Zaychess .jar or the .app (for MacOS) right <a href='/zaychess'>here</a>."
       >
         <img
           src="{{ url_for('static', filename='img/projects/zaychess-thumb.png') }}"
@@ -89,7 +89,7 @@
       <div class="project-card__body">
         <h3 class="project-card__title">Zaychess</h3>
         <p class="project-card__desc">
-          I created a java Chess app integrated with a powerful AI engine. You can try to beat the AI, but you won't succeed. 
+          I created a <a href='/zaychess' style="display: inline;">java Chess app</a> integrated with a powerful AI engine. You can try to beat the AI, but you won't succeed. 
         </p>
       </div>
     </article>
