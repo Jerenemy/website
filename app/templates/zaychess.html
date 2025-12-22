@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zaychess | Jeremy Zay</title>
+    <style>
+        :root {
+            --bg: #0f172a; /* Darker, modern slate blue/black */
+            --card: #1e293b;
+            --primary: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text-main); line-height: 1.6; }
+        
+        /* Utility */
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+        a { text-decoration: none; color: inherit; }
+        
+        /* Navigation */
+        .back-link { display: inline-block; margin-top: 20px; color: var(--text-muted); font-size: 0.9rem; transition: color 0.2s; }
+        .back-link:hover { color: var(--primary); }
+
+        /* Hero Section */
+        header { text-align: center; padding: 80px 0 60px; }
+        h1 { font-size: 4rem; margin: 0 0 10px; font-weight: 800; letter-spacing: -0.05em; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .tagline { font-size: 1.25rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 40px; }
+        
+        /* Button Group */
+        .btn-group { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .btn { padding: 14px 28px; border-radius: 8px; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
+        
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+
+        .tech-note { margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); opacity: 0.8; }
+
+        /* Feature Grid (The 3 boxes) */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 60px 0 100px;
+        }
+        .feature-card { background: var(--card); padding: 30px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.2s; }
+        .feature-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.1); }
+        .feature-card h3 { margin-top: 0; font-size: 1.1rem; color: #fff; }
+        .feature-card p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 0; }
+
+        /* Content Sections (Zig-Zag Layout) */
+        .section { display: flex; align-items: center; gap: 60px; margin-bottom: 120px; }
+        .section.reverse { flex-direction: row-reverse; }
+        
+        .section-text { flex: 1; }
+        .section-text h2 { font-size: 2.2rem; margin-bottom: 15px; letter-spacing: -0.025em; }
+        .section-text p { color: var(--text-muted); font-size: 1.1rem; }
+        
+        .section-media { flex: 1.2; }
+        .img-frame {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .img-frame img { width: 100%; height: auto; display: block; }
+
+        @media (max-width: 768px) {
+            .section { flex-direction: column !important; gap: 30px; text-align: center; }
+            h1 { font-size: 3rem; }
+        }
+
+        footer { text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/" class="back-link">← Back to Home</a>
+
+    <header>
+        <h1>Zaychess</h1>
+        <p class="tagline">A robust Java Swing Chess Engine designed for performance and flexibility.</p>
+        
+        <div class="btn-group">
+            <a href="{{ url_for('static', filename='zaychess/Zaychess-Mac.zip') }}" class="btn btn-primary">
+                <span>🍎</span> Download for Mac (.zip)
+            </a>
+            
+            <a href="{{ url_for('static', filename='zaychess/Zaychess.jar') }}" class="btn btn-secondary">
+                <span>☕</span> Download Java .JAR
+            </a>
+        </div>
+        <p class="tech-note">Mac users: Unzip the file to run the app. <br>Universal users: Requires Java (JRE) installed.</p>
+    </header>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <h3>🤖 Play vs Computer</h3>
+            <p>Challenge the internal engine logic with tunable difficulty and instant move validation.</p>
+        </div>
+        <div class="feature-card">
+            <h3>🌐 Multiplayer Support</h3>
+            <p>Host games locally or connect via direct IP for low-latency peer-to-peer matches.</p>
+        </div>
+        <div class="feature-card">
+            <h3>💾 Save & Resume</h3>
+            <p>Full serialization support allowing you to save board states and analyze them later.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-text">
+            <h2>Classic Strategy, Modern Code.</h2>
+            <p>Built from the ground up using Java and Swing, the launcher provides a clean entry point for testing algorithms or jumping straight into a match.</p>
+        </div>
+        <div class="section-media">
+            <div class="img-frame">
+                <img src="{{ url_for('static', filename='zaychess/launcher.png') }}" alt="Zaychess Launcher">
+            </div>
+        </div>
+    </div>
+
+    <div class="section reverse">
+        <div class="section-text">
+            <h2>Full Board Control</h2>
+            <p>Features custom assets, clear move highlighting, and a responsive UI that keeps the focus on the strategy, not the interface.</p>
+        </div>
+        <div class="section-media">
+            <div class="img-frame">
+                <img src="{{ url_for('static', filename='zaychess/gameplay.png') }}" alt="Gameplay Board">
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2025 Jeremy Zay
+    </footer>
+</div>
+
+</body>
+</html>

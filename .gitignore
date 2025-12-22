@@ -55,6 +55,8 @@
 # files
 !app/static/files
 !app/static/files/*
+# zaychess
+!app/static/zaychess
 # projects
 !projects/
 !projects/ear/
