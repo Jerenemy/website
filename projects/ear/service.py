@@ -155,8 +155,8 @@ load_index()
 
 @app.route('/')
 def index():
-    # Use standard Flask templating
-    return render_template('index.html')
+    # Pass 'debug' status to the template
+    return render_template('index.html', debug=app.debug)
 
 @app.route('/data/<path:filename>')
 @app.route('/ear/data/<path:filename>')
@@ -283,4 +283,12 @@ def query_endpoint():
 
 if __name__ == '__main__':
     # Local testing
-    app.run(debug=True, port=5001)
+    import argparse
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true", help="Run in debug mode")
+    args = parser.parse_args()
+
+    # Defaults to False. Only becomes True if you run with --debug
+    print(f"Starting EAR Service on port 5001 (Debug={args.debug})...")
+    app.run(debug=args.debug, port=5001)

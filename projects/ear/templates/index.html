@@ -45,10 +45,26 @@
         .card-score { font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-top: 4px; }
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+        .back-link { 
+            align-self: flex-start; /* Pushes it to the left */
+            margin-bottom: 20px; 
+            color: var(--text-light); 
+            text-decoration: none; 
+            font-size: 0.9rem; 
+            transition: color 0.2s; 
+        }
+        .back-link:hover { 
+            color: var(--primary); 
+        }
+        </style>
 </head>
 <body>
 <div class="container">
+    <div class="container">
+    <div class="container">
+    <a href="{% if debug %}http://127.0.0.1:5000{% else %}https://jeremyzay.com{% endif %}" class="back-link">
+        ← Back to Home
+    </a>
     <h1>EAR (Embedding Audio-visual Retrieval)</h1>
     <p class="project-desc">
         A multimodal search engine that projects audio and images into a shared embedding space to enable cross-modal retrieval.
