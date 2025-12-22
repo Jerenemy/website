@@ -1,7 +1,7 @@
 *
 # except
 !.gitignore
-pyproject.toml 
+# pyproject.toml 
 !README.md
 !__init__.py
 # app
