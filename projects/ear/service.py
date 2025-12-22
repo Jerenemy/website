@@ -158,6 +158,12 @@ def index():
     # Pass 'debug' status to the template
     return render_template('index.html', debug=app.debug)
 
+@app.route('/ce-loss')
+def ce_loss():
+    # Pass 'debug' status to the template
+    return render_template('ce_loss.html', debug=app.debug)
+
+
 @app.route('/data/<path:filename>')
 @app.route('/ear/data/<path:filename>')
 def serve_data(filename):

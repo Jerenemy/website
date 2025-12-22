@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Entropy Loss Visualizer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .metrics {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .metric-box {
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .metric-value.loss {
+            color: #ef4444; /* Red for loss */
+        }
+
+        .metric-value.prob {
+            color: #3b82f6; /* Blue for probability */
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Cross-Entropy Loss Visualizer</h1>
+    <p class="subtitle">Formula: L = -ln(Probability of Correct Class)</p>
+
+    <div class="metrics">
+        <div class="metric-box">
+            <div class="metric-label">Target Probability (p)</div>
+            <div class="metric-value prob" id="probDisplay">0.10</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-label">Cross-Entropy Loss</div>
+            <div class="metric-value loss" id="lossDisplay">2.3026</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="labels">
+            <span>High Loss (Confused)</span>
+            <span>Low Loss (Confident)</span>
+        </div>
+        <input type="range" id="confidenceSlider" min="1" max="99" value="10" step="0.1">
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const probDisplay = document.getElementById('probDisplay');
+    const lossDisplay = document.getElementById('lossDisplay');
+    const slider = document.getElementById('confidenceSlider');
+
+    // Configuration
+    const LABELS = ['Class A', 'Class B', 'Target', 'Class D', 'Class E'];
+    const TARGET_INDEX = 2; // "Target" is the correct class
+    
+    // Initial State
+    let targetProb = 0.10;
+
+    // Setup Chart
+    const myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: LABELS,
+            datasets: [
+                {
+                    label: 'Ground Truth (y)',
+                    data: [0, 0, 1, 0, 0], // One-hot encoded vector
+                    backgroundColor: 'rgba(0, 0, 0, 0)', // Transparent fill
+                    borderColor: 'rgba(34, 197, 94, 1)', // Green Outline
+                    borderWidth: 2,
+                    borderDash: [5, 5], // Dashed line to signify it's an overlay
+                    barPercentage: 1.0,
+                    categoryPercentage: 0.8,
+                    order: 1 // Draw on top
+                },
+                {
+                    label: 'Predicted Distribution (ŷ)',
+                    data: [0.225, 0.225, 0.1, 0.225, 0.225], // Initial dummy data
+                    backgroundColor: [
+                        'rgba(209, 213, 219, 0.8)', // Grey
+                        'rgba(209, 213, 219, 0.8)', // Grey
+                        'rgba(59, 130, 246, 0.8)',  // Blue (Target)
+                        'rgba(209, 213, 219, 0.8)', // Grey
+                        'rgba(209, 213, 219, 0.8)'  // Grey
+                    ],
+                    borderWidth: 0,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.8,
+                    order: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1.05,
+                    title: {
+                        display: true,
+                        text: 'Probability'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            animation: {
+                duration: 100 // Fast animation for smooth slider interaction
+            }
+        }
+    });
+
+    // Logic to calculate Loss and update Chart
+    function updateVisualization() {
+        // 1. Get Slider Value (0.01 to 0.99)
+        const p = parseFloat(slider.value) / 100;
+        
+        // 2. Calculate Cross Entropy Loss
+        // L = -ln(p_target)
+        // Note: In a one-hot scenario, the loss only depends on the probability assigned to the correct class.
+        const loss = -Math.log(p);
+
+        // 3. Update Text UI
+        probDisplay.textContent = p.toFixed(2);
+        lossDisplay.textContent = loss.toFixed(4);
+
+        // 4. Generate the Distribution Logic
+        // We set the target bar to exactly 'p'.
+        // We distribute the remaining probability (1 - p) among the other 4 classes.
+        // To make it look "alive", we add slight randomness to the wrong classes so they aren't perfectly equal.
+        
+        const remainingMass = 1 - p;
+        const numOtherClasses = LABELS.length - 1;
+        
+        // Generate random weights for other classes
+        let weights = [];
+        let totalWeight = 0;
+        for(let i=0; i<numOtherClasses; i++) {
+            let r = Math.random(); 
+            weights.push(r);
+            totalWeight += r;
+        }
+
+        // Calculate actual probabilities based on weights
+        let newDist = [];
+        let weightIndex = 0;
+
+        for (let i = 0; i < LABELS.length; i++) {
+            if (i === TARGET_INDEX) {
+                newDist.push(p);
+            } else {
+                let share = (weights[weightIndex] / totalWeight) * remainingMass;
+                newDist.push(share);
+                weightIndex++;
+            }
+        }
+
+        // 5. Update Chart Data
+        myChart.data.datasets[1].data = newDist;
+        myChart.update();
+    }
+
+    // Event Listener
+    slider.addEventListener('input', updateVisualization);
+
+    // Initial run
+    updateVisualization();
+
+</script>
+
+</body>
+</html>
