@@ -17,7 +17,7 @@ A small Flask app for my personal site, serving static pages and a contact API t
 - Poetry for dependency management
 
 ## Local Setup
-1) Install Poetry if you do not have it: `pipx install poetry`
+1) Install Poetry if you do not have it: `pip install poetry`
 2) Install dependencies:
    ```bash
    poetry install
@@ -74,6 +74,32 @@ poetry run flask --app app:create_app run --debug
   - `image_full`, `image_thumb` (paths relative to `/static`)
   - `image_alt`, `sort_order`, `is_published`
 - HTML is allowed in `short_desc` and `long_desc` (e.g., links). Keep markup minimal.
+
+## Admin Integration
+- The admin UI is a standalone blueprint (`/admin`) that uses the same portfolio store as the public site.
+- The public blueprint depends on the portfolio store only; it does not depend on the admin blueprint.
+- The API blueprint is independent of the admin system.
+- Sessions and CSRF protection rely on `SECRET_KEY`; set it in production.
+
+### Files Added
+- `app/blueprints/admin/` (routes + blueprint registration)
+- `app/portfolio/` (JSON store + helpers)
+- `app/templates/admin/` (login, list, form, flash partial)
+- `app/static/css/pages/admin.css`
+- `app/data/portfolio.json` (seed data)
+- `app/static/img/uploads/` and `app/static/img/uploads/thumbs/` (runtime upload locations)
+
+### Files Edited
+- `app/__init__.py` (register admin blueprint)
+- `app/config.py` (admin + upload config)
+- `app/blueprints/public/routes.py` (load portfolio items)
+- `app/templates/sections/_portfolio.html` (render from data)
+- `app/templates/index.html` (lightbox description mapping)
+- `app/static/css/pages/portfolio.css` (empty-state)
+- `app/templates/admin/portfolio_list.html` (delete confirmation)
+- `app/templates/admin/portfolio_form.html` (uploads + preview)
+- `.gitignore` (track admin templates)
+- `README.md`
 
 ## Project Structure
 - `app/__init__.py` – Flask app factory and blueprint registration

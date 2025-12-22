@@ -32,10 +32,10 @@
         <tbody>
           {% for item in items %}
             <tr>
-              <td>{{ item.title }}</td>
-              <td>{{ item.sort_order }}</td>
-              <td>{{ "Yes" if item.is_published else "No" }}</td>
-              <td class="admin-table__actions">
+              <td data-label="Title">{{ item.title }}</td>
+              <td data-label="Order">{{ item.sort_order }}</td>
+              <td data-label="Published">{{ "Yes" if item.is_published else "No" }}</td>
+              <td class="admin-table__actions" data-label="Actions">
                 <a class="admin-link" href="{{ url_for('admin.portfolio_edit', item_id=item.id) }}">Edit</a>
                 <form method="post" action="{{ url_for('admin.portfolio_delete', item_id=item.id) }}" class="js-delete-form" data-title="{{ item.title | e }}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
