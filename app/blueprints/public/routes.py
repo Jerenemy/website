@@ -57,6 +57,10 @@ def poster_diffusion_2025():
         mimetype="application/pdf"
     )
     
-@bp.get('/zaychess')  # Ensure 'bp' matches your blueprint name (might be 'main' or 'app')
+@bp.get('/zaychess')  
 def zaychess():
     return render_template('zaychess.html')
+
+@bp.get('/eqoscan')  
+def eqoscan():
+    return render_template('eqoscan.html')

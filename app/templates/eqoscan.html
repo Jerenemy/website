@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eQoScan | Sustainable Container Tracking</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --white: #ffffff;
+            --bg-light: #f3f4f6;
+            --accent-green: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--white);
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            cursor: pointer;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            margin-left: 2rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-green);
+        }
+
+        .cta-button {
+            background: var(--primary-gradient);
+            color: white !important;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Hero Section */
+        header {
+            padding: 8rem 5% 4rem;
+            text-align: center;
+            background: radial-gradient(circle at top right, rgba(74, 222, 128, 0.1), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.1), transparent 40%);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+        }
+
+        /* Video Section */
+        .video-container {
+            max-width: 900px;
+            margin: 0 auto 4rem;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            background: #000;
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        /* Features / Process */
+        .section {
+            padding: 5rem 5%;
+        }
+
+        .bg-light {
+            background-color: var(--bg-light);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .icon-box {
+            width: 50px;
+            height: 50px;
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--accent-green);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-number {
+            font-size: 4rem;
+            font-weight: 800;
+            color: rgba(0,0,0,0.05);
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            line-height: 1;
+        }
+
+        .card h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .card p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        /* Input Styling for Form */
+        .form-input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-green);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 5%;
+            background: var(--text-dark);
+            color: white;
+        }
+
+        footer p {
+            opacity: 0.7;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .nav-links { display: none; } /* Simplified for mobile */
+            header { padding-top: 6rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo" onclick="window.scrollTo(0,0)">eQoScan</div>
+        <div class="nav-links">
+            <a href="#demo">Demo</a>
+            <a href="#how-it-works">How it Works</a>
+            <a href="#features">Features</a>
+            <a href="#contact" class="cta-button" onclick="handleContactClick(event)">Request Access</a>
+        </div>
+    </nav>
+
+    <header>
+        <h1>Eliminate Packaging Waste<br>With One Scan.</h1>
+        <p class="subtitle">
+            An innovative, credit-based system specifically designed for university campuses to streamline reusable container tracking.
+        </p>
+        
+        <div id="demo" class="video-container">
+            <video controls poster="">
+                <source src="static/video/eqoscan_demo.mp4" type="video/mp4">
+                <source src="static/video/eqoscan_demo.mp4" type="video/quicktime">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </header>
+
+    <section id="how-it-works" class="section bg-light">
+        <h2 class="section-title">Track & Return in Seconds</h2>
+        <div class="grid">
+            <div class="card" style="position: relative;">
+                <span class="step-number">1</span>
+                <div class="icon-box">📍</div>
+                <h3>Scan Location</h3>
+                <p>Arrive at a dining hall or return station and scan the location QR code using the eQoScan app.</p>
+            </div>
+            <div class="card" style="position: relative;">
+                <span class="step-number">2</span>
+                <div class="icon-box">📦</div>
+                <h3>Scan Container</h3>
+                <p>Scan the unique QR code on your reusable food container to link it to your account.</p>
+            </div>
+            <div class="card" style="position: relative;">
+                <span class="step-number">3</span>
+                <div class="icon-box">🔄</div>
+                <h3>Credits Update</h3>
+                <p>Your digital credits are instantly updated. Return containers to earn credits back for your next meal.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="section">
+        <h2 class="section-title">Smart Campus Integration</h2>
+        <div class="grid">
+            <div class="card">
+                <div class="icon-box">🔐</div>
+                <h3>Secure Auth</h3>
+                <p>Seamless sign-in using university Google accounts ensures only authorized students can access the system.</p>
+            </div>
+            <div class="card">
+                <div class="icon-box">🗺️</div>
+                <h3>Location Tracking</h3>
+                <p>Visual map interface shows exactly where and when you last checked out or returned items.</p>
+            </div>
+            <div class="card">
+                <div class="icon-box">⚡</div>
+                <h3>Real-time Database</h3>
+                <p>Powered by Firebase for instant synchronization between the student app and the administrative dashboard.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="section bg-light">
+        <div class="card" style="max-width: 600px; margin: 0 auto; text-align: center; border-top: 4px solid var(--accent-green);">
+            <h2 style="margin-bottom: 0.5rem;">Bring eQoScan to Your Campus</h2>
+            <p style="color: var(--text-light); margin-bottom: 2rem;">
+                We are partnering with universities to reduce single-use plastic. Request a demo or technical documentation below.
+            </p>
+            
+            <form id="contact-form" style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                <div>
+                    <input name="name" type="text" placeholder="Contact Name" required class="form-input">
+                </div>
+                
+                <div>
+                    <input name="email" type="email" placeholder="University/Work Email" required class="form-input">
+                </div>
+                
+                <div>
+                    <input id="org-input" type="text" placeholder="University or Organization Name" required class="form-input">
+                </div>
+
+                <div>
+                    <textarea id="message-input" placeholder="Optional message (e.g. details about your dining system or timeline)" 
+                    class="form-input" style="height: 100px; resize: vertical;"></textarea>
+                </div>
+                
+                <button type="submit" class="cta-button" style="border: none; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 0.5rem;">
+                    Request Information
+                </button>
+            </form>
+            
+            <p id="contact-status" style="margin-top: 1rem; font-weight: 500; font-size: 0.9rem; min-height: 1.5em;"></p>
+        </div>
+    </section>
+
+    <footer>
+        <div class="logo" style="margin-bottom: 1rem;">eQoScan</div>
+        <p>&copy; 2026 eQoScan. All rights reserved.</p>
+        <p style="font-size: 0.8rem; margin-top: 1rem;">Reducing waste, one scan at a time.</p>
+    </footer>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                // If it's the CTA button, we handle via onclick function instead
+                if(this.classList.contains('cta-button')) return;
+
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if(targetId === '#') return;
+                
+                const target = document.querySelector(targetId);
+                if(target){
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        function handleContactClick(e) {
+            e.preventDefault();
+            document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Form Handler
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("contact-form");
+            const status = document.getElementById("contact-status");
+
+            if(form) {
+                form.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    status.textContent = "Sending inquiry...";
+                    status.style.color = "var(--text-light)";
+
+                    // 1. Get basic data from the form
+                    const formData = new FormData(form);
+                    const basicData = Object.fromEntries(formData.entries());
+
+                    // 2. Grab the specific fields we want to combine into the 'message' payload
+                    const orgName = document.getElementById('org-input').value;
+                    const userMessage = document.getElementById('message-input').value;
+
+                    // 3. Construct the final message string for the backend
+                    // This ensures the Organization name is clearly visible in the email you receive
+                    const finalMessage = `ORGANIZATION: ${orgName}\n\nMESSAGE:\n${userMessage ? userMessage : "No additional message provided."}`;
+
+                    // 4. Create the final payload object matching your API requirements
+                    const payload = {
+                        name: basicData.name,
+                        email: basicData.email,
+                        message: finalMessage
+                    };
+
+                    try {
+                        const response = await fetch("/api/contact", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(payload),
+                        });
+
+                        if (response.ok) {
+                            status.textContent = "Request sent! We'll be in touch shortly.";
+                            status.style.color = "var(--accent-green)";
+                            form.reset();
+                        } else {
+                            status.textContent = "Failed to send. Please try again.";
+                            status.style.color = "orange";
+                        }
+                    } catch (error) {
+                        console.error("Error:", error);
+                        status.textContent = "Network error — please check your connection.";
+                        status.style.color = "red";
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
