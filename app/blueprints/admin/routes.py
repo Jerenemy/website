@@ -1,5 +1,6 @@
 import hashlib
 import secrets
+import re
 from functools import wraps
 from pathlib import Path
 from uuid import uuid4
@@ -12,6 +13,9 @@ from werkzeug.utils import secure_filename
 
 from . import bp
 from ...portfolio import get_portfolio_store
+from ...site_settings import get_site_settings_store
+
+_HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
 
 
 def _admin_configured() -> bool:
@@ -73,6 +77,108 @@ def handle_request_too_large(_error):
 @admin_required
 def dashboard():
     return redirect(url_for("admin.portfolio_list"))
+
+
+@bp.route("/settings", methods=["GET", "POST"])
+@admin_required
+def site_settings():
+    store = get_site_settings_store()
+    settings = store.get_settings()
+
+    if request.method == "POST":
+        if not _validate_csrf(request.form.get("csrf_token")):
+            flash("Invalid or missing CSRF token.", "error")
+            return redirect(url_for("admin.site_settings"))
+
+        updates: dict = {}
+        errors: list[str] = []
+
+        home_description = request.form.get("home_description", "").strip()
+        if not home_description:
+            errors.append("Home description is required.")
+        else:
+            updates["home_description"] = home_description
+
+        home_bg_path = request.form.get("home_bg", "").strip()
+        home_bg_upload = request.files.get("home_bg_file")
+        if home_bg_upload and home_bg_upload.filename:
+            try:
+                updates["home_bg"] = _save_image_upload(home_bg_upload, Path(current_app.config["UPLOADS_DIR"]))
+            except ValueError as exc:
+                errors.append(str(exc))
+        elif home_bg_path:
+            path_error = _validate_relative_path(home_bg_path, "Home background path")
+            if path_error:
+                errors.append(path_error)
+            else:
+                ext_error = _validate_extension(home_bg_path, "Home background path")
+                if ext_error:
+                    errors.append(ext_error)
+                elif not _resolve_static_path(home_bg_path):
+                    errors.append("Home background path does not exist.")
+                else:
+                    updates["home_bg"] = home_bg_path
+
+        resume_upload = request.files.get("resume_file")
+        if resume_upload and resume_upload.filename:
+            try:
+                updates["resume_filename"] = _save_pdf_upload(
+                    resume_upload, Path(current_app.config["SITE_FILES_DIR"])
+                )
+            except ValueError as exc:
+                errors.append(str(exc))
+
+        theme_bg = request.form.get("theme_bg", "").strip()
+        theme_fg = request.form.get("theme_fg", "").strip()
+        theme_accent = request.form.get("theme_accent", "").strip()
+
+        for label, value in (
+            ("Background color", theme_bg),
+            ("Text color", theme_fg),
+            ("Accent color", theme_accent),
+        ):
+            error = _validate_hex_color(value, label)
+            if error:
+                errors.append(error)
+
+        if not errors:
+            updates["theme"] = {
+                "bg": theme_bg,
+                "fg": theme_fg,
+                "accent": theme_accent,
+            }
+
+        if errors:
+            flash(" ".join(errors), "error")
+            form_settings = settings.copy()
+            form_settings["home_description"] = home_description or settings.get("home_description", "")
+            form_settings["home_bg"] = home_bg_path or settings.get("home_bg", "")
+            form_settings["theme"] = dict(settings.get("theme", {}))
+            if theme_bg:
+                form_settings["theme"]["bg"] = theme_bg
+            if theme_fg:
+                form_settings["theme"]["fg"] = theme_fg
+            if theme_accent:
+                form_settings["theme"]["accent"] = theme_accent
+            return render_template(
+                "admin/site_settings.html",
+                settings=form_settings,
+                csrf_token=_csrf_token(),
+                **_upload_context(),
+            )
+
+        updated = store.update_settings(updates)
+        if "theme" in updates:
+            _write_theme_css(updated.get("theme", {}))
+        flash("Site settings updated.", "success")
+        return redirect(url_for("admin.site_settings"))
+
+    return render_template(
+        "admin/site_settings.html",
+        settings=settings,
+        csrf_token=_csrf_token(),
+        **_upload_context(),
+    )
 
 
 @bp.route("/login", methods=["GET", "POST"])
@@ -341,6 +447,55 @@ def _upload_context() -> dict:
         "allowed_extensions": allowed,
         "auto_thumbnail_default": True,
     }
+
+
+def _validate_hex_color(value: str, label: str) -> str | None:
+    if not value:
+        return f"{label} is required."
+    if not _HEX_COLOR_RE.match(value):
+        return f"{label} must be a hex color like #112233."
+    return None
+
+
+def _save_pdf_upload(file_storage, dest_dir: Path) -> str:
+    filename = secure_filename(file_storage.filename or "")
+    if not filename or "." not in filename:
+        raise ValueError("Uploaded file must have a valid filename.")
+
+    ext = filename.rsplit(".", 1)[1].lower()
+    if ext != "pdf":
+        raise ValueError("Only PDF files are allowed for resumes.")
+
+    try:
+        file_storage.stream.seek(0)
+        header = file_storage.stream.read(4)
+        if header != b"%PDF":
+            raise ValueError("Uploaded file is not a valid PDF.")
+    finally:
+        file_storage.stream.seek(0)
+
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    base_name = Path(filename).stem
+    unique_name = f"{base_name}-{uuid4().hex}.pdf"
+    dest_path = dest_dir / unique_name
+    file_storage.save(dest_path)
+    return dest_path.name
+
+
+def _write_theme_css(theme: dict) -> None:
+    theme_path = Path(current_app.config["SITE_THEME_CSS_PATH"])
+    theme_path.parent.mkdir(parents=True, exist_ok=True)
+    bg = theme.get("bg", "#555555")
+    fg = theme.get("fg", "#111111")
+    accent = theme.get("accent", "#4fc3f7")
+    css = (
+        ":root {\n"
+        f"  --bg: {bg};\n"
+        f"  --fg: {fg};\n"
+        f"  --accent: {accent};\n"
+        "}\n"
+    )
+    theme_path.write_text(css, encoding="utf-8")
 
 
 def _save_image_upload(file_storage, dest_dir: Path) -> str:

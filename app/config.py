@@ -28,6 +28,18 @@ class Config:
         "PORTFOLIO_DATA_PATH",
         os.path.join(_project_root, "app", "data", "portfolio.json"),
     )
+    SITE_SETTINGS_PATH = os.getenv(
+        "SITE_SETTINGS_PATH",
+        os.path.join(_project_root, "app", "data", "site_settings.json"),
+    )
+    SITE_FILES_DIR = os.getenv(
+        "SITE_FILES_DIR",
+        os.path.join(_project_root, "app", "static", "files"),
+    )
+    SITE_THEME_CSS_PATH = os.getenv(
+        "SITE_THEME_CSS_PATH",
+        os.path.join(_project_root, "app", "static", "css", "theme.css"),
+    )
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
 

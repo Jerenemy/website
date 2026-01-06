@@ -1,12 +1,9 @@
 <section id="home" class="hero has-overlay"
-         style="--hero-bg: url('{{ url_for('static', filename='img/home-bg.jpg') }}')">
+         style="--hero-bg: url('{{ url_for('static', filename=site_settings.home_bg) }}')">
   <div class="hero__content glassy hero__content--left">
     <h1>Jeremy Zay</h1>
     <p>
-      I am an undergraduate student at Wesleyan University, pursuing a triple-major in Computer Science,
-      Mathematics, and College of Integrative Sciences. My research in the Thayer Lab focuses on using
-      machine learning techniques, including diffusion, to design small drug-like molecules aimed at
-      restoring mutant p53.
+      {{ site_settings.home_description | safe }}
     </p>
     <a class="btn glassy" href="{{ url_for('public.resume') }}" target="_blank" rel="noopener">Resume</a><br>
     <a class="btn glassy" href="#contact" target="_blank" rel="noopener">Contact</a>

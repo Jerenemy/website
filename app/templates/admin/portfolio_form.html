@@ -8,7 +8,10 @@
   <div class="admin__panel glassy">
     <div class="admin__header">
       <h1 class="admin__title">{{ form_title }}</h1>
-      <a class="admin-link" href="{{ url_for('admin.portfolio_list') }}">Back to list</a>
+      <div class="admin__actions">
+        <a class="admin-link" href="{{ url_for('admin.portfolio_list') }}">Back to list</a>
+        <a class="admin-link" href="{{ url_for('admin.site_settings') }}">Site Settings</a>
+      </div>
     </div>
 
     {% include "admin/_flash.html" %}
