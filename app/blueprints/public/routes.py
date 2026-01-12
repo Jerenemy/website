@@ -12,11 +12,6 @@ def index():
     settings = get_site_settings_store().get_settings()
     return render_template("index.html", portfolio_items=items, site_settings=settings)
 
-# # later: presentations
-# @bp.get("/presentations")
-# def presentations():
-#     return render_template("presentations.html")
-
 @bp.get("/game")
 def game():
     return render_template("game.html")
@@ -60,6 +55,14 @@ def poster_diffusion_2025():
 @bp.get('/zaychess')  
 def zaychess():
     return render_template('zaychess.html')
+
+@bp.get('/zaychess/support')
+def zaychess_support():
+    return render_template('zaychess_support.html')
+
+@bp.get('/zaychess/privacy')
+def zaychess_privacy():
+    return render_template('zaychess_privacy.html')
 
 @bp.get('/eqoscan')  
 def eqoscan():

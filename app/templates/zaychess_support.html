@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zaychess Support | Jeremy Zay</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --primary: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--primary);
+    }
+
+    header {
+      text-align: center;
+      padding: 60px 0 30px;
+    }
+
+    h1 {
+      font-size: 3.2rem;
+      margin: 0 0 10px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tagline {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin: 30px 0 10px;
+    }
+
+    .meta-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+
+    .meta-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .meta-value {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      color: var(--text-muted);
+      margin: 0 0 12px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--text-muted);
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .highlight {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .support-form {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .support-form input,
+    .support-form textarea {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+    }
+
+    .support-form textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    .support-form input::placeholder,
+    .support-form textarea::placeholder {
+      color: rgba(148, 163, 184, 0.7);
+    }
+
+    .support-form input:focus,
+    .support-form textarea:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.6);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .support-status {
+      margin-top: 10px;
+      min-height: 1.2em;
+      color: var(--text-muted);
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.14);
+      transform: translateY(-2px);
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px 0 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        padding-top: 50px;
+      }
+
+      h1 {
+        font-size: 2.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/zaychess" class="back-link">&larr; Back to Zaychess</a>
+
+    <header>
+      <h1>Zaychess Support</h1>
+      <p class="tagline">
+        Zaychess is a macOS chess app with local play, a built-in AI opponent (Serendipity engine),
+        and direct peer-to-peer multiplayer by IP. You can save and load games as .chesslog files
+        via the standard file picker.
+      </p>
+
+      <div class="cta-row">
+        <a href="{{ url_for('static', filename='zaychess/Zaychess-Mac.zip') }}" class="btn btn-primary">
+          <span>🍎</span> Download for Mac
+        </a>
+        <a href="{{ url_for('static', filename='zaychess/Zaychess.jar') }}" class="btn btn-secondary">
+          <span>☕</span> Download Java .JAR
+        </a>
+      </div>
+    </header>
+
+    <div class="meta-grid">
+      <div class="meta-card">
+        <div class="meta-label">App name</div>
+        <div class="meta-value">Zaychess</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-label">Platform</div>
+        <div class="meta-value">macOS (Mac App Store)</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-label">Current version</div>
+        <div class="meta-value">1.0.8</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-label">Minimum macOS</div>
+        <div class="meta-value">12.0 or later</div>
+      </div>
+    </div>
+
+    <section>
+      <h2>Key features</h2>
+      <ul>
+        <li>Local games with a move list panel and fullscreen toggle.</li>
+        <li>Play vs computer AI (Serendipity engine) with adjustable difficulty.</li>
+        <li>Host or join multiplayer games by IP using direct peer-to-peer connections.</li>
+        <li>Save and load .chesslog files using the standard file picker.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>System requirements</h2>
+      <p><span class="highlight">macOS 12.0 or later</span>.</p>
+    </section>
+
+    <section>
+      <h2>Networking</h2>
+      <p>
+        Multiplayer uses direct TCP connections between players. There are no servers in the middle.
+      </p>
+    </section>
+
+    <section>
+      <h2>Data and privacy</h2>
+      <ul>
+        <li>Data collection: <span class="highlight">No account, no tracking, no analytics; all data stored locally.</span></li>
+        <li>Network use: Only for optional multiplayer (direct TCP between players).</li>
+        <li>Privacy policy: <a class="highlight" href="{{ url_for('public.zaychess_privacy') }}">jeremyzay.com/zaychess/privacy</a></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Known issues</h2>
+      <ul>
+        <li>LAN multiplayer may require firewall permission on one or both machines.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Logs for support</h2>
+      <ul>
+        <li>Development builds: zaychess.log in the app directory.</li>
+        <li>Packaged app logs: check <span class="highlight">~/Library/Logs/Zaychess/</span> (if present) or share a crash report from Console.app.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Contact support</h2>
+      <p>Use the form below and include your macOS version, Zaychess version, and steps to reproduce.</p>
+      <form id="contact-form" class="support-form">
+        <input name="name" placeholder="Name" required>
+        <input name="email" type="email" placeholder="Email" required>
+        <textarea name="message" placeholder="Message" required></textarea>
+        <button type="submit" class="btn btn-primary">Send</button>
+      </form>
+      <p id="contact-status" class="support-status"></p>
+      <p>
+        Support URL: <a class="highlight" href="https://jeremyzay.com/zaychess/support">https://jeremyzay.com/zaychess/support</a>
+      </p>
+    </section>
+
+    <footer>
+      &copy; 2025 Jeremy Zay
+    </footer>
+  </div>
+  <script src="{{ url_for('static', filename='js/contact.js') }}"></script>
+</body>
+</html>
