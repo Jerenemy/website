@@ -1,6 +1,20 @@
 # Personal Website
 A small Flask app for my personal site, serving static pages and a contact API that emails me via Flask-Mail.
 
+
+## Run the App
+```bash
+poetry run flask --app app:create_app run --debug
+```
+- The site will be available at `http://127.0.0.1:5000/`
+- Contact POST endpoint: `http://127.0.0.1:5000/api/contact`
+- Leaderboard GET endpoint: `http://127.0.0.1:5000/api/leaderboard`
+- Admin login: `http://127.0.0.1:5000/admin`
+- Admin site settings: `http://127.0.0.1:5000/admin/settings`
+
+## If problem with env and need to reinstall: 
+poetry install --no-root
+
 ## Features
 - Home/portfolio/blog/game pages rendered with Jinja templates
 - Contact endpoint posts to `/api/contact` and sends email via SMTP
@@ -55,16 +69,6 @@ A small Flask app for my personal site, serving static pages and a contact API t
    ```bash
    python -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('your-password'))"
    ```
-
-## Run the App
-```bash
-poetry run flask --app app:create_app run --debug
-```
-- The site will be available at `http://127.0.0.1:5000/`
-- Contact POST endpoint: `http://127.0.0.1:5000/api/contact`
-- Leaderboard GET endpoint: `http://127.0.0.1:5000/api/leaderboard`
-- Admin login: `http://127.0.0.1:5000/admin`
-- Admin site settings: `http://127.0.0.1:5000/admin/settings`
 
 ## Portfolio Admin
 - Data lives in `app/data/portfolio.json` (configurable via `PORTFOLIO_DATA_PATH`).
