@@ -67,3 +67,7 @@ def zaychess_privacy():
 @bp.get('/eqoscan')  
 def eqoscan():
     return render_template('eqoscan.html')
+
+@bp.get('/moinllm')
+def moinllm():
+    return render_template('moinllm.html')
