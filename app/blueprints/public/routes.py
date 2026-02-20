@@ -71,3 +71,7 @@ def eqoscan():
 @bp.get('/moinllm')
 def moinllm():
     return render_template('moinllm.html')
+
+@bp.get('/deltalab')
+def deltalab():
+    return render_template('attack_target_graph_interactive_v1.html')
