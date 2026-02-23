@@ -169,3 +169,5 @@ poetry install --no-root
 - Add draft/publish scheduling and content preview.
 - Add WYSIWYG editor for descriptions while preserving safe HTML.
 - Add tagging, search, and filtering for portfolio items.
+
+- Fix colors of contact fields to be consistent with the rest of the defaults.

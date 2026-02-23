@@ -37,6 +37,10 @@
 .hero__content--left  { margin-right: auto; }
 .hero__content--right { margin-left:  auto; }
 
+.hero .btn {
+  --btn-fg: var(--hero-fg, #f7fafc);
+}
+
 @media (max-width: 768px) {
   .hero__content {
     width: 50%;
