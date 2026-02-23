@@ -15,6 +15,9 @@
     --glass-shadow: 0 4px 20px rgba(0,0,0,0.2);
     /* button */
     --btn-bg-hover: rgba(255,255,255,0.50);
+    /* contrast text tokens for glass surfaces */
+    --on-glass: #111111;
+    --on-glass-muted: rgba(17, 17, 17, 0.78);
 }
 
 [data-theme="dark"] {
@@ -22,6 +25,8 @@
     --fg: #ffffff;
     --glass-bg: rgba(255,255,255,0.08);
     --glass-border: rgba(255,255,255,0.18);
+    --on-glass: #f7fafc;
+    --on-glass-muted: rgba(247, 250, 252, 0.82);
 }
 
 * {
@@ -45,4 +50,3 @@ section {
     scroll-margin-top: calc(var(--headerH) + 12px); 
     padding: 64px 0; 
 }
-

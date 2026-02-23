@@ -14,7 +14,7 @@
 /* Basic look (non-glass) */
 .btn {
     background: var(--btn-bg, #fff);
-    color: var(--btn-fg, #ffffff);
+    color: var(--btn-fg, var(--on-glass, #111111));
     border: 1px solid var(--btn-border, #ccc);
 }
 
@@ -77,7 +77,7 @@
 
 /* optional: make links inside glass-nav readable */
 .nav a {
-    color: #fff;
+    color: var(--on-glass, #111111);
     text-decoration: none;
     font-weight: 500;
     margin: 0 0.25rem;
@@ -98,16 +98,16 @@
     justify-content: center;
     gap: 4px;
     padding: 0.45rem;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.25));
     border-radius: 10px;
-    background: rgba(0, 0, 0, 0.35);
-    color: #fff; /* make hamburger bars white */
+    background: var(--glass-bg, rgba(255, 255, 255, 0.12));
+    color: var(--on-glass, #111111);
     cursor: pointer;
     transition: background 0.25s ease, transform 0.2s ease;
 }
 
 .nav-toggle:hover {
-    background: rgba(0, 0, 0, 0.45);
+    background: var(--btn-bg-hover, rgba(255, 255, 255, 0.5));
 }
 
 .nav-toggle:focus-visible {
@@ -200,7 +200,7 @@
 }
 
 .brand {
-  color: #fff;
+  color: var(--on-glass, #111111);
     text-decoration: none;
     font-weight: 500;
     margin: 0 0.75rem;
@@ -218,7 +218,7 @@
 }
 
 .social-links a {
-  color: #fff;
+  color: var(--on-glass, #111111);
   transition: color 0.3s ease, transform 0.2s ease;
 }
 
@@ -251,7 +251,7 @@
     padding: 0.75rem 2rem;
     border-radius: 9999px;                 /* <-- long oval shape */
     background: var(--heading-inner-bg, #fff);
-    color: var(--heading-text, #ffffff);
+    color: var(--heading-text, var(--on-glass, #111111));
     font-size: clamp(1.5rem, 2.5vw, 2rem);
     font-weight: 600;
     text-align: center;
