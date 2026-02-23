@@ -40,6 +40,10 @@ class Config:
         "SITE_THEME_CSS_PATH",
         os.path.join(_project_root, "app", "static", "css", "theme.css"),
     )
+    BLOG_POSTS_DIR = os.getenv(
+        "BLOG_POSTS_DIR",
+        os.path.join(_project_root, "app", "blog_posts"),
+    )
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
 

@@ -1,6 +1,7 @@
-from flask import render_template, send_from_directory, current_app
+from flask import abort, current_app, render_template, send_from_directory
 from werkzeug.exceptions import NotFound
 
+from ...blog import get_blog_store
 from ...portfolio import get_portfolio_store
 from ...site_settings import get_site_settings_store
 from . import bp
@@ -16,10 +17,18 @@ def index():
 def game():
     return render_template("game.html")
 
-# later: load post by slug; for now just show blank template
 @bp.get("/blog")
 def blog():
-    return render_template("blog.html")
+    posts = get_blog_store().list_posts()
+    return render_template("blog.html", posts=posts)
+
+
+@bp.get("/blog/<slug>")
+def blog_post(slug: str):
+    post = get_blog_store().get_post(slug)
+    if post is None:
+        abort(404)
+    return render_template("blog_post.html", post=post)
 
 @bp.get("/resume")
 def resume():

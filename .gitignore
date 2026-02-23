@@ -1,7 +1,7 @@
 *
 # except
 !.gitignore
-# pyproject.toml 
+!pyproject.toml
 !README.md
 !__init__.py
 # app
@@ -61,3 +61,10 @@
 !portfolio/
 # site settings
 !site_settings/
+# blog
+!app/blog
+!app/blog/*
+app/blog/__pycache__/
+app/blog/*.pyc
+!app/blog_posts
+!app/blog_posts/*

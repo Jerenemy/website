@@ -17,6 +17,7 @@ poetry install --no-root
 
 ## Features
 - Home/portfolio/blog/game pages rendered with Jinja templates
+- Blog posts auto-loaded from Markdown files in `app/blog_posts/`
 - Contact endpoint posts to `/api/contact` and sends email via SMTP
 - Resume served from `/resume` (backed by `app/static/files/`; filename stored in site settings)
 - Simple stub leaderboard at `/api/leaderboard`
@@ -60,6 +61,7 @@ poetry install --no-root
    # SITE_SETTINGS_PATH=/absolute/path/to/site_settings.json
    # SITE_FILES_DIR=/absolute/path/to/app/static/files
    # SITE_THEME_CSS_PATH=/absolute/path/to/app/static/css/theme.css
+   # BLOG_POSTS_DIR=/absolute/path/to/app/blog_posts
    # Optional: upload limits/paths
    # MAX_UPLOAD_MB=6
    # UPLOADS_DIR=/absolute/path/to/app/static/img/uploads
@@ -98,6 +100,18 @@ poetry install --no-root
 - The public blueprint depends on the portfolio + site settings stores only; it does not depend on the admin blueprint.
 - The API blueprint is independent of the admin system.
 - Sessions and CSRF protection rely on `SECRET_KEY`; set it in production.
+
+## Blog Posts
+- Add a `.md` file to `app/blog_posts/` and it appears automatically at `/blog`.
+- URL slugs are generated from filenames (for example, `my-first-post.md` -> `/blog/my-first-post`).
+- Optional front matter is supported:
+  ```md
+  ---
+  title: My Post Title
+  date: 2026-02-23
+  summary: One-line summary used on the blog index.
+  ---
+  ```
 
 ### Files Added
 - `app/blueprints/admin/` (routes + blueprint registration)
