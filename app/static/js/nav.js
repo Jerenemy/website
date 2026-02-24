@@ -17,6 +17,8 @@
     const nav = document.getElementById("site-nav");
     const header = document.querySelector(".site-header");
 
+    let isMobileMode = false;
+
     const setCollapsed = (collapsed) => {
       nav.dataset.collapsed = collapsed ? "true" : "false";
       if (header) {
@@ -25,23 +27,55 @@
       toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
     };
 
-    const mq = window.matchMedia("(min-width: 769px)");
-    const handleBreakpoint = (event) => {
-      if (event.matches) {
-        toggle.setAttribute("aria-expanded", "false");
-        nav.dataset.collapsed = "false";
+    const updateLayout = () => {
+      if (!header || !nav) return;
+      const wasMobileMode = isMobileMode;
+      const previouslyOpen = nav.dataset.collapsed === "false";
+
+      // Temporarily revert to desktop to check fit
+      document.body.classList.remove("is-mobile-menu");
+      header.dataset.mobileMenuOpen = "false";
+      nav.dataset.collapsed = "false"; // natural flex row state
+
+      // Set styles to measure true unconstrained width
+      const children = Array.from(header.children);
+      const originalShrink = children.map(c => c.style.flexShrink);
+      children.forEach(c => c.style.flexShrink = "0");
+      const originalWhiteSpace = nav.style.whiteSpace;
+      nav.style.whiteSpace = "nowrap";
+
+      // Force layout calculation (Synchronous reflow)
+      const needsMobile = header.scrollWidth > header.clientWidth;
+
+      // Restore flex shrink and white-space
+      children.forEach((c, i) => c.style.flexShrink = originalShrink[i]);
+      nav.style.whiteSpace = originalWhiteSpace;
+
+      if (needsMobile) {
+        document.body.classList.add("is-mobile-menu");
+        isMobileMode = true;
+        // If resizing within mobile mode, preserve state. If coming from desktop, start closed.
+        const shouldBeOpen = wasMobileMode ? previouslyOpen : false;
+
+        nav.dataset.collapsed = shouldBeOpen ? "false" : "true";
+        header.dataset.mobileMenuOpen = shouldBeOpen ? "true" : "false";
+        toggle.setAttribute("aria-expanded", shouldBeOpen ? "true" : "false");
       } else {
-        setCollapsed(true);
+        isMobileMode = false;
+        header.dataset.mobileMenuOpen = "false";
+        nav.dataset.collapsed = "false";
+        toggle.setAttribute("aria-expanded", "false");
       }
       notifyHeaderContrastEngine();
     };
 
-    handleBreakpoint(mq);
-    if (typeof mq.addEventListener === "function") {
-      mq.addEventListener("change", handleBreakpoint);
-    } else if (typeof mq.addListener === "function") {
-      mq.addListener(handleBreakpoint);
-    }
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(updateLayout, 50);
+    });
+    // Trigger immediately
+    updateLayout();
 
     toggle.addEventListener("click", () => {
       const isCollapsed = nav.dataset.collapsed !== "false";
@@ -50,7 +84,7 @@
     });
 
     const collapseIfMobile = () => {
-      if (!mq.matches && nav.dataset.collapsed === "false") {
+      if (isMobileMode && nav.dataset.collapsed === "false") {
         setCollapsed(true);
       }
     };
@@ -76,7 +110,7 @@
 
     nav.addEventListener("click", (event) => {
       if (event.target instanceof Element && event.target.matches("a")) {
-        if (!mq.matches) {
+        if (isMobileMode) {
           setCollapsed(true);
         }
       }
@@ -90,7 +124,10 @@
       notifyHeaderContrastEngine();
     });
 
-    window.addEventListener("load", notifyHeaderContrastEngine, { once: true });
+    window.addEventListener("load", () => {
+      updateLayout();
+      notifyHeaderContrastEngine();
+    }, { once: true });
   }
 
   window.initSiteNav = initSiteNav;

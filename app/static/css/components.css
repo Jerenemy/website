@@ -172,108 +172,104 @@
     transform: translateY(-4px) rotate(-45deg);
 }
 
-@media (max-width: 768px) {
-    .site-header {
-        align-items: flex-start;
-        /* Pin JZ and Hamburger to the top of the header */
-        padding: 0.75rem var(--pad);
+body.is-mobile-menu .site-header {
+    align-items: flex-start;
+    /* Pin JZ and Hamburger to the top of the header */
+    padding: 0.75rem var(--pad);
 
-        /* The Layout Shift Trick:
-           We transition the height to 100vh, but transition negative margin-bottom
-           so the browser thinks it still only takes up 64px of space. */
-        transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-            margin-bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-            background 0.3s ease;
-        overflow: hidden;
-        /* Hide the nav links when closed */
-        margin-bottom: 0px;
-    }
-
-    .site-header[data-mobile-menu-open="true"] {
-        height: 100vh;
-        height: 100dvh;
-        /* Pull the rest of the page up by the exact amount the header grew */
-        margin-bottom: calc(var(--headerH) - 100vh);
-        margin-bottom: calc(var(--headerH) - 100dvh);
-    }
-
-    .site-header .brand {
-        margin: 0;
-    }
-
-    /* Layer 2: The Navigation Container (Legibility Panel) */
-    .nav {
-        position: absolute;
-        top: calc(var(--headerH) + 1rem);
-        /* Keep it anchored near the top */
-        left: var(--pad);
-        right: var(--pad);
-        flex-direction: column;
-        align-items: flex-start;
-        /* Left-aligned items */
-        gap: 0;
-        padding: 1.25rem 1rem;
-        border-radius: 20px;
-        z-index: 11;
-
-        transform: translateY(-20px) scale(0.95);
-        opacity: 0;
-        pointer-events: none;
-
-        /* Fast out when closing */
-        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-            opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-            background 0.3s ease, border-color 0.3s ease;
-    }
-
-    .site-header[data-mobile-menu-open="true"] .nav {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-        pointer-events: auto;
-
-        /* Delayed in when opening: wait for the header backdrop to slide down slightly */
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s,
-            opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s,
-            background 0.3s ease, border-color 0.3s ease;
-    }
-
-    /* Tactile Mobile Links */
-    .nav a {
-        width: 100%;
-        margin: 0;
-        padding: 1.25rem 1.25rem;
-        /* Taller tap targets */
-        font-size: 1.25rem;
-        text-align: left;
-        align-self: flex-start;
-        border-radius: 12px;
-        background: transparent;
-        border-bottom: 1px solid rgba(128, 128, 128, 0.15);
-        /* Separators between items */
-        border-radius: 0;
-        /* Flat list style like iOS */
-        transition: background 0.2s ease, color 0.3s ease;
-    }
-
-    .nav a:last-child {
-        border-bottom: none;
-    }
-
-    /* Pressed / Hover State */
-    .nav a:active,
-    .nav a:hover {
-        background: rgba(128, 128, 128, 0.1);
-    }
-
-    .nav-toggle {
-        display: flex;
-    }
+    /* The Layout Shift Trick:
+       We transition the height to 100vh, but transition negative margin-bottom
+       so the browser thinks it still only takes up 64px of space. */
+    transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+        margin-bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.3s ease;
+    overflow: hidden;
+    /* Hide the nav links when closed */
+    margin-bottom: 0px;
 }
 
-@media (min-width: 769px) {
-    .nav a {
-        margin: 0 0.75rem;
-    }
+body.is-mobile-menu .site-header[data-mobile-menu-open="true"] {
+    height: 100vh;
+    height: 100dvh;
+    /* Pull the rest of the page up by the exact amount the header grew */
+    margin-bottom: calc(var(--headerH) - 100vh);
+    margin-bottom: calc(var(--headerH) - 100dvh);
+}
+
+body.is-mobile-menu .site-header .brand {
+    margin: 0;
+}
+
+/* Layer 2: The Navigation Container (Legibility Panel) */
+body.is-mobile-menu .nav {
+    position: absolute;
+    top: calc(var(--headerH) + 1rem);
+    /* Keep it anchored near the top */
+    left: var(--pad);
+    right: var(--pad);
+    flex-direction: column;
+    align-items: flex-start;
+    /* Left-aligned items */
+    gap: 0;
+    padding: 1.25rem 1rem;
+    border-radius: 20px;
+    z-index: 11;
+
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+
+    /* Fast out when closing */
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.3s ease, border-color 0.3s ease;
+}
+
+body.is-mobile-menu .site-header[data-mobile-menu-open="true"] .nav {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+
+    /* Delayed in when opening: wait for the header backdrop to slide down slightly */
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s,
+        opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s,
+        background 0.3s ease, border-color 0.3s ease;
+}
+
+/* Tactile Mobile Links */
+body.is-mobile-menu .nav a {
+    width: 100%;
+    margin: 0;
+    padding: 1.25rem 1.25rem;
+    /* Taller tap targets */
+    font-size: 1.25rem;
+    text-align: left;
+    align-self: flex-start;
+    border-radius: 12px;
+    background: transparent;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+    /* Separators between items */
+    border-radius: 0;
+    /* Flat list style like iOS */
+    transition: background 0.2s ease, color 0.3s ease;
+}
+
+body.is-mobile-menu .nav a:last-child {
+    border-bottom: none;
+}
+
+/* Pressed / Hover State */
+body.is-mobile-menu .nav a:active,
+body.is-mobile-menu .nav a:hover {
+    background: rgba(128, 128, 128, 0.1);
+}
+
+body.is-mobile-menu .nav-toggle {
+    display: flex;
+}
+
+body:not(.is-mobile-menu) .nav a {
+    margin: 0 0.75rem;
 }
 
 
