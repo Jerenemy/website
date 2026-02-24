@@ -28,53 +28,60 @@
     --btn-fg: #fff;
     --btn-border: var(--accent, #4fc3f7);
 }
+
 .btn--accent:hover {
     --btn-bg-hover: #38bdf8;
 }
 
 
 .card {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
 }
 
-.container { 
-    max-width: var(--max); 
-    margin: 0 auto; 
-    padding: 0 
-    var(--pad) 
-    var(--pad); 
+.container {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 var(--pad) var(--pad);
 }
 
 /* nav */
 /* base structure, no visuals */
 .site-header {
-  position: sticky;
-  top: 0;
-  height: var(--headerH);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0 var(--pad);
-  z-index: 10;
-  --header-ink: #000000;
+    position: sticky;
+    top: 0;
+    height: var(--headerH);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 var(--pad);
+    z-index: 10;
+    --header-ink: #000000;
 }
 
 .site-header.site-header--hit-test-pass-through,
 .site-header.site-header--hit-test-pass-through * {
-  pointer-events: none !important;
+    pointer-events: none !important;
 }
 
 .site-header.site-header--on-dark {
-  --header-ink: #f7fafc;
+    --header-ink: #f7fafc;
 }
 
-.site-header.site-header--blend-contrast .nav {
-  background: var(--glass-bg, rgba(255, 255, 255, 0.12));
-  border-color: var(--glass-border, rgba(255, 255, 255, 0.25));
+.site-header.site-header--blend-contrast:not(.site-header--on-dark) .nav,
+.site-header.site-header--blend-contrast:not(.site-header--on-dark) .brand.glassy {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure high contrast when text is light (header is over dark bg) */
+.site-header.site-header--blend-contrast.site-header--on-dark .nav,
+.site-header.site-header--blend-contrast.site-header--on-dark .brand.glassy {
+    background: rgba(0, 0, 0, 0.55);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 /* Glassy navbar variant */
@@ -88,6 +95,7 @@
     border: 1px solid var(--nav-border, rgba(255, 255, 255, 0.25));
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
     border-radius: 999px;
+    transition: background 0.3s ease, border-color 0.3s ease, transform 0.25s ease, opacity 0.25s ease;
 }
 
 /* optional: make links inside glass-nav readable */
@@ -103,7 +111,7 @@
     color: var(--accent, #4fc3f7);
 }
 
-.nav a + a {
+.nav a+a {
     margin-left: 0.35rem;
 }
 
@@ -215,11 +223,11 @@
 }
 
 .brand {
-  color: var(--header-ink, var(--on-glass, #111111));
+    color: var(--header-ink, var(--on-glass, #111111));
     text-decoration: none;
     font-weight: 500;
     margin: 0 0.75rem;
-    transition: color 0.3s ease;
+    transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
 }
 
 .brand:hover {
@@ -227,34 +235,36 @@
 }
 
 .social-links {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
 }
 
 .social-links a {
-  color: var(--header-ink, var(--on-glass, #111111));
-  transition: color 0.3s ease, transform 0.2s ease;
+    color: var(--header-ink, var(--on-glass, #111111));
+    transition: color 0.3s ease, transform 0.2s ease;
 }
 
 .social-links a:hover {
-  color: var(--accent, #4fc3f7);
-  transform: translateY(-2px);
+    color: var(--accent, #4fc3f7);
+    transform: translateY(-2px);
 }
 
 .social-links svg {
-  width: 1.5rem;
-  height: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
 }
 
 /* Full-width heading section */
 .heading {
     width: 100%;
-    background: var(--heading-bg, #f2f2f2); /* light gray */
+    background: var(--heading-bg, #f2f2f2);
+    /* light gray */
     padding: clamp(1.5rem, 4vw, 3rem) 0;
 
     display: flex;
-    justify-content: center;               /* center inner oval */
+    justify-content: center;
+    /* center inner oval */
     align-items: center;
 }
 
@@ -262,7 +272,8 @@
 .heading__title {
     display: inline-block;
     padding: 0.75rem 2rem;
-    border-radius: 9999px;                 /* <-- long oval shape */
+    border-radius: 9999px;
+    /* <-- long oval shape */
     background: var(--heading-inner-bg, #fff);
     color: var(--heading-text, var(--on-glass, #111111));
     font-size: clamp(1.5rem, 2.5vw, 2rem);
