@@ -95,7 +95,7 @@
     border: 1px solid var(--nav-border, rgba(255, 255, 255, 0.25));
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
     border-radius: 999px;
-    transition: background 0.3s ease, border-color 0.3s ease, transform 0.25s ease, opacity 0.25s ease;
+    transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 /* optional: make links inside glass-nav readable */
@@ -174,71 +174,75 @@
 
 @media (max-width: 768px) {
     .site-header {
+        align-items: flex-start;
+        /* Pin JZ and Hamburger to the top of the header */
         padding: 0.75rem var(--pad);
+
+        /* The Layout Shift Trick:
+           We transition the height to 100vh, but transition negative margin-bottom
+           so the browser thinks it still only takes up 64px of space. */
+        transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+            margin-bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+            background 0.3s ease;
+        overflow: hidden;
+        /* Hide the nav links when closed */
+        margin-bottom: 0px;
     }
 
-    #mobile-menu-backdrop {
-        display: block;
-    }
-
-    /* Layer 1: Full-Screen Backdrop */
-    #mobile-menu-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
+    .site-header[data-mobile-menu-open="true"] {
         height: 100vh;
         height: 100dvh;
-        /* Mobile browser viewport fix */
-        background: var(--glass-bg, rgba(255, 255, 255, 0.4));
-        backdrop-filter: blur(var(--glass-blur, 20px));
-        -webkit-backdrop-filter: blur(var(--glass-blur, 20px));
-        z-index: 10;
-
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        /* Pull the rest of the page up by the exact amount the header grew */
+        margin-bottom: calc(var(--headerH) - 100vh);
+        margin-bottom: calc(var(--headerH) - 100dvh);
     }
 
-    #mobile-menu-backdrop[data-collapsed="false"] {
-        opacity: 1;
-        pointer-events: auto;
+    .site-header .brand {
+        margin: 0;
     }
 
-    /* Layer 2: The Navigation Rectangle (Legible Glass Panel) */
+    /* Layer 2: The Navigation Container (Legibility Panel) */
     .nav {
         position: absolute;
-        top: calc(100% + 0.5rem);
+        top: calc(var(--headerH) + 1rem);
+        /* Keep it anchored near the top */
         left: var(--pad);
         right: var(--pad);
         flex-direction: column;
         align-items: flex-start;
         /* Left-aligned items */
         gap: 0;
-        padding: 1.5rem 1rem;
+        padding: 1.25rem 1rem;
         border-radius: 20px;
         z-index: 11;
 
-        /* Slide tracking the backdrop conceptually, but bounded as a floating panel over it */
         transform: translateY(-20px) scale(0.95);
         opacity: 0;
         pointer-events: none;
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-            opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+
+        /* Fast out when closing */
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+            opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
             background 0.3s ease, border-color 0.3s ease;
     }
 
-    .nav[data-collapsed="false"] {
+    .site-header[data-mobile-menu-open="true"] .nav {
         transform: translateY(0) scale(1);
         opacity: 1;
         pointer-events: auto;
+
+        /* Delayed in when opening: wait for the header backdrop to slide down slightly */
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s,
+            opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s,
+            background 0.3s ease, border-color 0.3s ease;
     }
 
     /* Tactile Mobile Links */
     .nav a {
         width: 100%;
         margin: 0;
-        padding: 1rem 1.25rem;
+        padding: 1.25rem 1.25rem;
+        /* Taller tap targets */
         font-size: 1.25rem;
         text-align: left;
         align-self: flex-start;

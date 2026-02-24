@@ -15,12 +15,12 @@
 
     const toggle = document.querySelector(".nav-toggle");
     const nav = document.getElementById("site-nav");
-    const backdrop = document.getElementById("mobile-menu-backdrop");
+    const header = document.querySelector(".site-header");
 
     const setCollapsed = (collapsed) => {
       nav.dataset.collapsed = collapsed ? "true" : "false";
-      if (backdrop) {
-        backdrop.dataset.collapsed = collapsed ? "true" : "false";
+      if (header) {
+        header.dataset.mobileMenuOpen = collapsed ? "false" : "true";
       }
       toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
     };
