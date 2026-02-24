@@ -16,6 +16,8 @@ poetry run flask --app app:create_app run --debug
 poetry install --no-root
 
 ## Features
+- Dynamic, Apple-style mobile navigation menu with a zero-layout-shift sliding drawer animation and an intelligent breakpoint calculator
+- Responsive sticky header with automatic background lightness detection to adapt its frosted glass contrast
 - Home/portfolio/blog/game pages rendered with Jinja templates
 - Blog posts auto-loaded from Markdown files in `app/blog_posts/`
 - Contact endpoint posts to `/api/contact` and sends email via SMTP

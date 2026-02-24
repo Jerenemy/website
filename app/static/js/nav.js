@@ -29,6 +29,10 @@
 
     const updateLayout = () => {
       if (!header || !nav) return;
+
+      // Temporarily disable transitions during measurement to prevent visual bugs
+      document.body.classList.add("is-measuring");
+
       const wasMobileMode = isMobileMode;
       const previouslyOpen = nav.dataset.collapsed === "false";
 
@@ -66,13 +70,18 @@
         nav.dataset.collapsed = "false";
         toggle.setAttribute("aria-expanded", "false");
       }
+
+      // Force synchronous layout to apply the correct non-transitioned state
+      document.body.offsetHeight;
+      document.body.classList.remove("is-measuring");
+
       notifyHeaderContrastEngine();
     };
 
-    let resizeTimer;
+    let resizeFrame;
     window.addEventListener("resize", () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(updateLayout, 50);
+      if (resizeFrame) cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(updateLayout);
     });
     // Trigger immediately
     updateLayout();

@@ -1,4 +1,8 @@
 /* Base button — structure only */
+body.is-measuring * {
+    transition: none !important;
+}
+
 .btn {
     display: inline-block;
     margin-top: 0.75rem;
