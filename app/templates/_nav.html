@@ -1,12 +1,13 @@
 <header class="site-header glassy">
   <a class="btn brand glassy" href="{{ url_for('public.index') }}">JZ</a>
 
-  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
-    <span class="nav-toggle__bar"></span>
+  <button class="nav-toggle glassy" type="button" aria-expanded="false" aria-controls="site-nav">
     <span class="nav-toggle__bar"></span>
     <span class="nav-toggle__bar"></span>
     <span class="sr-only">Menu</span>
   </button>
+  
+  <div id="mobile-menu-backdrop" class="glassy" aria-hidden="true" data-collapsed="true"></div>
 
   <nav id="site-nav" class="nav glassy" aria-label="Main navigation" data-collapsed="true">
     <!-- in-page sections on Home -->

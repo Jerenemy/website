@@ -119,14 +119,29 @@
     display: none;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 0.45rem;
+    flex-direction: column;
+    gap: 6px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 999px;
     border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.25));
-    border-radius: 10px;
     background: var(--glass-bg, rgba(255, 255, 255, 0.12));
     color: var(--header-ink, var(--on-glass, #111111));
     cursor: pointer;
-    transition: background 0.25s ease, transform 0.2s ease;
+    transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    z-index: 100;
+    /* Ensure button stays on top */
+}
+
+.site-header.site-header--blend-contrast:not(.site-header--on-dark) .nav-toggle.glassy {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.site-header.site-header--blend-contrast.site-header--on-dark .nav-toggle.glassy {
+    background: rgba(0, 0, 0, 0.55);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .nav-toggle:hover {
@@ -144,19 +159,17 @@
     height: 2px;
     background: currentColor;
     border-radius: 999px;
-    transition: transform 0.25s ease, opacity 0.25s ease;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: center;
 }
 
+/* Two-line morph into an X */
 .nav-toggle[aria-expanded="true"] .nav-toggle__bar:nth-child(1) {
-    transform: translateY(6px) rotate(45deg);
+    transform: translateY(4px) rotate(45deg);
 }
 
 .nav-toggle[aria-expanded="true"] .nav-toggle__bar:nth-child(2) {
-    opacity: 0;
-}
-
-.nav-toggle[aria-expanded="true"] .nav-toggle__bar:nth-child(3) {
-    transform: translateY(-6px) rotate(-45deg);
+    transform: translateY(-4px) rotate(-45deg);
 }
 
 @media (max-width: 768px) {
@@ -164,39 +177,92 @@
         padding: 0.75rem var(--pad);
     }
 
-    .nav {
-        position: absolute;
-        top: calc(100% + 0.5rem);
-        right: var(--pad);
-        left: var(--pad);
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 0.5rem;
-        padding: 1rem;
-        border-radius: 18px;
-        transform: scaleY(0);
-        transform-origin: top;
-        opacity: 0;
-        pointer-events: none;
-        transition: transform 0.25s ease, opacity 0.25s ease;
+    #mobile-menu-backdrop {
+        display: block;
     }
 
-    .nav[data-collapsed="false"] {
-        transform: scaleY(1);
+    /* Layer 1: Full-Screen Backdrop */
+    #mobile-menu-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        /* Mobile browser viewport fix */
+        background: var(--glass-bg, rgba(255, 255, 255, 0.4));
+        backdrop-filter: blur(var(--glass-blur, 20px));
+        -webkit-backdrop-filter: blur(var(--glass-blur, 20px));
+        z-index: 10;
+
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #mobile-menu-backdrop[data-collapsed="false"] {
         opacity: 1;
         pointer-events: auto;
     }
 
+    /* Layer 2: The Navigation Rectangle (Legible Glass Panel) */
+    .nav {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        left: var(--pad);
+        right: var(--pad);
+        flex-direction: column;
+        align-items: flex-start;
+        /* Left-aligned items */
+        gap: 0;
+        padding: 1.5rem 1rem;
+        border-radius: 20px;
+        z-index: 11;
+
+        /* Slide tracking the backdrop conceptually, but bounded as a floating panel over it */
+        transform: translateY(-20px) scale(0.95);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+            opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+            background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .nav[data-collapsed="false"] {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Tactile Mobile Links */
     .nav a {
-        width: auto;
+        width: 100%;
         margin: 0;
-        padding: 0.35rem 0;
-        text-align: right;
-        align-self: flex-end;
+        padding: 1rem 1.25rem;
+        font-size: 1.25rem;
+        text-align: left;
+        align-self: flex-start;
+        border-radius: 12px;
+        background: transparent;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+        /* Separators between items */
+        border-radius: 0;
+        /* Flat list style like iOS */
+        transition: background 0.2s ease, color 0.3s ease;
+    }
+
+    .nav a:last-child {
+        border-bottom: none;
+    }
+
+    /* Pressed / Hover State */
+    .nav a:active,
+    .nav a:hover {
+        background: rgba(128, 128, 128, 0.1);
     }
 
     .nav-toggle {
-        display: inline-flex;
+        display: flex;
     }
 }
 
