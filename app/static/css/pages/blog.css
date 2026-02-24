@@ -2,7 +2,8 @@
     position: relative;
     z-index: 1;
     max-width: 720px;
-    margin: var(--text-margin, clamp(2rem, 4vw, 4rem)) auto; /* centers + top/bottom padding */
+    margin: var(--text-margin, clamp(2rem, 4vw, 4rem)) auto;
+    /* centers + top/bottom padding */
     padding: clamp(1rem, 2vw, 2rem);
     border-radius: 16px;
 
@@ -11,15 +12,20 @@
 }
 
 .blog-list {
-    display: grid;
-    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
 }
 
 .blog-card {
-    padding: 1rem 1.1rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.08);
+    padding: 1.5rem 1.6rem;
+    border-radius: 16px;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.blog-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .blog-card__title {

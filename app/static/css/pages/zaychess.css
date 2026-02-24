@@ -1,0 +1,178 @@
+/* 
+ * Zaychess Landing Page Specific Styles
+ * Most structural/thematic elements use global .glassy and .btn classes 
+ */
+
+.zaychess-hero {
+    text-align: center;
+    padding: 6rem 1rem 4rem;
+}
+
+.hero-title-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.zaychess-logo-link {
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zaychess-logo-link:hover {
+    transform: scale(1.05);
+}
+
+.zaychess-logo {
+    height: clamp(3rem, 8vw, 5rem);
+    width: auto;
+}
+
+.zaychess-hero h1 {
+    font-size: clamp(3rem, 8vw, 5rem);
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    background: linear-gradient(135deg, var(--fg) 0%, rgba(128, 128, 128, 0.8) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.zaychess-tagline {
+    font-size: 1.25rem;
+    color: var(--fg);
+    opacity: 0.8;
+    max-width: 600px;
+    margin: 0 auto 3rem;
+    line-height: 1.6;
+}
+
+.zaychess-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.zaychess-action .btn {
+    font-size: 1.1rem;
+    padding: 0.8rem 1.8rem;
+    border-radius: 12px;
+}
+
+.tech-note {
+    font-size: 0.9rem;
+    color: var(--fg);
+    opacity: 0.6;
+    margin: 0;
+}
+
+/* Feature Grid (The 3 boxes) */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 4rem auto 6rem;
+    max-width: 1000px;
+    padding: 0 1rem;
+}
+
+.feature-card {
+    padding: 2rem;
+    border-radius: 20px;
+    text-align: left;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.feature-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+    color: var(--fg);
+}
+
+.feature-card p {
+    color: var(--fg);
+    opacity: 0.8;
+    font-size: 1rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Content Sections (Zig-Zag Layout) */
+.screenshot-section {
+    display: flex;
+    align-items: center;
+    gap: 4rem;
+    margin: 0 auto 8rem;
+    max-width: 1100px;
+    padding: 0 1rem;
+}
+
+.screenshot-section.reverse {
+    flex-direction: row-reverse;
+}
+
+.screenshot-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.screenshot-text h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+.screenshot-text p {
+    color: var(--fg);
+    opacity: 0.8;
+    font-size: 1.15rem;
+    line-height: 1.6;
+}
+
+.screenshot-media {
+    flex: 1.2;
+    min-width: 0;
+}
+
+.img-frame {
+    background: transparent;
+    border-radius: 16px;
+    overflow: hidden;
+    /* Soft shadow to lift it off the background */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    /* Subtle glassy border */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.img-frame img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+@media (max-width: 800px) {
+
+    .screenshot-section,
+    .screenshot-section.reverse {
+        flex-direction: column;
+        gap: 2.5rem;
+        text-align: center;
+        margin-bottom: 5rem;
+    }
+
+    .screenshot-text h2 {
+        font-size: 2rem;
+    }
+}

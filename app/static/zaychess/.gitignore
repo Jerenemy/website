@@ -1,4 +1,4 @@
 *
 !.gitignore
-!gameplay.png
-!launcher.png
+!/img/
+!/img/*

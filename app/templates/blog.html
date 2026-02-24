@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 {% block title %}Blog — Jeremy Zay{% endblock %}
 {% block content %}
-  <div class="heading glassy">
-    <div class="heading__title glassy">Blog</div>
-  </div>
+<div class="heading glassy">
+  <div class="heading__title glassy">Blog</div>
+</div>
 
-  <section class="blog-text-container glassy">
-    {% if posts %}
-      <div class="blog-list">
-        {% for post in posts %}
-          <article class="blog-card">
-            <h2 class="blog-card__title">
-              <a href="{{ url_for('public.blog_post', slug=post.slug) }}">{{ post.title }}</a>
-            </h2>
-            <p class="blog-card__meta">{{ post.date_label }}</p>
-            {% if post.summary %}
-              <p class="blog-card__summary">{{ post.summary }}</p>
-            {% endif %}
-            <a class="btn glassy blog-card__link" href="{{ url_for('public.blog_post', slug=post.slug) }}">Read Post</a>
-          </article>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p>No posts yet. Add a Markdown file to <code>app/blog_posts/</code>.</p>
-    {% endif %}
-  </section>
+<section class="blog-text-container">
+  {% if posts %}
+  <div class="blog-list">
+    {% for post in posts %}
+    <article class="blog-card glassy">
+      <h2 class="blog-card__title">
+        <a href="{{ url_for('public.blog_post', slug=post.slug) }}">{{ post.title }}</a>
+      </h2>
+      <p class="blog-card__meta">{{ post.date_label }}</p>
+      {% if post.summary %}
+      <p class="blog-card__summary">{{ post.summary }}</p>
+      {% endif %}
+      <a class="btn glassy blog-card__link" href="{{ url_for('public.blog_post', slug=post.slug) }}">Read Post</a>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>No posts yet. Add a Markdown file to <code>app/blog_posts/</code>.</p>
+  {% endif %}
+</section>
 {% endblock %}
