@@ -72,6 +72,11 @@
   --header-ink: #f7fafc;
 }
 
+.site-header.site-header--blend-contrast .nav {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.12));
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.25));
+}
+
 /* Glassy navbar variant */
 .nav {
     display: flex;
