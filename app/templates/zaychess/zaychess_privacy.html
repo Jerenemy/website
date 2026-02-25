@@ -12,12 +12,13 @@
 
     <header class="zaychess-header">
       <h1>Privacy Policy</h1>
-      <p class="zaychess-tagline">Zaychess does not collect analytics or tracking data.</p>
+      <p class="zaychess-tagline">Zaychess {{ zaychess_current_version }} does not collect analytics or tracking data.</p>
     </header>
 
     <section class="zaychess-section glassy">
       <h2>Summary</h2>
       <ul>
+        <li>This policy applies to Zaychess version {{ zaychess_current_version }}.</li>
         <li>No account required.</li>
         <li>No analytics, tracking, or advertising SDKs.</li>
         <li>Game data stays on your device.</li>
@@ -28,29 +29,32 @@
       <h2>Data you provide</h2>
       <p>
         If you contact support, you may provide your name, email, and message through the support
-        form. This information is used only to respond to your request and is not sold or shared.
+        form. This information is used only to respond to your request and is not sold. Messages are
+        delivered to the developer via the site email backend.
       </p>
     </section>
 
     <section class="zaychess-section glassy">
       <h2>Network use</h2>
       <p>
-        Multiplayer uses direct TCP connections between players. There are no relay servers and no
-        gameplay telemetry is collected.
+        Multiplayer uses the relay matchmaking server to connect players. There are no gameplay analytics
+        and no account-based telemetry.
       </p>
     </section>
 
     <section class="zaychess-section glassy">
       <h2>Local storage</h2>
       <p>
-        Zaychess stores saved games (.chesslog) and preferences locally on your machine.
+        Zaychess stores saved games (.chesslog), preferences, and local runtime data on your machine.
+        There is no required cloud account or cloud sync.
       </p>
     </section>
 
     <section class="zaychess-section glassy">
       <h2>Changes</h2>
       <p>
-        If this policy changes, the updated version will be posted on this page.
+        This policy currently corresponds to Zaychess {{ zaychess_current_version }}. If the policy
+        changes, the updated version will be posted on this page.
       </p>
     </section>
 

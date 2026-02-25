@@ -6,6 +6,9 @@ from ...portfolio import get_portfolio_store
 from ...site_settings import get_site_settings_store
 from . import bp
 
+ZAYCHESS_CURRENT_VERSION = "1.2"
+ZAYCHESS_MIN_MACOS = "12.0"
+
 @bp.get("/")
 def index():
     store = get_portfolio_store()
@@ -67,11 +70,18 @@ def zaychess():
 
 @bp.get('/zaychess/support', strict_slashes=False)
 def zaychess_support():
-    return render_template('zaychess/zaychess_support.html')
+    return render_template(
+        'zaychess/zaychess_support.html',
+        zaychess_current_version=ZAYCHESS_CURRENT_VERSION,
+        zaychess_min_macos=ZAYCHESS_MIN_MACOS,
+    )
 
 @bp.get('/zaychess/privacy', strict_slashes=False)
 def zaychess_privacy():
-    return render_template('zaychess/zaychess_privacy.html')
+    return render_template(
+        'zaychess/zaychess_privacy.html',
+        zaychess_current_version=ZAYCHESS_CURRENT_VERSION,
+    )
 
 @bp.get('/eqoscan')  
 def eqoscan():

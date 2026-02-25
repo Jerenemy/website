@@ -13,9 +13,9 @@
     <header class="zaychess-header">
       <h1>Zaychess Support</h1>
       <p class="zaychess-tagline">
-        Zaychess is a macOS chess app with local play, a built-in AI opponent (Serendipity engine),
-        and direct peer-to-peer multiplayer by IP. You can save and load games as .chesslog files
-        via the standard file picker.
+        Zaychess is a local-first macOS chess app with hot-seat play, a built-in AI opponent
+        (Serendipity engine), and online multiplayer through a relay matchmaking server. Save and load games as .chesslog files,
+        then continue them against either a human player or the AI.
       </p>
 
       <div class="zaychess-cta-row">
@@ -41,33 +41,34 @@
       </div>
       <div class="zaychess-meta-card glassy">
         <div class="zaychess-meta-label">Current version</div>
-        <div class="zaychess-meta-value">1.0.8</div>
+        <div class="zaychess-meta-value">{{ zaychess_current_version }}</div>
       </div>
       <div class="zaychess-meta-card glassy">
         <div class="zaychess-meta-label">Minimum macOS</div>
-        <div class="zaychess-meta-value">12.0 or later</div>
+        <div class="zaychess-meta-value">{{ zaychess_min_macos }} or later</div>
       </div>
     </div>
 
     <section class="zaychess-section glassy">
       <h2>Key features</h2>
       <ul>
-        <li>Local games with a move list panel and fullscreen toggle.</li>
-        <li>Play vs computer AI (Serendipity engine) with adjustable difficulty.</li>
-        <li>Host or join multiplayer games by IP using direct peer-to-peer connections.</li>
-        <li>Save and load .chesslog files using the standard file picker.</li>
+        <li>Local hot-seat play with automatic board flipping, SAN move list, and captured piece tracking.</li>
+        <li>Play vs Serendipity AI with adjustable difficulty and style-biased lower levels.</li>
+        <li>Queue for online multiplayer through the relay server.</li>
+        <li>Save and load .chesslog games, then continue the same position vs human or vs AI.</li>
+        <li>Undo/redo support that handles AI turns correctly.</li>
       </ul>
     </section>
 
     <section class="zaychess-section glassy">
       <h2>System requirements</h2>
-      <p><span class="zaychess-highlight">macOS 12.0 or later</span>.</p>
+      <p><span class="zaychess-highlight">macOS {{ zaychess_min_macos }} or later</span>.</p>
     </section>
 
     <section class="zaychess-section glassy">
       <h2>Networking</h2>
       <p>
-        Multiplayer uses direct TCP connections between players. There are no servers in the middle.
+        Online multiplayer uses the relay matchmaking server for queueing and game session routing.
       </p>
     </section>
 
@@ -76,7 +77,7 @@
       <ul>
         <li>Data collection: <span class="zaychess-highlight">No account, no tracking, no analytics; all data stored
             locally.</span></li>
-        <li>Network use: Only for optional multiplayer (direct TCP between players).</li>
+        <li>Network use: Only for optional online multiplayer through the relay server.</li>
         <li>Privacy policy: <a class="zaychess-highlight"
             href="{{ url_for('public.zaychess_privacy') }}">jeremyzay.com/zaychess/privacy</a></li>
       </ul>
@@ -85,7 +86,12 @@
     <section class="zaychess-section glassy">
       <h2>Known issues</h2>
       <ul>
-        <li>LAN multiplayer may require firewall permission on one or both machines.</li>
+        <li>No known relay multiplayer networking issues at this time.</li>
+        <li>If matchmaking stalls, cancel and re-queue from the multiplayer screen.</li>
+        <li>Very rarely, rapidly entering and leaving the multiplayer queue can desync the loading state; the next queue
+          attempt may incorrectly match you to your own session. If this happens, return to the main menu, then
+          re-enter multiplayer and queue again.</li>
+        <li>Some Bluetooth audio devices may delay the first move sound after long silence.</li>
       </ul>
     </section>
 
@@ -95,12 +101,14 @@
         <li>Development builds: zaychess.log in the app directory.</li>
         <li>Packaged app logs: check <span class="zaychess-highlight">~/Library/Logs/Zaychess/</span> (if present) or
           share a crash report from Console.app.</li>
+        <li>If the issue is game-state related, include the affected .chesslog file if available.</li>
       </ul>
     </section>
 
     <section class="zaychess-section glassy">
       <h2>Contact support</h2>
-      <p>Use the form below and include your macOS version, Zaychess version, and steps to reproduce.</p>
+      <p>Use the form below and include your macOS version, Zaychess version, game mode (local/AI/multiplayer), and
+        steps to reproduce.</p>
       <form id="contact-form" class="zaychess-support-form">
         <input name="name" placeholder="Name" required>
         <input name="email" type="email" placeholder="Email" required>
