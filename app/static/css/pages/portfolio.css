@@ -9,7 +9,8 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: clamp(1rem, 2vw, 1.5rem);
   max-width: var(--max, 1100px);
-  margin: 0 auto;            /* centers grid area */
+  margin: 0 auto;
+  /* centers grid area */
   padding: clamp(1.5rem, 4vw, 3rem) var(--pad, 1rem);
 }
 
@@ -18,8 +19,9 @@
   background: var(--card-bg, #fff);
   border: 1px solid var(--card-border, #eaeaea);
   border-radius: 16px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  overflow: hidden;           /* round image corners at top */
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  /* round image corners at top */
 }
 
 /* Clickable media area */
@@ -62,3 +64,17 @@
 
 /* If you want a bit more width on large screens, bump the minmax: 
    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); */
+
+/* GLightbox overrides for portfolio */
+.glightbox-clean .gslide-description {
+  background: var(--bg) !important;
+}
+
+.glightbox-clean .gdesc-inner {
+  background: transparent !important;
+}
+
+.project-card__lightbox-desc {
+  color: var(--fg);
+  line-height: 1.6;
+}
