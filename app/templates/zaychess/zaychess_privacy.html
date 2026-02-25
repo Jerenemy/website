@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Zaychess Privacy Policy | Jeremy Zay{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/zaychess.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page-content" style="padding-top: 100px;">
+  <div class="zaychess-container">
+
+    <header class="zaychess-header">
+      <h1>Privacy Policy</h1>
+      <p class="zaychess-tagline">Zaychess does not collect analytics or tracking data.</p>
+    </header>
+
+    <section class="zaychess-section glassy">
+      <h2>Summary</h2>
+      <ul>
+        <li>No account required.</li>
+        <li>No analytics, tracking, or advertising SDKs.</li>
+        <li>Game data stays on your device.</li>
+      </ul>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>Data you provide</h2>
+      <p>
+        If you contact support, you may provide your name, email, and message through the support
+        form. This information is used only to respond to your request and is not sold or shared.
+      </p>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>Network use</h2>
+      <p>
+        Multiplayer uses direct TCP connections between players. There are no relay servers and no
+        gameplay telemetry is collected.
+      </p>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>Local storage</h2>
+      <p>
+        Zaychess stores saved games (.chesslog) and preferences locally on your machine.
+      </p>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>Changes</h2>
+      <p>
+        If this policy changes, the updated version will be posted on this page.
+      </p>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>Contact</h2>
+      <p>
+        Questions? Use the support form at
+        <a class="zaychess-highlight"
+          href="{{ url_for('public.zaychess_support') }}">jeremyzay.com/zaychess/support</a>.
+      </p>
+    </section>
+
+    <footer class="zaychess-footer">
+      &copy; 2025 Jeremy Zay
+    </footer>
+  </div>
+</main>
+{% endblock %}

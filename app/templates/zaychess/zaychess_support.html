@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Zaychess Support | Jeremy Zay{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/zaychess.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page-content" style="padding-top: 100px;">
+  <div class="zaychess-container">
+
+    <header class="zaychess-header">
+      <h1>Zaychess Support</h1>
+      <p class="zaychess-tagline">
+        Zaychess is a macOS chess app with local play, a built-in AI opponent (Serendipity engine),
+        and direct peer-to-peer multiplayer by IP. You can save and load games as .chesslog files
+        via the standard file picker.
+      </p>
+
+      <div class="zaychess-cta-row">
+        <a href="{{ url_for('static', filename='zaychess/Zaychess-Mac.zip') }}"
+          class="zaychess-btn zaychess-btn-primary">
+          <span>🍎</span> Download for Mac
+        </a>
+        <a href="{{ url_for('static', filename='zaychess/Zaychess.jar') }}"
+          class="zaychess-btn zaychess-btn-secondary glassy">
+          <span>☕</span> Download Java .JAR
+        </a>
+      </div>
+    </header>
+
+    <div class="zaychess-meta-grid">
+      <div class="zaychess-meta-card glassy">
+        <div class="zaychess-meta-label">App name</div>
+        <div class="zaychess-meta-value">Zaychess</div>
+      </div>
+      <div class="zaychess-meta-card glassy">
+        <div class="zaychess-meta-label">Platform</div>
+        <div class="zaychess-meta-value">macOS (Mac App Store)</div>
+      </div>
+      <div class="zaychess-meta-card glassy">
+        <div class="zaychess-meta-label">Current version</div>
+        <div class="zaychess-meta-value">1.0.8</div>
+      </div>
+      <div class="zaychess-meta-card glassy">
+        <div class="zaychess-meta-label">Minimum macOS</div>
+        <div class="zaychess-meta-value">12.0 or later</div>
+      </div>
+    </div>
+
+    <section class="zaychess-section glassy">
+      <h2>Key features</h2>
+      <ul>
+        <li>Local games with a move list panel and fullscreen toggle.</li>
+        <li>Play vs computer AI (Serendipity engine) with adjustable difficulty.</li>
+        <li>Host or join multiplayer games by IP using direct peer-to-peer connections.</li>
+        <li>Save and load .chesslog files using the standard file picker.</li>
+      </ul>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>System requirements</h2>
+      <p><span class="zaychess-highlight">macOS 12.0 or later</span>.</p>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>Networking</h2>
+      <p>
+        Multiplayer uses direct TCP connections between players. There are no servers in the middle.
+      </p>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>Data and privacy</h2>
+      <ul>
+        <li>Data collection: <span class="zaychess-highlight">No account, no tracking, no analytics; all data stored
+            locally.</span></li>
+        <li>Network use: Only for optional multiplayer (direct TCP between players).</li>
+        <li>Privacy policy: <a class="zaychess-highlight"
+            href="{{ url_for('public.zaychess_privacy') }}">jeremyzay.com/zaychess/privacy</a></li>
+      </ul>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>Known issues</h2>
+      <ul>
+        <li>LAN multiplayer may require firewall permission on one or both machines.</li>
+      </ul>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>Logs for support</h2>
+      <ul>
+        <li>Development builds: zaychess.log in the app directory.</li>
+        <li>Packaged app logs: check <span class="zaychess-highlight">~/Library/Logs/Zaychess/</span> (if present) or
+          share a crash report from Console.app.</li>
+      </ul>
+    </section>
+
+    <section class="zaychess-section glassy">
+      <h2>Contact support</h2>
+      <p>Use the form below and include your macOS version, Zaychess version, and steps to reproduce.</p>
+      <form id="contact-form" class="zaychess-support-form">
+        <input name="name" placeholder="Name" required>
+        <input name="email" type="email" placeholder="Email" required>
+        <textarea name="message" placeholder="Message" required></textarea>
+        <button type="submit" class="zaychess-btn zaychess-btn-primary">Send</button>
+      </form>
+      <p id="contact-status" class="zaychess-support-status"></p>
+      <p>
+        Support URL: <a class="zaychess-highlight"
+          href="https://jeremyzay.com/zaychess/support">https://jeremyzay.com/zaychess/support</a>
+      </p>
+    </section>
+
+    <footer class="zaychess-footer">
+      &copy; 2025 Jeremy Zay
+    </footer>
+  </div>
+  <script src="{{ url_for('static', filename='js/contact.js') }}"></script>
+</main>
+{% endblock %}

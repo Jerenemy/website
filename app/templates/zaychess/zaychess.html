@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Zaychess | Jeremy Zay{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/zaychess.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page-content" style="padding-top: 100px;">
+    <div class="zaychess-hero">
+        <div class="hero-title-group">
+            <a href="https://apps.apple.com/us/app/zaychess/id6751706040?mt=12" target="_blank" rel="noopener"
+                class="zaychess-logo-link">
+                <img src="{{ url_for('static', filename='zaychess/img/app-icon.png') }}" alt="Zaychess App Icon"
+                    class="zaychess-logo" data-no-fluid="true">
+            </a>
+            <h1>Zaychess</h1>
+        </div>
+        <p class="zaychess-tagline">
+            A Chess App Built to Feel Good to Play. <br>
+            Local hot-seat, deeply configurable AI, and a tactile, premium design.
+        </p>
+
+        <div class="zaychess-action">
+            <a href="https://apps.apple.com/us/app/zaychess/id6751706040?mt=12" class="btn glassy" data-no-fluid="true"
+                target="_blank" rel="noopener">
+                <span>🍎</span> Get it on the Mac App Store
+            </a>
+            <p class="tech-note">Download, install, and play directly on macOS.</p>
+        </div>
+    </div>
+
+    <div class="features-grid" data-no-fluid="true">
+        <div class="feature-card glassy">
+            <h3>🤖 ZayBot & Serendipity AI</h3>
+            <p>Challenge the internal engine logic with specific personality biases ranging from completely passive to
+                hyper-aggressive across 11 difficulty levels.</p>
+        </div>
+        <div class="feature-card glassy">
+            <h3>🤝 Local & Online Multiplayer</h3>
+            <p>Play face-to-face on one computer with automatic board flipping, or connect across the internet via
+                low-latency direct IP peer-to-peer matchmaking.</p>
+        </div>
+        <div class="feature-card glassy">
+            <h3>💾 Portable Sessions</h3>
+            <p>Full serialization support. Save your games to `.chesslog` files, load them later, and use full undo/redo
+                with AI-aware reconstruction.</p>
+        </div>
+    </div>
+
+    <div class="screenshot-section">
+        <div class="screenshot-text">
+            <h2>Start Fast, Play Beautifully.</h2>
+            <p>The home screen puts every mode one click away: Local Game, ZayBot, Load Game, and Multiplayer. Open the
+                app
+                and start playing immediately.</p>
+        </div>
+        <div class="screenshot-media">
+            <div class="img-frame">
+                <img src="{{ url_for('static', filename='zaychess/img/home-screen.png') }}" alt="Zaychess Home Screen">
+            </div>
+        </div>
+    </div>
+
+    <div class="screenshot-section reverse">
+        <div class="screenshot-text">
+            <h2>Drag and Drop Play</h2>
+            <p>Move pieces directly on the board with smooth drag interactions. Legal destinations are highlighted
+                clearly,
+                so each move feels fast, visual, and precise.</p>
+        </div>
+        <div class="screenshot-media">
+            <div class="img-frame">
+                <img src="{{ url_for('static', filename='zaychess/img/drag-pawn.png') }}"
+                    alt="Zaychess Drag and Drop Play">
+            </div>
+        </div>
+    </div>
+
+    <div class="screenshot-section">
+        <div class="screenshot-text">
+            <h2>Rich Match Setup</h2>
+            <p>Before starting a ZayBot match, pick your difficulty with a simple slider. The aggressiveness level is
+                shown
+                live so you can tune the challenge before the first move.</p>
+        </div>
+        <div class="screenshot-media">
+            <div class="img-frame">
+                <img src="{{ url_for('static', filename='zaychess/img/choose-difficulty-aggr.png') }}"
+                    alt="Choosing AI Difficulty Level in Zaychess">
+            </div>
+        </div>
+    </div>
+
+    <div class="screenshot-section reverse">
+        <div class="screenshot-text">
+            <h2>Resume Saved Progress</h2>
+            <p>When reopening a saved game, choose whether to continue against another player or switch to AI. The
+                resume
+                prompt keeps your session flexible without restarting.</p>
+        </div>
+        <div class="screenshot-media">
+            <div class="img-frame">
+                <img src="{{ url_for('static', filename='zaychess/img/vs-human-ai.png') }}"
+                    alt="Zaychess Resume Game Prompt">
+            </div>
+        </div>
+    </div>
+
+    <div class="screenshot-section">
+        <div class="screenshot-text">
+            <h2>Direct Multiplayer</h2>
+            <p>Host a multiplayer session and share your connection details. The waiting screen confirms matchmaking is
+                in
+                progress and lets you cancel anytime.</p>
+        </div>
+        <div class="screenshot-media">
+            <div class="img-frame">
+                <img src="{{ url_for('static', filename='zaychess/img/waiting-for-opponent.png') }}"
+                    alt="Zaychess Multiplayer Waiting Screen">
+            </div>
+        </div>
+    </div>
+
+    <footer class="zaychess-footer" style="padding-bottom: 40px;">
+        &copy; 2025 Jeremy Zay |
+        <a class="zaychess-highlight" href="{{ url_for('public.zaychess_privacy') }}">Privacy</a> |
+        <a class="zaychess-highlight" href="{{ url_for('public.zaychess_support') }}">Support</a>
+    </footer>
+</main>
+{% endblock %}

@@ -30,6 +30,9 @@
 # templates sections
 !app/templates/sections/
 !app/templates/sections/*
+# templates zaychess
+!app/templates/zaychess
+!app/templates/zaychess/*
 # static
 !app/static
 # static css
