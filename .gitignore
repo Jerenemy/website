@@ -52,8 +52,8 @@
 # static images
 !app/static/img
 !app/static/img/*
-!app/static/img/projects
 !app/static/img/projects/*
+!app/static/img/brand/*
 # files
 !app/static/files
 !app/static/files/*
