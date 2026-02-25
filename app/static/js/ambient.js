@@ -31,6 +31,16 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
+        // MUST DISABLE NATIVE TOUCH HANDLERS on webgl-fluid!
+        // webgl-fluid's native touch listeners use absolute pageX/pageY coordinates which are
+        // completely incorrect for non-fullscreen canvases, making fluid draw far outside the container.
+        const originalAddEventListener = canvas.addEventListener;
+        canvas.addEventListener = function (type, listener, options) {
+            // Intercept and discard touch binding requests from the library
+            if (type === 'touchstart' || type === 'touchmove') return;
+            originalAddEventListener.call(canvas, type, listener, options);
+        };
+
         // Initialize Independent WebGL Fluid Simulation
         // ----------------------------------------------------------------------------------
         WebGLFluid(canvas, {
@@ -63,6 +73,9 @@ document.addEventListener('DOMContentLoaded', () => {
             SUNRAYS_WEIGHT: 1.0,
         });
 
+        // Restore native canvas listener capability immediately after initialization
+        canvas.addEventListener = originalAddEventListener;
+
         // Fade the canvas in after the initial splash dissipates
         setTimeout(() => {
             canvas.style.opacity = '1';
@@ -80,35 +93,56 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.closest && e.target.closest('[data-no-fluid="true"]')) return;
 
             if (e.target !== canvas) {
-                const mouseEvent = new MouseEvent('mousemove', {
-                    clientX: e.clientX,
-                    clientY: e.clientY,
-                    bubbles: false,
-                    cancelable: true,
-                    view: window
-                });
-                canvas.dispatchEvent(mouseEvent);
+                // webgl-fluid reads offsetX/offsetY. We must explicitly inject them 
+                // because synthetic events fail to populate local node coordinates correctly.
+                const proxyEvent = new Event('mousemove');
+                const rect = canvas.getBoundingClientRect();
+                proxyEvent.offsetX = e.clientX - rect.left;
+                proxyEvent.offsetY = e.clientY - rect.top;
+                canvas.dispatchEvent(proxyEvent);
             }
         });
 
-        listenerTarget.addEventListener('touchmove', (e) => {
-            // If the element (or its parent) has data-no-fluid="true", ignore the event entirely
-            if (e.target.closest && e.target.closest('[data-no-fluid="true"]')) return;
+        const handleTouch = (e) => {
+            if (!e.target.closest) return;
 
-            if (e.target !== canvas && e.touches.length > 0) {
-                const touch = e.touches[0];
-                // The webgl-fluid library natively listens for 'mousemove' on the window object.
-                // It does not natively interpret TouchEvents well without complex coordinate translations.
-                // We fake a generic mouse move at the window level with the correct Touch coordinates.
-                const mouseEvent = new MouseEvent('mousemove', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                });
-                window.dispatchEvent(mouseEvent);
+            const dragNode = e.target.closest('[data-fluid-drag="true"]') || (container.getAttribute('data-fluid-drag') === 'true' ? container : null);
+            const noFluidNode = e.target.closest('[data-no-fluid="true"]');
+
+            if (noFluidNode) {
+                // If there's no drag flag anywhere, or if the no-fluid flag is on a child element
+                // strictly inside the drag container (e.g. dragging a button inside a dragged div), block the fluid.
+                // However, if they are on the exact same element, the drag flag overrides the no-fluid flag on mobile.
+                if (!dragNode || (dragNode !== noFluidNode && dragNode.contains(noFluidNode))) {
+                    return;
+                }
             }
-        }, { passive: false });
+
+            // On mobile, explicitly require the drag flag to interact with fluid!
+            if (!dragNode) return;
+
+            // PREVENT CROSS-TALK:
+            // Since touches bubble up to window (where the fullscreen bg listens),
+            // a touch on the squircle triggers BOTH the squircle's handleTouch AND window's handleTouch!
+            // If we are currently handling the window listener (isFullScreenBg) BUT the touch 
+            // natively originated inside a localized fluid container (e.g. the squircle), skip it!
+            const isInsideLocalFluidBox = e.target.closest('.ambient-fluid:not(.ambient-fluid-bg)');
+            if (isFullScreenBg && isInsideLocalFluidBox) return;
+
+            if (e.touches.length > 0) {
+                const touch = e.touches[0];
+                const proxyEvent = new Event('mousemove');
+                const rect = canvas.getBoundingClientRect();
+
+                // CRITICAL: webgl-fluid relies strictly on offsetX and offsetY for local mapping!
+                proxyEvent.offsetX = touch.clientX - rect.left;
+                proxyEvent.offsetY = touch.clientY - rect.top;
+
+                canvas.dispatchEvent(proxyEvent);
+            }
+        };
+
+        listenerTarget.addEventListener('touchstart', handleTouch, { passive: true });
+        listenerTarget.addEventListener('touchmove', handleTouch, { passive: false });
     });
 });
