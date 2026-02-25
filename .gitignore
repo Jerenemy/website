@@ -16,6 +16,9 @@
 !app/blueprints/api
 # blueprints public
 !app/blueprints/public
+# blueprints ear
+!app/blueprints/ear
+!app/blueprints/ear/*
 # templates
 !app/templates
 !app/templates/*
