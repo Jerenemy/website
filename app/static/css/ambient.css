@@ -1,4 +1,4 @@
-/* Ambient Abstract Apple-Style Watercolor Background */
+/* Ambient WebGL Fluid Simulation Background */
 
 .ambient-background {
     position: fixed;
@@ -13,85 +13,11 @@
 }
 
 /* 
- * We use 3 large pseudo-elements to represent the soft brush strokes.
- * We use radial gradients fading to 0 alpha of exactly the SAME color.
- * (Fading to 'transparent' fades to transparent black, creating muddy brown/gray lines).
+ * The canvas MUST receive pointer events to simulate the fluid 
+ * over the background while letting clicks pass to the foreground UI.
  */
-.ambient-background::before,
-.ambient-background::after,
-.ambient-background .paint-drop {
-    content: '';
-    position: absolute;
-    /* Hardware accelerated, perfectly fluid animations */
-    will-change: transform;
-    animation: drift 25s infinite ease-in-out alternate;
-}
-
-/* Paint stroke 1: Vibrant electric blue/violet */
-.ambient-background::before {
-    top: -20vh;
-    left: -10vw;
-    width: 120vw;
-    height: 60vh;
-    background: radial-gradient(ellipse closest-side, rgba(64, 115, 255, 0.6) 0%, rgba(64, 115, 255, 0) 80%);
-    animation-delay: -5s;
-    animation-duration: 30s;
-}
-
-/* Paint stroke 2: Vibrant magenta/pink */
-.ambient-background::after {
-    bottom: -20vh;
-    right: -10vw;
-    width: 120vw;
-    height: 60vh;
-    background: radial-gradient(ellipse closest-side, rgba(255, 41, 117, 0.6) 0%, rgba(255, 41, 117, 0) 80%);
-    animation-delay: -12s;
-}
-
-/* Paint stroke 3: Vibrant cyan/teal */
-.ambient-background .paint-drop {
-    top: -10vh;
-    left: -20vw;
-    width: 60vw;
-    height: 120vh;
-    /* Oblong */
-    background: radial-gradient(ellipse closest-side, rgba(0, 210, 255, 0.5) 0%, rgba(0, 210, 255, 0) 80%);
-    animation-delay: -18s;
-    animation-duration: 28s;
-}
-
-/* Very subtle drifting animation to make the 'paint' feel like an organic aurora */
-@keyframes drift {
-    0% {
-        transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
-    }
-
-    33% {
-        transform: translate3d(8%, 12%, 0) scale(1.1) rotate(5deg);
-    }
-
-    66% {
-        transform: translate3d(-10%, 5%, 0) scale(0.9) rotate(-3deg);
-    }
-
-    100% {
-        transform: translate3d(5%, -10%, 0) scale(1.05) rotate(2deg);
-    }
-}
-
-/* Support for Dark Mode detection (If --bg is a dark color) */
-@media (prefers-color-scheme: dark) {
-
-    /* Vibrant, richer versions of the abstract strokes for dark mode */
-    .ambient-background::before {
-        background: radial-gradient(ellipse closest-side, rgba(94, 92, 230, 0.5) 0%, rgba(94, 92, 230, 0) 80%);
-    }
-
-    .ambient-background::after {
-        background: radial-gradient(ellipse closest-side, rgba(255, 55, 95, 0.5) 0%, rgba(255, 55, 95, 0) 80%);
-    }
-
-    .ambient-background .paint-drop {
-        background: radial-gradient(ellipse closest-side, rgba(100, 210, 255, 0.4) 0%, rgba(100, 210, 255, 0) 80%);
-    }
+#fluid-canvas {
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
 }
