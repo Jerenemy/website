@@ -5,9 +5,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#000000" />
+    
+    <!-- Open Graph / Link Preview Meta Tags -->
+    <meta property="og:title" content="Jeremy Zay" />
+    <meta property="og:description" content="Personal website and portfolio of Jeremy Zay." />
+    <meta property="og:image" content="{{ url_for('static', filename='img/brand/squircle-black.png', _external=True) }}" />
+    <meta property="og:type" content="website" />
+
     <title>{% block title %}Portfolio{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/brand/squircle-black.svg') }}">
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/brand/squircle-black.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/brand/squircle-black.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambient.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
