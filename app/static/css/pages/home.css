@@ -1,57 +1,96 @@
-/* 1) Pure layout-only hero */
 .hero {
   position: relative;
   min-height: var(--hero-min-h, 85vh);
   display: grid;
+  grid-template-columns: 1fr 1fr;
+  /* Keep 50x50 precise spacing */
+  gap: 2rem;
   align-items: center;
+  justify-content: center;
   padding: var(--hero-pad, clamp(1.5rem, 5vw, 6rem));
-  color: var(--hero-fg, #fff);
-
-  /* background via custom property so each page can set it */
-  background: var(--hero-bg, none) center/cover no-repeat;
+  color: var(--fg);
 }
 
 /* 2) Optional gradient overlay (attach only when needed) */
 .hero.has-overlay::after {
   content: "";
-  position: absolute; inset: 0;
+  position: absolute;
+  inset: 0;
   background: var(--hero-overlay,
-    linear-gradient(90deg,
-      rgba(0,0,0,.55) 0%,
-      rgba(0,0,0,.30) 50%,
-      rgba(0,0,0,.10) 100%)
-  );
+      linear-gradient(90deg,
+        rgba(0, 0, 0, .55) 0%,
+        rgba(0, 0, 0, .30) 50%,
+        rgba(0, 0, 0, .10) 100%));
   pointer-events: none;
 }
 
 /* 3) Content block = layout only; visuals come from .glassy */
 .hero__content {
   position: relative;
-  z-index: 1; /* keep above overlay */
-  max-width: var(--hero-content-max, 50%);
+  z-index: 1;
+  /* keep above overlay */
+  max-width: var(--hero-content-max, 100%);
+  /* Now grid bound, no longer needs max % */
   padding: var(--hero-content-pad, clamp(1rem, 2vw, 2rem));
   border-radius: var(--hero-content-radius, 16px);
 }
 
+/* Right-side visual block housing the fluid */
+.hero__visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* The fluid squircle container */
+.squircle-box {
+  /* Edit this exactly to control the squircle curvature walls cleanly */
+  --squircle-radius: 4%;
+
+  width: 100%;
+  max-width: 450px;
+  aspect-ratio: 1 / 1;
+  /* Squircle border clipping controlled by the one var */
+  border-radius: var(--squircle-radius);
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  /* The canvas will stretch to fill this */
+}
+
 /* (optional) quick align helpers */
-.hero__content--left  { margin-right: auto; }
-.hero__content--right { margin-left:  auto; }
+.hero__content--left {
+  margin-right: auto;
+}
+
+.hero__content--right {
+  margin-left: auto;
+}
 
 .hero .btn {
-  --btn-fg: var(--hero-fg, #f7fafc);
+  --btn-fg: var(--header-ink, var(--on-glass, #111111));
+}
+
+.hero .btn:hover {
+  --btn-fg: var(--accent, #4fc3f7);
 }
 
 @media (max-width: 768px) {
-  .hero__content {
-    width: 50%;
-    max-width: none;
+  .hero {
+    grid-template-columns: 2fr 3fr;
+    /* Flexible side-by-side on mobile */
+    gap: 1.5rem;
   }
 
+  .hero__content {
+    width: 100%;
+    max-width: none;
+    /* Removed order: 2 to prevent stacking above/below */
+  }
+
+  /* Optional: hide text desc on small mobile */
   .hero__content p {
     display: none;
-  }
-
-  .hero {
-    background-position: 75% center;
   }
 }

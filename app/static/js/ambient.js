@@ -44,40 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.style.opacity = '1';
     }, 1500);
 
-    // Forward mouse events from the document to the canvas so that 
-    // the fluid reacts even when hovering over text and other elements
-    window.addEventListener('mousemove', (e) => {
-        if (e.target !== canvas) {
-            const mouseEvent = new MouseEvent('mousemove', {
-                clientX: e.clientX,
-                clientY: e.clientY,
-                bubbles: false,
-                cancelable: true,
-                view: window
-            });
-            canvas.dispatchEvent(mouseEvent);
-        }
-    });
-
-    // Also forward touch events for mobile
-    window.addEventListener('touchmove', (e) => {
-        if (e.target !== canvas && e.touches.length > 0) {
-            const touch = e.touches[0];
-            const touchEvent = new TouchEvent('touchmove', {
-                changedTouches: [new Touch({
-                    identifier: touch.identifier,
-                    target: canvas,
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    pageX: touch.pageX,
-                    pageY: touch.pageY,
-                })],
-                touches: e.touches,
-                bubbles: false,
-                cancelable: true,
-                view: window
-            });
-            canvas.dispatchEvent(touchEvent);
-        }
-    }, { passive: true });
+    // No event forwarding needed anymore. The simulation will 
+    // natively react ONLY when the user hovers over the squircle canvas.
 });

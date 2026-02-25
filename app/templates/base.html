@@ -23,22 +23,17 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body>
-    <div class="ambient-background">
-        <!-- Canvas for WebGL Fluid Simulation -->
-        <canvas id="fluid-canvas"></canvas>
-    </div>
-    {% include "_nav.html" %}
-    {% block content %}{% endblock %}
-    {% block scripts %}
-    <script src="{{ url_for('static', filename='js/header_contrast.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/glightbox/glightbox.min.js') }}"></script>
-    <!-- WebGL Fluid Simulation for realistic gas effect -->
-    <script src="https://unpkg.com/webgl-fluid"></script>
-    <script src="{{ url_for('static', filename='js/ambient.js') }}"></script>
-    {% endblock %}
+{% include "_nav.html" %}
+{% block content %}{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/header_contrast.js') }}"></script>
+<script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/base.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/glightbox/glightbox.min.js') }}"></script>
+<!-- WebGL Fluid Simulation for realistic gas effect -->
+<script src="https://unpkg.com/webgl-fluid"></script>
+<script src="{{ url_for('static', filename='js/ambient.js') }}"></script>
+{% endblock %}
 </body>
 
 </html>
