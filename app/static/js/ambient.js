@@ -97,21 +97,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (e.target !== canvas && e.touches.length > 0) {
                 const touch = e.touches[0];
-                const touchEvent = new TouchEvent('touchmove', {
-                    changedTouches: [new Touch({
-                        identifier: touch.identifier,
-                        target: canvas,
-                        clientX: touch.clientX,
-                        clientY: touch.clientY,
-                        pageX: touch.pageX,
-                        pageY: touch.pageY,
-                    })],
-                    touches: e.touches,
+
+                // The webgl-fluid library only listens for 'mousemove' for its hover trigger, 
+                // so we must convert the touch coordinates into a synthetic mouse event.
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
                     bubbles: false,
                     cancelable: true,
                     view: window
                 });
-                canvas.dispatchEvent(touchEvent);
+                canvas.dispatchEvent(mouseEvent);
             }
         }, { passive: true });
     });
