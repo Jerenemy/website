@@ -48,14 +48,14 @@ document.addEventListener('DOMContentLoaded', () => {
             SPLAT_FORCE: 6000,
             SHADING: isHighFidelity,    // Effects are ON for high-fidelity only
             COLORFUL: true,
-            COLOR_UPDATE_SPEED: 8,
+            COLOR_UPDATE_SPEED: 3,
             PAUSED: false,
             BACK_COLOR: backColor,
             TRANSPARENT: isTransparent,
             BLOOM: isHighFidelity,      // Effects are ON for high-fidelity only
             BLOOM_ITERATIONS: 8,
             BLOOM_RESOLUTION: 256,
-            BLOOM_INTENSITY: 0.8,
+            BLOOM_INTENSITY: 0.3,
             BLOOM_THRESHOLD: 0.6,
             BLOOM_SOFT_KNEE: 0.7,
             SUNRAYS: isHighFidelity,    // Effects are ON for high-fidelity only
@@ -76,6 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // This ensures the fluid reacts even when the user is hovering over 
         // text, buttons, or links that sit visually above the canvas.
         listenerTarget.addEventListener('mousemove', (e) => {
+            // If the element (or its parent) has data-no-fluid="true", ignore the event entirely
+            if (e.target.closest && e.target.closest('[data-no-fluid="true"]')) return;
+
             if (e.target !== canvas) {
                 const mouseEvent = new MouseEvent('mousemove', {
                     clientX: e.clientX,
@@ -89,6 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         listenerTarget.addEventListener('touchmove', (e) => {
+            // If the element (or its parent) has data-no-fluid="true", ignore the event entirely
+            if (e.target.closest && e.target.closest('[data-no-fluid="true"]')) return;
+
             if (e.target !== canvas && e.touches.length > 0) {
                 const touch = e.touches[0];
                 const touchEvent = new TouchEvent('touchmove', {

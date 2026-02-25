@@ -99,25 +99,7 @@ def site_settings():
         else:
             updates["home_description"] = home_description
 
-        home_bg_path = request.form.get("home_bg", "").strip()
-        home_bg_upload = request.files.get("home_bg_file")
-        if home_bg_upload and home_bg_upload.filename:
-            try:
-                updates["home_bg"] = _save_image_upload(home_bg_upload, Path(current_app.config["UPLOADS_DIR"]))
-            except ValueError as exc:
-                errors.append(str(exc))
-        elif home_bg_path:
-            path_error = _validate_relative_path(home_bg_path, "Home background path")
-            if path_error:
-                errors.append(path_error)
-            else:
-                ext_error = _validate_extension(home_bg_path, "Home background path")
-                if ext_error:
-                    errors.append(ext_error)
-                elif not _resolve_static_path(home_bg_path):
-                    errors.append("Home background path does not exist.")
-                else:
-                    updates["home_bg"] = home_bg_path
+
 
         resume_upload = request.files.get("resume_file")
         if resume_upload and resume_upload.filename:
@@ -131,11 +113,13 @@ def site_settings():
         theme_bg = request.form.get("theme_bg", "").strip()
         theme_fg = request.form.get("theme_fg", "").strip()
         theme_accent = request.form.get("theme_accent", "").strip()
+        squircle_bg_color = request.form.get("squircle_bg_color", "").strip()
 
         for label, value in (
             ("Background color", theme_bg),
             ("Text color", theme_fg),
             ("Accent color", theme_accent),
+            ("Squircle background color", squircle_bg_color),
         ):
             error = _validate_hex_color(value, label)
             if error:
@@ -146,13 +130,13 @@ def site_settings():
                 "bg": theme_bg,
                 "fg": theme_fg,
                 "accent": theme_accent,
+                "squircle_bg_color": squircle_bg_color,
             }
 
         if errors:
             flash(" ".join(errors), "error")
             form_settings = settings.copy()
             form_settings["home_description"] = home_description or settings.get("home_description", "")
-            form_settings["home_bg"] = home_bg_path or settings.get("home_bg", "")
             form_settings["theme"] = dict(settings.get("theme", {}))
             if theme_bg:
                 form_settings["theme"]["bg"] = theme_bg
@@ -160,6 +144,8 @@ def site_settings():
                 form_settings["theme"]["fg"] = theme_fg
             if theme_accent:
                 form_settings["theme"]["accent"] = theme_accent
+            if squircle_bg_color:
+                form_settings["theme"]["squircle_bg_color"] = squircle_bg_color
             return render_template(
                 "admin/site_settings.html",
                 settings=form_settings,
@@ -488,11 +474,13 @@ def _write_theme_css(theme: dict) -> None:
     bg = theme.get("bg", "#555555")
     fg = theme.get("fg", "#111111")
     accent = theme.get("accent", "#4fc3f7")
+    squircle_bg_color = theme.get("squircle_bg_color", "#111111")
     css = (
         ":root {\n"
         f"  --bg: {bg};\n"
         f"  --fg: {fg};\n"
         f"  --accent: {accent};\n"
+        f"  --squircle-bg-color: {squircle_bg_color};\n"
         "}\n"
     )
     theme_path.write_text(css, encoding="utf-8")

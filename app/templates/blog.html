@@ -9,7 +9,7 @@
   {% if posts %}
   <div class="blog-list">
     {% for post in posts %}
-    <article class="blog-card glassy">
+    <article class="blog-card glassy" data-no-fluid="true">
       <h2 class="blog-card__title">
         <a href="{{ url_for('public.blog_post', slug=post.slug) }}">{{ post.title }}</a>
       </h2>

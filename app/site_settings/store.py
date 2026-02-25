@@ -18,12 +18,12 @@ _STORE_LOCK = Lock()
 def _default_settings() -> dict:
     return {
         "home_description": DEFAULT_HOME_DESCRIPTION,
-        "home_bg": "img/home-bg.jpg",
         "resume_filename": "resume.pdf",
         "theme": {
             "bg": "#555555",
             "fg": "#111111",
             "accent": "#4fc3f7",
+            "squircle_bg_color": "#111111",
         },
     }
 
@@ -37,17 +37,13 @@ def _merge_defaults(data: dict) -> dict:
     if isinstance(home_description, str) and home_description.strip():
         merged["home_description"] = home_description
 
-    home_bg = data.get("home_bg")
-    if isinstance(home_bg, str) and home_bg.strip():
-        merged["home_bg"] = home_bg
-
     resume_filename = data.get("resume_filename")
     if isinstance(resume_filename, str) and resume_filename.strip():
         merged["resume_filename"] = resume_filename
 
     theme = data.get("theme")
     if isinstance(theme, dict):
-        for key in ("bg", "fg", "accent"):
+        for key in ("bg", "fg", "accent", "squircle_bg_color"):
             value = theme.get(key)
             if isinstance(value, str) and value.strip():
                 merged["theme"][key] = value
@@ -74,14 +70,12 @@ class SiteSettingsStore:
 
             if "home_description" in updates and updates["home_description"] is not None:
                 current["home_description"] = str(updates["home_description"])
-            if "home_bg" in updates and updates["home_bg"] is not None:
-                current["home_bg"] = str(updates["home_bg"])
             if "resume_filename" in updates and updates["resume_filename"] is not None:
                 current["resume_filename"] = str(updates["resume_filename"])
 
             if "theme" in updates and isinstance(updates["theme"], dict):
                 theme = current.get("theme", {})
-                for key in ("bg", "fg", "accent"):
+                for key in ("bg", "fg", "accent", "squircle_bg_color"):
                     if key in updates["theme"] and updates["theme"][key] is not None:
                         theme[key] = str(updates["theme"][key])
                 current["theme"] = theme

@@ -1,5 +1,5 @@
 <section id="home" class="hero">
-  <div class="hero__content glassy hero__content--left solid-bg">
+  <div class="hero__content glassy hero__content--left">
     <h1>Jeremy Zay</h1>
     <p>
       {{ site_settings.home_description | safe }}
@@ -8,8 +8,9 @@
     <a class="btn glassy" href="#contact" target="_blank" rel="noopener">Contact</a>
   </div>
 
-  <!-- <div class="hero__visual">
-    <div class="squircle-box" data-high-fidelity="true">
+  <div class="hero__visual">
+    <div class="squircle-box ambient-fluid" data-no-fluid="true" data-high-fidelity="true" data-transparent="false"
+      data-bg-color="{{ site_settings.theme.squircle_bg_color | default('#111111') }}">
     </div>
-  </div> -->
+  </div>
 </section>

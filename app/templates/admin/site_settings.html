@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Site Settings{% endblock %}
 {% block extra_head %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
 {% endblock %}
 {% block content %}
 <section id="admin" class="admin">
@@ -24,23 +24,9 @@
 
       <h2 class="admin-form__subtitle">Home Panel</h2>
       <label class="admin-form__label" for="home_description">Description</label>
-      <textarea class="admin-form__input admin-form__textarea" id="home_description" name="home_description" rows="6" required>{{ settings.home_description | e }}</textarea>
+      <textarea class="admin-form__input admin-form__textarea" id="home_description" name="home_description" rows="6"
+        required>{{ settings.home_description | e }}</textarea>
       <div class="admin-form__hint">HTML is allowed for links and emphasis.</div>
-
-      <label class="admin-form__label" for="home_bg_file">Upload Background Image</label>
-      <input class="admin-form__input" type="file" id="home_bg_file" name="home_bg_file" accept=".jpg,.jpeg,.png,.webp,image/*">
-      <div class="admin-form__hint">Allowed types: {{ allowed_extensions | join(", ") }}. Max {{ max_upload_mb }} MB.</div>
-
-      <label class="admin-form__label" for="home_bg">Background Image Path</label>
-      <input class="admin-form__input" type="text" id="home_bg" name="home_bg" value="{{ settings.home_bg | e }}">
-      <div class="admin-form__hint">Relative to /static, e.g. img/home-bg.jpg or img/uploads/hero.jpg</div>
-
-      {% if settings.home_bg %}
-        <div class="admin-form__section">
-          <div class="admin-form__hint">Current background preview:</div>
-          <img src="{{ url_for('static', filename=settings.home_bg) }}" alt="Home background preview" style="max-width: 100%; border-radius: var(--radius);">
-        </div>
-      {% endif %}
 
       <h2 class="admin-form__subtitle">Resume</h2>
       <div class="admin-form__hint">Current file: {{ settings.resume_filename | e }}</div>
@@ -54,15 +40,23 @@
       <div class="admin-form__row">
         <div>
           <label class="admin-form__label" for="theme_bg">Background</label>
-          <input class="admin-form__input" type="color" id="theme_bg" name="theme_bg" value="{{ settings.theme.bg | e }}">
+          <input class="admin-form__input" type="color" id="theme_bg" name="theme_bg"
+            value="{{ settings.theme.bg | e }}">
         </div>
         <div>
           <label class="admin-form__label" for="theme_fg">Text</label>
-          <input class="admin-form__input" type="color" id="theme_fg" name="theme_fg" value="{{ settings.theme.fg | e }}">
+          <input class="admin-form__input" type="color" id="theme_fg" name="theme_fg"
+            value="{{ settings.theme.fg | e }}">
         </div>
         <div>
           <label class="admin-form__label" for="theme_accent">Accent</label>
-          <input class="admin-form__input" type="color" id="theme_accent" name="theme_accent" value="{{ settings.theme.accent | e }}">
+          <input class="admin-form__input" type="color" id="theme_accent" name="theme_accent"
+            value="{{ settings.theme.accent | e }}">
+        </div>
+        <div>
+          <label class="admin-form__label" for="squircle_bg_color">Squircle Background</label>
+          <input class="admin-form__input" type="color" id="squircle_bg_color" name="squircle_bg_color"
+            value="{{ settings.theme.squircle_bg_color | default('#111111') | e }}">
         </div>
       </div>
 
