@@ -4,8 +4,9 @@
     <p>
       {{ site_settings.home_description | safe }}
     </p>
-    <a class="btn glassy" href="{{ url_for('public.resume') }}" target="_blank" rel="noopener">Resume</a><br>
-    <a class="btn glassy" href="#contact" target="_blank" rel="noopener">Contact</a>
+    <a class="btn glassy" data-no-fluid="true" href="{{ url_for('public.resume') }}" target="_blank"
+      rel="noopener">Resume</a><br>
+    <a class="btn glassy" data-no-fluid="true" href="#contact" target="_blank" rel="noopener">Contact</a>
   </div>
 
   <div class="hero__visual">
