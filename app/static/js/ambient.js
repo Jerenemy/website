@@ -97,18 +97,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (e.target !== canvas && e.touches.length > 0) {
                 const touch = e.touches[0];
-
-                // The webgl-fluid library only listens for 'mousemove' for its hover trigger, 
-                // so we must convert the touch coordinates into a synthetic mouse event.
+                // The webgl-fluid library natively listens for 'mousemove' on the window object.
+                // It does not natively interpret TouchEvents well without complex coordinate translations.
+                // We fake a generic mouse move at the window level with the correct Touch coordinates.
                 const mouseEvent = new MouseEvent('mousemove', {
                     clientX: touch.clientX,
                     clientY: touch.clientY,
-                    bubbles: false,
+                    bubbles: true,
                     cancelable: true,
                     view: window
                 });
-                canvas.dispatchEvent(mouseEvent);
+                window.dispatchEvent(mouseEvent);
             }
-        }, { passive: true });
+        }, { passive: false });
     });
 });
