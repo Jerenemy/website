@@ -10,6 +10,11 @@
     overflow: hidden;
 }
 
+/* Allow users to smoothly drag the fluid on mobile without the page scrolling */
+.ambient-fluid[data-fluid-drag="true"] {
+    touch-action: none;
+}
+
 /* 
  * Apply `.ambient-fluid-bg` for a full-screen page background
  */
