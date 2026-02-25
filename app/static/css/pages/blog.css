@@ -7,8 +7,8 @@
     padding: clamp(1rem, 2vw, 2rem);
     border-radius: 16px;
 
-    /* solid background and clean edge */
-    color: var(--text-fg, #111);
+    /* Inherit global foreground color perfectly and cleanly */
+    color: var(--fg);
 }
 
 .blog-list {
