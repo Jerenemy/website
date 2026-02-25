@@ -9,7 +9,7 @@ import torchvision as tvm
 import torchaudio
 import gc
 import logging
-from flask import Flask, request, jsonify, send_from_directory, render_template
+from flask import Flask, request, jsonify, send_from_directory, render_template, url_for as flask_url_for
 from werkzeug.utils import secure_filename
 from PIL import Image
 
@@ -29,9 +29,23 @@ torch.set_num_threads(1)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("EarService")
 
-app = Flask(__name__)
+# The ML service natively loads the main website's template directory for Jinja inheritance
+TEMPLATE_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'app', 'templates'))
+app = Flask(__name__, template_folder=TEMPLATE_DIR)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Intercept url_for requests so the standalone EAR app
+# doesn't crash when rendering the main website's navigation bar
+@app.context_processor
+def override_url_for():
+    def custom_url_for(endpoint, **values):
+        if endpoint == 'public.index': return '/'
+        if endpoint == 'public.blog': return '/blog'
+        if endpoint == 'public.game': return '/game'
+        if endpoint == 'public.zaychess': return '/zaychess'
+        return flask_url_for(endpoint, **values)
+    return dict(url_for=custom_url_for)
 
 # Force CPU
 device = "cpu"
@@ -156,12 +170,13 @@ load_index()
 @app.route('/')
 def index():
     # Pass 'debug' status to the template
-    return render_template('index.html', debug=app.debug)
+    return render_template('ear/index.html', debug=app.debug)
 
 @app.route('/ce-loss')
+@app.route('/ear/ce-loss')
 def ce_loss():
     # Pass 'debug' status to the template
-    return render_template('ce_loss.html', debug=app.debug)
+    return render_template('ear/ce_loss.html', debug=app.debug)
 
 
 @app.route('/data/<path:filename>')
@@ -171,6 +186,7 @@ def serve_data(filename):
     return send_from_directory(DATASET_ROOT, filename)
 
 @app.route('/query', methods=['POST'])
+@app.route('/ear/query', methods=['POST'])
 def query_endpoint():
     if 'file' not in request.files: return jsonify({'error': 'No file'}), 400
     file = request.files['file']

@@ -19,6 +19,8 @@
 # templates
 !app/templates
 !app/templates/*
+!app/templates/ear
+!app/templates/ear/*
 # templates admin
 !app/templates/admin/
 !app/templates/admin/*

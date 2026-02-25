@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from .blueprints.public import bp as public_bp
 from .blueprints.api import bp as api_bp
 from .blueprints.admin import bp as admin_bp
-# from .blueprints.ear import bp as ear_bp
+from .blueprints.ear import bp as ear_bp
 from .extensions import mail
 from .config import Config
 
@@ -30,15 +30,7 @@ def create_app():
     app.register_blueprint(public_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(admin_bp, url_prefix="/admin")
-    # app.register_blueprint(ear_bp, url_prefix="/ear")
-    # --- ADD THIS BLOCK ---
-    # In production, Nginx handles this. 
-    # Locally, we manually redirect /ear/ to the separate process on port 5001.
-    if app.debug:
-        @app.route('/ear/')
-        def local_ear_redirect():
-            return redirect("http://127.0.0.1:5001/")
-    # ----------------------
+    app.register_blueprint(ear_bp, url_prefix="/ear")
     
     # initialize extensions
     mail.init_app(app)
