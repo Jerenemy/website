@@ -23,3 +23,14 @@
 #contact textarea {
   height: 100px;
 }
+
+#contact input::placeholder,
+#contact textarea::placeholder {
+  color: var(--fg);
+  opacity: 1; /* Firefox sets a lower opacity by default */
+}
+
+#contact input::-webkit-input-placeholder,
+#contact textarea::-webkit-input-placeholder {
+  color: var(--fg);
+}
