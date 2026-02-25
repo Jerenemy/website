@@ -63,15 +63,15 @@ def poster_diffusion_2025():
     
 @bp.get('/zaychess')  
 def zaychess():
-    return render_template('zaychess.html')
+    return render_template('zaychess/zaychess.html')
 
 @bp.get('/zaychess/support')
 def zaychess_support():
-    return render_template('zaychess_support.html')
+    return render_template('zaychess/zaychess_support.html')
 
 @bp.get('/zaychess/privacy')
 def zaychess_privacy():
-    return render_template('zaychess_privacy.html')
+    return render_template('zaychess/zaychess_privacy.html')
 
 @bp.get('/eqoscan')  
 def eqoscan():
