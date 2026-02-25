@@ -46,16 +46,16 @@ document.addEventListener('DOMContentLoaded', () => {
         WebGLFluid(canvas, {
             IMMEDIATE: true,
             TRIGGER: 'hover',
-            SIM_RESOLUTION: isHighFidelity ? 256 : 128, // High fidelity runs 128 res, standard runs fast 32
-            DYE_RESOLUTION: isHighFidelity ? 1028 : 512,
-            CAPTURE_RESOLUTION: 128,
+            SIM_RESOLUTION: isHighFidelity ? 64 : 64, // High fidelity runs 128 res, standard runs fast 32
+            DYE_RESOLUTION: isHighFidelity ? 256 : 256,
+            CAPTURE_RESOLUTION: isHighFidelity ? 128 : 64,
             DENSITY_DISSIPATION: 1.5,
             VELOCITY_DISSIPATION: 1.5,
             PRESSURE: isHighFidelity ? 0.8 : 0.1,
-            PRESSURE_ITERATIONS: isHighFidelity ? 30 : 5, // High fidelity gets more accurate physics
+            PRESSURE_ITERATIONS: isHighFidelity ? 5 : 4, // High fidelity gets more accurate physics
             CURL: 0,
             SPLAT_RADIUS: 0.3,
-            SPLAT_FORCE: 6000,
+            SPLAT_FORCE: isHighFidelity ? 3000 : 6000,
             // SHADING: isHighFidelity,    // Effects are ON for high-fidelity only
             SHADING: true,
             COLORFUL: true,
@@ -64,15 +64,15 @@ document.addEventListener('DOMContentLoaded', () => {
             BACK_COLOR: backColor,
             TRANSPARENT: isTransparent,
             // BLOOM: isHighFidelity,      // Effects are ON for high-fidelity only
-            BLOOM: true,
-            BLOOM_ITERATIONS: 8,
-            BLOOM_RESOLUTION: 256,
+            BLOOM: isHighFidelity,
+            BLOOM_ITERATIONS: isHighFidelity ? 4 : 2,
+            BLOOM_RESOLUTION: isHighFidelity ? 64 : 64,
             BLOOM_INTENSITY: isHighFidelity ? 0.8 : 0.3,
             BLOOM_THRESHOLD: 0.6,
             BLOOM_SOFT_KNEE: 0.7,
-            // SUNRAYS: isHighFidelity,    // Effects are ON for high-fidelity only
-            SUNRAYS: true,
-            SUNRAYS_RESOLUTION: isHighFidelity ? 196 : 128,
+            SUNRAYS: isHighFidelity,    // Effects are ON for high-fidelity only
+            // SUNRAYS: true,
+            SUNRAYS_RESOLUTION: isHighFidelity ? 64 : 64,
             SUNRAYS_WEIGHT: 1.0,
         });
 
