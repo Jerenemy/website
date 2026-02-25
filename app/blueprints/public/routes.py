@@ -61,15 +61,15 @@ def poster_diffusion_2025():
         mimetype="application/pdf"
     )
     
-@bp.get('/zaychess')  
+@bp.get('/zaychess', strict_slashes=False)  
 def zaychess():
     return render_template('zaychess/zaychess.html')
 
-@bp.get('/zaychess/support')
+@bp.get('/zaychess/support', strict_slashes=False)
 def zaychess_support():
     return render_template('zaychess/zaychess_support.html')
 
-@bp.get('/zaychess/privacy')
+@bp.get('/zaychess/privacy', strict_slashes=False)
 def zaychess_privacy():
     return render_template('zaychess/zaychess_privacy.html')
 
