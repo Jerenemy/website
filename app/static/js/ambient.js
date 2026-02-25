@@ -46,30 +46,33 @@ document.addEventListener('DOMContentLoaded', () => {
         WebGLFluid(canvas, {
             IMMEDIATE: true,
             TRIGGER: 'hover',
-            SIM_RESOLUTION: isHighFidelity ? 128 : 32, // High fidelity runs 128 res, standard runs fast 32
-            DYE_RESOLUTION: isHighFidelity ? 512 : 256,
+            SIM_RESOLUTION: isHighFidelity ? 256 : 128, // High fidelity runs 128 res, standard runs fast 32
+            DYE_RESOLUTION: isHighFidelity ? 1028 : 512,
             CAPTURE_RESOLUTION: 128,
             DENSITY_DISSIPATION: 1.5,
             VELOCITY_DISSIPATION: 1.5,
-            PRESSURE: 0.1,
-            PRESSURE_ITERATIONS: isHighFidelity ? 15 : 5, // High fidelity gets more accurate physics
+            PRESSURE: isHighFidelity ? 0.8 : 0.1,
+            PRESSURE_ITERATIONS: isHighFidelity ? 30 : 5, // High fidelity gets more accurate physics
             CURL: 0,
             SPLAT_RADIUS: 0.3,
             SPLAT_FORCE: 6000,
-            SHADING: isHighFidelity,    // Effects are ON for high-fidelity only
+            // SHADING: isHighFidelity,    // Effects are ON for high-fidelity only
+            SHADING: true,
             COLORFUL: true,
             COLOR_UPDATE_SPEED: 3,
             PAUSED: false,
             BACK_COLOR: backColor,
             TRANSPARENT: isTransparent,
-            BLOOM: isHighFidelity,      // Effects are ON for high-fidelity only
+            // BLOOM: isHighFidelity,      // Effects are ON for high-fidelity only
+            BLOOM: true,
             BLOOM_ITERATIONS: 8,
             BLOOM_RESOLUTION: 256,
-            BLOOM_INTENSITY: 0.3,
+            BLOOM_INTENSITY: isHighFidelity ? 0.8 : 0.3,
             BLOOM_THRESHOLD: 0.6,
             BLOOM_SOFT_KNEE: 0.7,
-            SUNRAYS: isHighFidelity,    // Effects are ON for high-fidelity only
-            SUNRAYS_RESOLUTION: 196,
+            // SUNRAYS: isHighFidelity,    // Effects are ON for high-fidelity only
+            SUNRAYS: true,
+            SUNRAYS_RESOLUTION: isHighFidelity ? 196 : 128,
             SUNRAYS_WEIGHT: 1.0,
         });
 
@@ -78,7 +81,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Fade the canvas in after the initial splash dissipates
         setTimeout(() => {
-            canvas.style.opacity = '1';
+            if (isHighFidelity) {
+                canvas.style.opacity = '1';
+            } else {
+                canvas.style.opacity = '0.35';
+            }
         }, 1);
 
         // If this is the full-screen background, we want it to react to the mouse anywhere on the page
