@@ -1,23 +1,43 @@
 /* Ambient WebGL Fluid Simulation Background */
 
-.ambient-background {
+/* 
+ * Apply the class `.ambient-fluid` to ANY container to instantly give it the WebGL gas background! 
+ */
+.ambient-fluid {
+    /* Required to contain the absolutely positioned fluid canvas */
+    position: relative;
+    /* Required to clip the fluid to the container's natural rounded edges */
+    overflow: hidden;
+}
+
+/* 
+ * Apply `.ambient-fluid-bg` for a full-screen page background
+ */
+.ambient-fluid-bg {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
     z-index: -999;
-    pointer-events: none;
-    overflow: hidden;
-    background: var(--bg);
+    /* We don't need overflow hidden or relative positioning here */
 }
 
-/* 
- * The canvas MUST receive pointer events to simulate the fluid 
- * over the background while letting clicks pass to the foreground UI.
- */
-#fluid-canvas {
+/* The fluid canvas that gets injected via JS */
+.fluid-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
+    /* Keep it behind the text and other elements in the container */
+    z-index: 0;
+    /* Allow the canvas to intercept mouse actions */
     pointer-events: auto;
+}
+
+/* Elements inside an ambient-fluid container need z-index up so they stay above the fluid, unless they are the canvas itself */
+.ambient-fluid>*:not(.fluid-canvas) {
+    position: relative;
+    z-index: 1;
 }

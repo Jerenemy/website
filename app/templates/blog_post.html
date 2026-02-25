@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 {% block title %}{{ post.title }} — Blog{% endblock %}
 {% block content %}
-  <div class="heading glassy">
-    <div class="heading__title glassy">Blog</div>
-  </div>
+<div class="heading glassy">
+  <div class="heading__title glassy">Blog</div>
+</div>
 
-  <section class="blog-text-container glassy">
-    <a class="btn glassy blog-back-link" href="{{ url_for('public.blog') }}">Back to All Posts</a>
+<section class="blog-text-container glassy">
+  <a class="btn glassy blog-back-link" href="{{ url_for('public.blog') }}">Back to All Posts</a>
 
-    <article class="blog-post">
-      <header class="blog-post__header">
-        <h1>{{ post.title }}</h1>
-        <p class="blog-post__meta">{{ post.date_label }}</p>
-      </header>
+  <article class="blog-post">
+    <header class="blog-post__header">
+      <h1>{{ post.title }}</h1>
+      <p class="blog-post__meta">{{ post.date_label }}</p>
+    </header>
 
-      <div class="blog-post__content">
-        {{ post.html | safe }}
-      </div>
-    </article>
-  </section>
+    <div class="blog-post__content">
+      {{ post.html | safe }}
+    </div>
+  </article>
+</section>
 {% endblock %}

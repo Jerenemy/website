@@ -7,29 +7,22 @@
   <!-- Projects grid -->
   <div class="projects__grid">
     {% for item in portfolio_items %}
-      <article class="project-card glassy">
-        <a
-          href="{{ url_for('static', filename=item.image_full) }}"
-          class="glightbox"
-          data-gallery="portfolio"
-          data-description-id="desc-{{ item.id }}"
-        >
-          <img
-            src="{{ url_for('static', filename=item.image_thumb) }}"
-            alt="{{ item.image_alt | e }}"
-            class="project-card__img"
-          />
-        </a>
-        <div class="project-card__body">
-          <h3 class="project-card__title">{{ item.title }}</h3>
-          <p class="project-card__desc">{{ item.short_desc | safe }}</p>
-        </div>
-        <div id="desc-{{ item.id }}" class="project-card__lightbox-desc" hidden>
-          {{ item.long_desc | safe }}
-        </div>
-      </article>
+    <article class="project-card glassy">
+      <a href="{{ url_for('static', filename=item.image_full) }}" class="glightbox" data-gallery="portfolio"
+        data-description-id="desc-{{ item.id }}">
+        <img src="{{ url_for('static', filename=item.image_thumb) }}" alt="{{ item.image_alt | e }}"
+          class="project-card__img" />
+      </a>
+      <div class="project-card__body">
+        <h3 class="project-card__title">{{ item.title }}</h3>
+        <p class="project-card__desc">{{ item.short_desc | safe }}</p>
+      </div>
+      <div id="desc-{{ item.id }}" class="project-card__lightbox-desc" hidden>
+        {{ item.long_desc | safe }}
+      </div>
+    </article>
     {% else %}
-      <p class="projects__empty">No portfolio items yet.</p>
+    <p class="projects__empty">No portfolio items yet.</p>
     {% endfor %}
   </div>
 </section>
