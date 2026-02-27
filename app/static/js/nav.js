@@ -1,11 +1,7 @@
 (() => {
   let navInitialized = false;
 
-  function notifyHeaderContrastEngine() {
-    if (typeof window.requestHeaderContrastUpdate === "function") {
-      window.requestHeaderContrastUpdate();
-    }
-  }
+  // Removed notifyHeaderContrastEngine as it is no longer used and scroll listeners are disabled.
 
   function initSiteNav() {
     if (navInitialized) {
@@ -74,8 +70,6 @@
       // Force synchronous layout to apply the correct non-transitioned state
       document.body.offsetHeight;
       document.body.classList.remove("is-measuring");
-
-      notifyHeaderContrastEngine();
     };
 
     let resizeFrame;
@@ -89,7 +83,6 @@
     toggle.addEventListener("click", () => {
       const isCollapsed = nav.dataset.collapsed !== "false";
       setCollapsed(!isCollapsed);
-      notifyHeaderContrastEngine();
     });
 
     const collapseIfMobile = () => {
@@ -108,14 +101,7 @@
       }
     });
 
-    document.addEventListener(
-      "scroll",
-      () => {
-        collapseIfMobile();
-        notifyHeaderContrastEngine();
-      },
-      { passive: true }
-    );
+    // Removed the "scroll" event listener entirely to prevent lag and unnecessary layout checks.
 
     nav.addEventListener("click", (event) => {
       if (event.target instanceof Element && event.target.matches("a")) {
@@ -123,19 +109,16 @@
           setCollapsed(true);
         }
       }
-      notifyHeaderContrastEngine();
     });
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && nav.dataset.collapsed === "false") {
         setCollapsed(true);
       }
-      notifyHeaderContrastEngine();
     });
 
     window.addEventListener("load", () => {
       updateLayout();
-      notifyHeaderContrastEngine();
     }, { once: true });
   }
 
