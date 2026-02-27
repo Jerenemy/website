@@ -12,9 +12,9 @@ import pandas as pd
 import plotly.graph_objects as go
 
 try:
-    from .runtime_paths import RuntimePaths, resolve_runtime_paths
+    from .week3_runtime_paths import RuntimePaths, resolve_runtime_paths
 except ImportError:
-    from runtime_paths import RuntimePaths, resolve_runtime_paths
+    from week3_runtime_paths import RuntimePaths, resolve_runtime_paths
 
 PARTY_COLORS = {
     "REP": "#d62728",
