@@ -21,6 +21,7 @@
         header.dataset.mobileMenuOpen = collapsed ? "false" : "true";
       }
       toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      document.body.style.overflow = collapsed ? "" : "hidden";
     };
 
     const updateLayout = () => {
@@ -60,11 +61,13 @@
         nav.dataset.collapsed = shouldBeOpen ? "false" : "true";
         header.dataset.mobileMenuOpen = shouldBeOpen ? "true" : "false";
         toggle.setAttribute("aria-expanded", shouldBeOpen ? "true" : "false");
+        document.body.style.overflow = shouldBeOpen ? "hidden" : "";
       } else {
         isMobileMode = false;
         header.dataset.mobileMenuOpen = "false";
         nav.dataset.collapsed = "false";
         toggle.setAttribute("aria-expanded", "false");
+        document.body.style.overflow = "";
       }
 
       // Force synchronous layout to apply the correct non-transitioned state

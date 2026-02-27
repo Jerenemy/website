@@ -218,6 +218,8 @@ body.is-mobile-menu .nav {
     padding: 1.25rem 1rem;
     border-radius: 20px;
     z-index: 11;
+    max-height: calc(100dvh - var(--headerH) - 2rem);
+    overflow-y: auto;
 
     transform: translateY(-20px) scale(0.95);
     opacity: 0;
