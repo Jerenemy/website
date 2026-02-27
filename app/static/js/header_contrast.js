@@ -293,14 +293,14 @@
     const darknessValues = (() => {
       try {
         return HEADER_CONTRAST.PROBE_X_RATIOS.flatMap((ratio) => {
-        const probeX = Math.min(
-          window.innerWidth - 1,
-          Math.max(0, Math.round(window.innerWidth * ratio))
-        );
-        return probeYs.map((probeY) => sampleDarknessAtPoint(probeX, probeY, header));
-      });
-    } finally {
-      header.classList.remove("site-header--hit-test-pass-through");
+          const probeX = Math.min(
+            window.innerWidth - 1,
+            Math.max(0, Math.round(window.innerWidth * ratio))
+          );
+          return probeYs.map((probeY) => sampleDarknessAtPoint(probeX, probeY, header));
+        });
+      } finally {
+        header.classList.remove("site-header--hit-test-pass-through");
       }
     })();
 
@@ -312,45 +312,9 @@
     return total / darknessValues.length;
   }
 
-  function applyHeaderContrastFromBackdrop() {
-    const header = document.querySelector(".site-header");
-    if (!(header instanceof HTMLElement)) {
-      return;
-    }
-
-    const darkness = detectHeaderBackdropDarkness(header);
-    const onThreshold = headerDarknessThreshold();
-    const hysteresis = clamp(HEADER_CONTRAST.SWITCH_HYSTERESIS, 0, 0.2);
-    const offThreshold = Math.max(0, onThreshold - hysteresis);
-    const isCurrentlyDark = header.classList.contains("site-header--on-dark");
-    const shouldBeDark = isCurrentlyDark
-      ? darkness >= offThreshold
-      : darkness >= onThreshold;
-
-    if (shouldUseBlendContrast()) {
-      header.classList.add("site-header--blend-contrast");
-      header.classList.toggle("site-header--on-dark", shouldBeDark);
-      header.style.setProperty("--header-ink", blendHeaderInkFromDarkness(shouldBeDark));
-      return;
-    }
-
-    header.classList.remove("site-header--blend-contrast");
-    header.style.removeProperty("--header-ink");
-
-    // Threshold controls switch-to-light-header. Hysteresis avoids flicker on switch-back.
-    header.classList.toggle("site-header--on-dark", shouldBeDark);
-  }
-
   function requestHeaderContrastUpdate() {
-    if (headerContrastTicking) {
-      return;
-    }
-
-    headerContrastTicking = true;
-    window.requestAnimationFrame(() => {
-      headerContrastTicking = false;
-      applyHeaderContrastFromBackdrop();
-    });
+    // No-op: dynamic scroll updating is disabled by user request.
+    // This empty function remains so that other scripts (like nav.js) don't throw an undefined error.
   }
 
   function initHeaderContrast() {
@@ -360,27 +324,27 @@
     headerContrastInitialized = true;
 
     applyGlassContrastTokens();
-    
+
     // We only need to compute the initial contrast once based on the page background
     // Removing the aggressive scroll listeners entirely removes the "scroll jank".
     let header = document.querySelector(".site-header");
     if (header instanceof HTMLElement) {
-       // Since we are no longer dynamically checking scroll depth, we can just use the static configured page background:
-       let bgConfig = getConfiguredPageBackground();
-       let darkness = darknessFromRgba(bgConfig);
+      // Since we are no longer dynamically checking scroll depth, we can just use the static configured page background:
+      let bgConfig = getConfiguredPageBackground();
+      let darkness = darknessFromRgba(bgConfig);
 
-       const onThreshold = headerDarknessThreshold();
-       const shouldBeDark = darkness >= onThreshold;
+      const onThreshold = headerDarknessThreshold();
+      const shouldBeDark = darkness >= onThreshold;
 
-       if (shouldUseBlendContrast()) {
-         header.classList.add("site-header--blend-contrast");
-         header.classList.toggle("site-header--on-dark", shouldBeDark);
-         header.style.setProperty("--header-ink", blendHeaderInkFromDarkness(shouldBeDark));
-       } else {
-         header.classList.remove("site-header--blend-contrast");
-         header.style.removeProperty("--header-ink");
-         header.classList.toggle("site-header--on-dark", shouldBeDark);
-       }
+      if (shouldUseBlendContrast()) {
+        header.classList.add("site-header--blend-contrast");
+        header.classList.toggle("site-header--on-dark", shouldBeDark);
+        header.style.setProperty("--header-ink", blendHeaderInkFromDarkness(shouldBeDark));
+      } else {
+        header.classList.remove("site-header--blend-contrast");
+        header.style.removeProperty("--header-ink");
+        header.classList.toggle("site-header--on-dark", shouldBeDark);
+      }
     }
   }
 
