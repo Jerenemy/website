@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import os
 
 import dash
 from dash import Input, Output, State, dcc, html
@@ -11,6 +11,10 @@ import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
 
+try:
+    from .runtime_paths import RuntimePaths, resolve_runtime_paths
+except ImportError:
+    from runtime_paths import RuntimePaths, resolve_runtime_paths
 
 PARTY_COLORS = {
     "REP": "#d62728",
@@ -37,28 +41,6 @@ LABEL_COLORS = {
     "SPONSOR": "#636363",
     "UNKNOWN": "#9e9e9e",
 }
-
-
-def detect_analysis_root() -> Path:
-    cwd = Path.cwd().resolve()
-    script_dir = Path(__file__).resolve().parent
-    candidates = [cwd, script_dir, script_dir.parent, cwd.parent]
-
-    seen = set()
-    for candidate in candidates:
-        if candidate in seen:
-            continue
-        seen.add(candidate)
-        if (candidate / "outputs").exists() and (candidate / "data").exists():
-            return candidate
-    return cwd
-
-
-def resolve_path(path_str: str, analysis_root: Path) -> Path:
-    path = Path(path_str).expanduser()
-    if path.is_absolute():
-        return path
-    return (analysis_root / path).resolve()
 
 
 def mode(series: pd.Series, default: str = "UNKNOWN") -> str:
@@ -95,17 +77,12 @@ def scale_series(values: pd.Series, lo: float = 8, hi: float = 42) -> pd.Series:
     return lo + (values - vmin) * (hi - lo) / (vmax - vmin)
 
 
-def load_runtime_data(analysis_root: Path) -> dict[str, object]:
-    edges_path = resolve_path("outputs/week3/attack_target_edges_v1_1.csv", analysis_root)
-    nodes_path = resolve_path("outputs/week3/attack_target_nodes_v1_1.csv", analysis_root)
-    mentions_path = resolve_path("outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz", analysis_root)
-    harmonized_path = resolve_path("outputs/week1/harmonized_sample_week1.csv.gz", analysis_root)
-
-    edges = pd.read_csv(edges_path).copy()
-    nodes = pd.read_csv(nodes_path).copy()
-    mentions = pd.read_csv(mentions_path, compression="gzip").copy()
+def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
+    edges = pd.read_csv(paths.edges_path).copy()
+    nodes = pd.read_csv(paths.nodes_path).copy()
+    mentions = pd.read_csv(paths.mentions_path, compression="gzip").copy()
     harmonized = pd.read_csv(
-        harmonized_path,
+        paths.harmonized_path,
         compression="gzip",
         usecols=["platform", "ad_id", "spend_proxy"],
     ).copy()
@@ -202,7 +179,12 @@ def load_runtime_data(analysis_root: Path) -> dict[str, object]:
             full_graph.nodes[node]["target_received_spend"] = 0.0
             full_graph.nodes[node]["sponsor_attack_spend"] = float(sponsor_attack_spend.get(node, 0.0))
 
-    positions = nx.spring_layout(full_graph, seed=42, k=0.42)
+    try:
+        positions = nx.spring_layout(full_graph, seed=42, k=0.42)
+    except ModuleNotFoundError as exc:
+        if exc.name != "scipy":
+            raise
+        positions = nx.random_layout(full_graph, seed=42)
 
     return {
         "edges": edges,
@@ -480,11 +462,17 @@ def build_figure(
     return fig, status
 
 
-ANALYSIS_ROOT = detect_analysis_root()
-RUNTIME = load_runtime_data(ANALYSIS_ROOT)
+PATHS = resolve_runtime_paths()
+RUNTIME = load_runtime_data(PATHS)
+BASE_PATH = PATHS.base_path
 
-app = dash.Dash(__name__)
+app = dash.Dash(
+    __name__,
+    requests_pathname_prefix=BASE_PATH,
+    routes_pathname_prefix=BASE_PATH,
+)
 app.title = "Week 3 Attack-Target Graph"
+server = app.server
 EDGE_Q95 = int(pd.Series(RUNTIME["edges"]["mention_count"]).quantile(0.95))  # type: ignore[index]
 SLIDER_MAX = max(2, EDGE_Q95)
 SLIDER_STEP = 5 if SLIDER_MAX >= 20 else 1
@@ -718,4 +706,8 @@ def update_graph(
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, host="127.0.0.1", port=8050)
+    app.run_server(
+        debug=True,
+        host=os.getenv("DELTA_HOST", "127.0.0.1"),
+        port=int(os.getenv("DELTA_PORT", "8050")),
+    )
