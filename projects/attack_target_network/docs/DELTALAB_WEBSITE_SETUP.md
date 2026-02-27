@@ -8,7 +8,7 @@ This is now set up in repo to run like EAR: separate process + nginx reverse pro
 
 ## What Is Already Updated In This Repo
 
-1. `projects/attack_target_network/week_3_attack_target_graph_dash.py`
+1. `projects/attack_target_network/week3_attack_target_graph_dash.py`
    - Supports subpath hosting via `DELTA_BASE_PATH` (required for Dash behind `/deltalab/`).
    - Accepts input files from either:
      - `outputs/week3/...` + `outputs/week1/...`
