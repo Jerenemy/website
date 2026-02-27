@@ -1,7 +1,8 @@
 *
 # except
 !.gitignore
-# !pyproject.toml
+!pyproject.toml
+!poetry.lock
 !README.md
 !__init__.py
 # app
@@ -63,6 +64,12 @@
 !projects/
 !projects/ear/
 !projects/ear/*
+!projects/attack_target_network/
+!projects/attack_target_network/week_3_attack_target_graph_dash.py
+!projects/attack_target_network/docs/
+!projects/attack_target_network/docs/DELTALAB_WEBSITE_SETUP.md
+!projects/attack_target_network/deploy/
+!projects/attack_target_network/deploy/*
 # data
 !data/
 # portfolio
