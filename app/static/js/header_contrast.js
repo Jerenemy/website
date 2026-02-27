@@ -360,17 +360,28 @@
     headerContrastInitialized = true;
 
     applyGlassContrastTokens();
-    requestHeaderContrastUpdate();
+    
+    // We only need to compute the initial contrast once based on the page background
+    // Removing the aggressive scroll listeners entirely removes the "scroll jank".
+    let header = document.querySelector(".site-header");
+    if (header instanceof HTMLElement) {
+       // Since we are no longer dynamically checking scroll depth, we can just use the static configured page background:
+       let bgConfig = getConfiguredPageBackground();
+       let darkness = darknessFromRgba(bgConfig);
 
-    document.addEventListener(
-      "scroll",
-      () => {
-        requestHeaderContrastUpdate();
-      },
-      { passive: true }
-    );
-    window.addEventListener("resize", requestHeaderContrastUpdate, { passive: true });
-    window.addEventListener("load", requestHeaderContrastUpdate, { once: true });
+       const onThreshold = headerDarknessThreshold();
+       const shouldBeDark = darkness >= onThreshold;
+
+       if (shouldUseBlendContrast()) {
+         header.classList.add("site-header--blend-contrast");
+         header.classList.toggle("site-header--on-dark", shouldBeDark);
+         header.style.setProperty("--header-ink", blendHeaderInkFromDarkness(shouldBeDark));
+       } else {
+         header.classList.remove("site-header--blend-contrast");
+         header.style.removeProperty("--header-ink");
+         header.classList.toggle("site-header--on-dark", shouldBeDark);
+       }
+    }
   }
 
   window.initHeaderContrast = initHeaderContrast;
