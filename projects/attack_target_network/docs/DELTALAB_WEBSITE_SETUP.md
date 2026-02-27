@@ -40,6 +40,17 @@ sudo cp /home/jzay/personal_website/projects/attack_target_network/deploy/superv
   /etc/supervisor/conf.d/attack_target_network.conf
 ```
 
+If your CSV files are in a non-default directory, add `DELTA_DATA_ROOT` in the supervisor file:
+
+```ini
+environment=DELTA_BASE_PATH="/deltalab/",DELTA_DATA_ROOT="/absolute/path/to/your/csv/root"
+```
+
+`DELTA_DATA_ROOT` can point either to:
+
+1. a directory containing `outputs/week3/...` and `outputs/week1/...`, or
+2. a directory containing the files directly (for example `attack_target_edges_v1_1.csv`, etc.).
+
 Load and start:
 
 ```bash
@@ -55,17 +66,23 @@ This is the command you expected, and it will work once config is in place:
 sudo supervisorctl start attack_target_network
 ```
 
-### 3. Nginx config for `/deltalab/`
+### 3. Nginx config for `/deltalab/` (exact change)
 
 Open your site config:
 
 ```bash
-sudo nano /etc/nginx/sites-enabled/personal_website
+sudo vim /etc/nginx/sites-enabled/personal_website
 ```
 
-Inside the HTTPS `server { ... }` block for `jeremyzay.com`, add:
+Your current file already has the `/ear/` block.  
+Add the DeltaLab block directly **after** the `/ear/` block and **before** the final `}` of the HTTPS `server` block.
+
+Paste this:
 
 ```nginx
+# --- 3. DeltaLab Dash Service (Port 5002) ---
+
+# Force trailing slash (jeremyzay.com/deltalab -> jeremyzay.com/deltalab/)
 location = /deltalab {
     return 301 $scheme://$http_host/deltalab/;
 }
@@ -83,15 +100,22 @@ location /deltalab/ {
 }
 ```
 
+Important:
+
+1. Do **not** add `rewrite ^/deltalab/(.*) /$1 break;` for DeltaLab.
+2. Keep your `/ear/` block exactly as-is.
+3. Add DeltaLab only inside the HTTPS `server { ... }` block (port `443`), not the HTTP redirect block (port `80`).
+
 Or copy from:
 
 - `projects/attack_target_network/deploy/nginx_deltalab_location.conf`
 
-Then validate and reload:
+Then save and run:
 
 ```bash
 sudo nginx -t
 sudo systemctl reload nginx
+sudo supervisorctl restart attack_target_network
 ```
 
 ## Verify It Is Live
@@ -104,6 +128,30 @@ curl -I https://jeremyzay.com/deltalab/
 ```
 
 Then open `https://jeremyzay.com/deltalab/` in browser and confirm callbacks/filters work.
+
+## Fix For The Exact Error You Posted (`FileNotFoundError`)
+
+If logs show `None of the candidate input paths exist`, the Dash service cannot find the 4 required CSVs.
+
+Run:
+
+```bash
+cd /home/jzay/personal_website/projects/attack_target_network
+ls -lh data_inputs/attack_target_edges_v1_1.csv \
+       data_inputs/attack_target_nodes_v1_1.csv \
+       data_inputs/entity_mentions_week3_cleaned_v1_1.csv.gz \
+       data_inputs/harmonized_sample_week1.csv.gz
+```
+
+If any are missing, place/copy them into `data_inputs/` (or set `DELTA_DATA_ROOT` to where they already exist), then restart:
+
+```bash
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl restart attack_target_network
+sudo supervisorctl status attack_target_network
+tail -n 80 /var/log/personal_website/attack_target_network.err.log
+```
 
 ## Notes About Existing Flask `/deltalab` Route
 

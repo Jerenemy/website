@@ -60,6 +60,12 @@
 !app/static/files/*
 # zaychess
 !app/static/zaychess
+# deploy
+!deploy/
+!deploy/supervisor/
+!deploy/supervisor/*
+!deploy/nginx/
+!deploy/nginx/*
 # projects
 !projects/
 !projects/ear/

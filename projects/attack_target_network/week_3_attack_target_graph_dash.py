@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import dash
@@ -62,26 +61,6 @@ def resolve_path(path_str: str, analysis_root: Path) -> Path:
     return (analysis_root / path).resolve()
 
 
-def resolve_first_existing_path(candidates: list[str], analysis_root: Path) -> Path:
-    attempted: list[Path] = []
-    for candidate in candidates:
-        path = resolve_path(candidate, analysis_root)
-        attempted.append(path)
-        if path.exists():
-            return path
-    attempted_paths = "\n".join(f"- {p}" for p in attempted)
-    raise FileNotFoundError(f"None of the candidate input paths exist:\n{attempted_paths}")
-
-
-def normalize_base_path(path: str) -> str:
-    normalized = (path or "/").strip()
-    if not normalized.startswith("/"):
-        normalized = f"/{normalized}"
-    if not normalized.endswith("/"):
-        normalized = f"{normalized}/"
-    return normalized
-
-
 def mode(series: pd.Series, default: str = "UNKNOWN") -> str:
     s = series.dropna().astype(str)
     if s.empty:
@@ -117,51 +96,10 @@ def scale_series(values: pd.Series, lo: float = 8, hi: float = 42) -> pd.Series:
 
 
 def load_runtime_data(analysis_root: Path) -> dict[str, object]:
-    project_dir = Path(__file__).resolve().parent
-    edges_path = resolve_first_existing_path(
-        [
-            "outputs/week3/attack_target_edges_v1_1.csv",
-            "projects/attack_target_network/outputs/week3/attack_target_edges_v1_1.csv",
-            str(project_dir / "outputs/week3/attack_target_edges_v1_1.csv"),
-            "data_inputs/attack_target_edges_v1_1.csv",
-            "projects/attack_target_network/data_inputs/attack_target_edges_v1_1.csv",
-            str(project_dir / "data_inputs/attack_target_edges_v1_1.csv"),
-        ],
-        analysis_root,
-    )
-    nodes_path = resolve_first_existing_path(
-        [
-            "outputs/week3/attack_target_nodes_v1_1.csv",
-            "projects/attack_target_network/outputs/week3/attack_target_nodes_v1_1.csv",
-            str(project_dir / "outputs/week3/attack_target_nodes_v1_1.csv"),
-            "data_inputs/attack_target_nodes_v1_1.csv",
-            "projects/attack_target_network/data_inputs/attack_target_nodes_v1_1.csv",
-            str(project_dir / "data_inputs/attack_target_nodes_v1_1.csv"),
-        ],
-        analysis_root,
-    )
-    mentions_path = resolve_first_existing_path(
-        [
-            "outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz",
-            "projects/attack_target_network/outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz",
-            str(project_dir / "outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz"),
-            "data_inputs/entity_mentions_week3_cleaned_v1_1.csv.gz",
-            "projects/attack_target_network/data_inputs/entity_mentions_week3_cleaned_v1_1.csv.gz",
-            str(project_dir / "data_inputs/entity_mentions_week3_cleaned_v1_1.csv.gz"),
-        ],
-        analysis_root,
-    )
-    harmonized_path = resolve_first_existing_path(
-        [
-            "outputs/week1/harmonized_sample_week1.csv.gz",
-            "projects/attack_target_network/outputs/week1/harmonized_sample_week1.csv.gz",
-            str(project_dir / "outputs/week1/harmonized_sample_week1.csv.gz"),
-            "data_inputs/harmonized_sample_week1.csv.gz",
-            "projects/attack_target_network/data_inputs/harmonized_sample_week1.csv.gz",
-            str(project_dir / "data_inputs/harmonized_sample_week1.csv.gz"),
-        ],
-        analysis_root,
-    )
+    edges_path = resolve_path("outputs/week3/attack_target_edges_v1_1.csv", analysis_root)
+    nodes_path = resolve_path("outputs/week3/attack_target_nodes_v1_1.csv", analysis_root)
+    mentions_path = resolve_path("outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz", analysis_root)
+    harmonized_path = resolve_path("outputs/week1/harmonized_sample_week1.csv.gz", analysis_root)
 
     edges = pd.read_csv(edges_path).copy()
     nodes = pd.read_csv(nodes_path).copy()
@@ -264,14 +202,7 @@ def load_runtime_data(analysis_root: Path) -> dict[str, object]:
             full_graph.nodes[node]["target_received_spend"] = 0.0
             full_graph.nodes[node]["sponsor_attack_spend"] = float(sponsor_attack_spend.get(node, 0.0))
 
-    try:
-        positions = nx.spring_layout(full_graph, seed=42, k=0.42)
-    except ModuleNotFoundError as exc:
-        # NetworkX may require SciPy for large-graph sparse ops; fall back to a
-        # deterministic layout so the app still runs on lean VPS installs.
-        if exc.name != "scipy":
-            raise
-        positions = nx.random_layout(full_graph, seed=42)
+    positions = nx.spring_layout(full_graph, seed=42, k=0.42)
 
     return {
         "edges": edges,
@@ -395,9 +326,11 @@ def build_figure(
     size_scaled = scale_series(size_series, lo=10, hi=46).to_dict()
 
     edge_x_dim, edge_y_dim, edge_x_hi, edge_y_hi = [], [], [], []
+    edge_hover_x, edge_hover_y, edge_hover_text = [], [], []
     for u, v in graph.edges():
         x0, y0 = pos[u]
         x1, y1 = pos[v]
+        edge_meta = graph.edges[u, v]
         is_hi = (u, v) in highlight_edges
         if interaction_mode in {"highlight", "accumulate"} and has_active_selection and not is_hi:
             edge_x_dim.extend([x0, x1, None])
@@ -405,6 +338,16 @@ def build_figure(
         else:
             edge_x_hi.extend([x0, x1, None])
             edge_y_hi.extend([y0, y1, None])
+
+        # Hover anchor at edge midpoint so edge details are discoverable.
+        edge_hover_x.append((x0 + x1) / 2.0)
+        edge_hover_y.append((y0 + y1) / 2.0)
+        edge_hover_text.append(
+            f"{u} -> {v}<br>"
+            f"attacks (mention_count)={int(edge_meta.get('mention_count', 0)):,}<br>"
+            f"ads={int(edge_meta.get('ad_count', 0)):,}<br>"
+            f"attack_spend=${float(edge_meta.get('edge_attack_spend', 0.0)):,.2f}"
+        )
 
     edge_dim_trace = go.Scatter(
         x=edge_x_dim,
@@ -421,6 +364,19 @@ def build_figure(
         hoverinfo="none",
         line=dict(width=0.9, color="rgba(120,120,120,0.42)"),
         showlegend=False,
+    )
+    edge_hover_trace = go.Scatter(
+        x=edge_hover_x,
+        y=edge_hover_y,
+        mode="markers",
+        hoverinfo="text",
+        text=edge_hover_text,
+        showlegend=False,
+        marker=dict(
+            size=10,
+            color="rgba(0,0,0,0.001)",
+            line=dict(width=0),
+        ),
     )
 
     sponsor_x, sponsor_y, sponsor_size, sponsor_color, sponsor_text, sponsor_cd, sponsor_opacity = ([] for _ in range(7))
@@ -499,7 +455,7 @@ def build_figure(
     target_trace.marker.symbol = "circle"
     target_trace.marker.line = dict(width=0.9, color="#ffffff")
 
-    fig = go.Figure(data=[edge_dim_trace, edge_hi_trace, sponsor_trace, target_trace])
+    fig = go.Figure(data=[edge_dim_trace, edge_hi_trace, edge_hover_trace, sponsor_trace, target_trace])
     fig.update_layout(
         template="plotly_white",
         title=f"Week 3 Attack-Target Interactive Graph ({graph.number_of_nodes():,} nodes, {graph.number_of_edges():,} edges)",
@@ -526,15 +482,9 @@ def build_figure(
 
 ANALYSIS_ROOT = detect_analysis_root()
 RUNTIME = load_runtime_data(ANALYSIS_ROOT)
-BASE_PATH = normalize_base_path(os.getenv("DELTA_BASE_PATH", "/"))
 
-app = dash.Dash(
-    __name__,
-    requests_pathname_prefix=BASE_PATH,
-    routes_pathname_prefix=BASE_PATH,
-)
+app = dash.Dash(__name__)
 app.title = "Week 3 Attack-Target Graph"
-server = app.server
 EDGE_Q95 = int(pd.Series(RUNTIME["edges"]["mention_count"]).quantile(0.95))  # type: ignore[index]
 SLIDER_MAX = max(2, EDGE_Q95)
 SLIDER_STEP = 5 if SLIDER_MAX >= 20 else 1
@@ -768,8 +718,4 @@ def update_graph(
 
 
 if __name__ == "__main__":
-    app.run_server(
-        debug=True,
-        host=os.getenv("DELTA_HOST", "127.0.0.1"),
-        port=int(os.getenv("DELTA_PORT", "8050")),
-    )
+    app.run_server(debug=True, host="127.0.0.1", port=8050)
