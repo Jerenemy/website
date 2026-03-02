@@ -1,4 +1,4 @@
-from flask import request, jsonify, current_app
+from flask import request, jsonify, current_app, abort
 from flask_mail import Message
 from ...extensions import mail
 from . import bp
@@ -6,6 +6,9 @@ from . import bp
 @bp.get("/debug/mail")
 def debug_mail():
     """Temporary debug endpoint to inspect mail config presence. Remove after troubleshooting."""
+    if not current_app.debug:
+        abort(404)
+
     cfg = current_app.config
     return {
         "MAIL_SERVER": cfg.get("MAIL_SERVER"),
