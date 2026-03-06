@@ -30,10 +30,9 @@ PARTY_COLORS = {
 }
 
 TARGET_PARTY_COLORS = {
-    # For targets, inferred party comes from incoming attackers.
-    # Flip DEM/REP colors to represent the likely opposed camp.
-    "REP": "#1f77b4",
-    "DEM": "#d62728",
+    # Target nodes now store the inferred target party directly.
+    "REP": "#d62728",
+    "DEM": "#1f77b4",
     "IND": "#2ca02c",
     "OTHER": "#7f7f7f",
     "UNKNOWN": "#9e9e9e",
@@ -59,6 +58,17 @@ def mode(series: pd.Series, default: str = "UNKNOWN") -> str:
     if m.empty:
         return default
     return str(m.iloc[0]).strip() or default
+
+
+def opposing_party(party: str) -> str:
+    party = str(party).strip().upper()
+    if party == "REP":
+        return "DEM"
+    if party == "DEM":
+        return "REP"
+    if party in {"IND", "OTHER", "UNKNOWN"}:
+        return party
+    return "UNKNOWN"
 
 
 def resolve_first_available_column(
@@ -178,7 +188,7 @@ def infer_target_party(edges: pd.DataFrame) -> pd.Series:
     for target, g in grouped.groupby(CANONICAL_ENTITY_COL):
         top_count = g["mention_count"].max()
         winners = g[g["mention_count"] == top_count]["sponsor_party"].tolist()
-        out[target] = winners[0] if len(winners) == 1 else "UNKNOWN"
+        out[target] = opposing_party(winners[0]) if len(winners) == 1 else "UNKNOWN"
     return pd.Series(out, name="target_party_inferred")
 
 
