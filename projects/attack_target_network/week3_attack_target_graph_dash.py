@@ -5,15 +5,24 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
+import hmac
 import math
+from pathlib import Path
+import secrets
+import time
+from threading import Lock
+from collections import deque
+from datetime import timedelta
 
 import dash
-from dash import Input, Output, State, dcc, html
+from dash import Input, Output, State, ctx, dcc, html
 from dash.exceptions import PreventUpdate
+from dotenv import load_dotenv
+from flask import request as flask_request, session
 import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
+from werkzeug.security import check_password_hash
 
 try:
     from .week3_runtime_paths import RuntimePaths, resolve_runtime_paths
@@ -22,6 +31,11 @@ except ImportError:
         from week3_runtime_paths import RuntimePaths, resolve_runtime_paths
     except ImportError:
         from projects.attack_target_network.week3_runtime_paths import RuntimePaths, resolve_runtime_paths
+
+THIS_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = THIS_DIR.parent.parent
+load_dotenv(PROJECT_ROOT / ".env", override=False)
+load_dotenv(THIS_DIR / ".env.deltalab", override=False)
 
 PARTY_COLORS = {
     "REP": "#d62728",
@@ -53,6 +67,254 @@ IS_TARGET_COL = "is_target"
 TARGET_PARTY_MODE_MONEY = "money"
 TARGET_PARTY_MODE_MENTIONS = "mentions"
 DEFAULT_TARGET_PARTY_MODE = TARGET_PARTY_MODE_MONEY
+
+ADMIN_SESSION_AUTH_KEY = "delta_admin_authenticated"
+ADMIN_SESSION_USER_KEY = "delta_admin_user"
+ADMIN_SESSION_EXPIRES_AT_KEY = "delta_admin_expires_at"
+
+
+def env_int(name: str, default: int, minimum: int, maximum: int) -> int:
+    raw_value = os.getenv(name, "").strip()
+    if not raw_value:
+        return default
+    try:
+        parsed = int(raw_value)
+    except ValueError:
+        return default
+    return max(minimum, min(maximum, parsed))
+
+
+def env_float(name: str, default: float, minimum: float, maximum: float) -> float:
+    raw_value = os.getenv(name, "").strip()
+    if not raw_value:
+        return default
+    try:
+        parsed = float(raw_value)
+    except ValueError:
+        return default
+    return max(minimum, min(maximum, parsed))
+
+
+def env_bool(name: str, default: bool) -> bool:
+    raw_value = os.getenv(name, "").strip().lower()
+    if not raw_value:
+        return default
+    if raw_value in {"1", "true", "yes", "on"}:
+        return True
+    if raw_value in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+ADMIN_SESSION_TTL_SECONDS = env_int("DELTA_ADMIN_SESSION_TTL_SECONDS", default=1800, minimum=300, maximum=43200)
+ADMIN_RATE_LIMIT_MAX_ATTEMPTS = env_int("DELTA_ADMIN_RATE_LIMIT_MAX_ATTEMPTS", default=5, minimum=2, maximum=20)
+ADMIN_RATE_LIMIT_WINDOW_SECONDS = env_int("DELTA_ADMIN_RATE_LIMIT_WINDOW_SECONDS", default=300, minimum=30, maximum=3600)
+ADMIN_LOCKOUT_BASE_SECONDS = env_int("DELTA_ADMIN_LOCKOUT_BASE_SECONDS", default=300, minimum=30, maximum=7200)
+ADMIN_LOCKOUT_MAX_SECONDS = env_int("DELTA_ADMIN_LOCKOUT_MAX_SECONDS", default=3600, minimum=60, maximum=86400)
+ADMIN_FAILED_DELAY_SECONDS = env_float("DELTA_ADMIN_FAILED_DELAY_SECONDS", default=0.35, minimum=0.0, maximum=2.0)
+ADMIN_COOKIE_SECURE = env_bool("DELTA_SESSION_COOKIE_SECURE", default=True)
+MAX_ADMIN_CRED_LENGTH = 256
+
+
+class LoginAttemptLimiter:
+    """In-memory sliding-window limiter with lockouts for failed login attempts."""
+
+    def __init__(
+        self,
+        max_attempts: int,
+        window_seconds: int,
+        base_lock_seconds: int,
+        max_lock_seconds: int,
+    ) -> None:
+        self.max_attempts = max_attempts
+        self.window_seconds = window_seconds
+        self.base_lock_seconds = base_lock_seconds
+        self.max_lock_seconds = max_lock_seconds
+        self._state: dict[str, dict[str, object]] = {}
+        self._lock = Lock()
+
+    def _cleanup(self, now: float) -> None:
+        stale_after = max(self.window_seconds, self.max_lock_seconds) * 2
+        stale_keys = [
+            key
+            for key, state in self._state.items()
+            if float(state.get("lock_until", 0.0)) < (now - stale_after)
+            and not state.get("attempts")
+        ]
+        for key in stale_keys:
+            self._state.pop(key, None)
+
+    def _get_state(self, key: str) -> dict[str, object]:
+        if key not in self._state:
+            self._state[key] = {"attempts": deque(), "lock_until": 0.0}
+        return self._state[key]
+
+    def _trim_attempts(self, attempts: deque[float], now: float) -> None:
+        while attempts and now - attempts[0] > self.window_seconds:
+            attempts.popleft()
+
+    def check_wait_seconds(self, keys: list[str]) -> int:
+        now = time.monotonic()
+        with self._lock:
+            self._cleanup(now)
+            max_wait = 0
+            for key in keys:
+                state = self._get_state(key)
+                lock_until = float(state.get("lock_until", 0.0))
+                if lock_until > now:
+                    max_wait = max(max_wait, int(lock_until - now) + 1)
+            return max_wait
+
+    def register_failure(self, keys: list[str]) -> int:
+        now = time.monotonic()
+        with self._lock:
+            self._cleanup(now)
+            lock_seconds = 0
+            for key in keys:
+                state = self._get_state(key)
+                attempts = state["attempts"]
+                if not isinstance(attempts, deque):
+                    attempts = deque()
+                    state["attempts"] = attempts
+                self._trim_attempts(attempts, now)
+                attempts.append(now)
+                if len(attempts) >= self.max_attempts:
+                    overflow = len(attempts) - self.max_attempts
+                    applied_lock = min(self.max_lock_seconds, self.base_lock_seconds * (2 ** overflow))
+                    state["lock_until"] = now + applied_lock
+                    attempts.clear()
+                    lock_seconds = max(lock_seconds, int(applied_lock))
+            return lock_seconds
+
+    def register_success(self, keys: list[str]) -> None:
+        with self._lock:
+            for key in keys:
+                self._state.pop(key, None)
+
+
+LOGIN_ATTEMPT_LIMITER = LoginAttemptLimiter(
+    max_attempts=ADMIN_RATE_LIMIT_MAX_ATTEMPTS,
+    window_seconds=ADMIN_RATE_LIMIT_WINDOW_SECONDS,
+    base_lock_seconds=ADMIN_LOCKOUT_BASE_SECONDS,
+    max_lock_seconds=ADMIN_LOCKOUT_MAX_SECONDS,
+)
+
+
+def admin_username() -> str:
+    return (
+        os.getenv("DELTA_ADMIN_USERNAME", "").strip()
+        or os.getenv("ADMIN_USERNAME", "").strip()
+    )
+
+
+def admin_password_hash() -> str:
+    return (
+        os.getenv("DELTA_ADMIN_PASSWORD_HASH", "").strip()
+        or os.getenv("ADMIN_PASSWORD_HASH", "").strip()
+    )
+
+
+def admin_password_plain() -> str:
+    return (
+        os.getenv("DELTA_ADMIN_PASSWORD", "").strip()
+        or os.getenv("ADMIN_PASSWORD", "").strip()
+    )
+
+
+def admin_auth_configured() -> bool:
+    return bool(admin_username() and (admin_password_hash() or admin_password_plain()))
+
+
+def verify_admin_credentials(username: str, password: str) -> bool:
+    expected_username = admin_username()
+    if not expected_username:
+        return False
+    username = (username or "").strip()
+    password = password or ""
+    if len(username) > MAX_ADMIN_CRED_LENGTH or len(password) > MAX_ADMIN_CRED_LENGTH:
+        return False
+    if not hmac.compare_digest(username, expected_username):
+        return False
+
+    configured_hash = admin_password_hash()
+    if configured_hash:
+        try:
+            return check_password_hash(configured_hash, password)
+        except ValueError:
+            return False
+
+    configured_plain = admin_password_plain()
+    if configured_plain:
+        return hmac.compare_digest(password, configured_plain)
+    return False
+
+
+def clear_admin_session() -> None:
+    session.pop(ADMIN_SESSION_AUTH_KEY, None)
+    session.pop(ADMIN_SESSION_USER_KEY, None)
+    session.pop(ADMIN_SESSION_EXPIRES_AT_KEY, None)
+
+
+def set_admin_session(username: str) -> None:
+    now = int(time.time())
+    session[ADMIN_SESSION_AUTH_KEY] = True
+    session[ADMIN_SESSION_USER_KEY] = username
+    session[ADMIN_SESSION_EXPIRES_AT_KEY] = now + ADMIN_SESSION_TTL_SECONDS
+    session.permanent = True
+
+
+def is_admin_session_authenticated() -> bool:
+    if not session.get(ADMIN_SESSION_AUTH_KEY):
+        clear_admin_session()
+        return False
+
+    expires_at_raw = session.get(ADMIN_SESSION_EXPIRES_AT_KEY)
+    try:
+        expires_at = int(expires_at_raw)
+    except (TypeError, ValueError):
+        clear_admin_session()
+        return False
+
+    now = int(time.time())
+    if now >= expires_at:
+        clear_admin_session()
+        return False
+
+    # Sliding expiration while the admin session is actively used.
+    session[ADMIN_SESSION_EXPIRES_AT_KEY] = now + ADMIN_SESSION_TTL_SECONDS
+    session.modified = True
+    return True
+
+
+def client_ip() -> str:
+    x_forwarded_for = flask_request.headers.get("X-Forwarded-For", "")
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(",")[0].strip()
+        if ip:
+            return ip[:64]
+    remote_addr = (flask_request.remote_addr or "").strip()
+    if remote_addr:
+        return remote_addr[:64]
+    return "unknown"
+
+
+def login_rate_limit_keys(username: str) -> list[str]:
+    ip = client_ip()
+    username_key = (username or "").strip().lower()[:MAX_ADMIN_CRED_LENGTH] or "_"
+    return [f"ip:{ip}", f"ip-user:{ip}:{username_key}"]
+
+
+def auth_ui_style(is_admin: bool, is_error: bool = False) -> dict[str, str]:
+    color = "#555555"
+    if is_admin:
+        color = "#0d7a28"
+    elif is_error:
+        color = "#a31621"
+    return {"marginTop": "6px", "fontSize": "0.9rem", "fontWeight": "600", "color": color}
+
+
+def auth_ui_payload(is_admin: bool) -> dict[str, object]:
+    return {"is_admin": is_admin, "updated_at": int(time.time())}
 
 
 def mode(series: pd.Series, default: str = "UNKNOWN") -> str:
@@ -1010,6 +1272,18 @@ app = dash.Dash(
 )
 app.title = "Week 3 Attack-Target Graph"
 server = app.server
+server.secret_key = (
+    os.getenv("DELTA_SECRET_KEY", "").strip()
+    or os.getenv("SECRET_KEY", "").strip()
+    or server.secret_key
+    or secrets.token_hex(32)
+)
+server.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=ADMIN_COOKIE_SECURE,
+    PERMANENT_SESSION_LIFETIME=timedelta(seconds=ADMIN_SESSION_TTL_SECONDS),
+)
 EDGE_Q95 = int(pd.Series(RUNTIME["edges"]["mention_count"]).quantile(0.95))  # type: ignore[index]
 SLIDER_MAX = max(2, EDGE_Q95)
 SLIDER_STEP = 5 if SLIDER_MAX >= 20 else 1
@@ -1019,6 +1293,53 @@ if SLIDER_MAX not in SLIDER_MARKS:
 
 app.layout = html.Div(
     [
+        dcc.Location(id="page-location", refresh=False),
+        dcc.Store(id="admin-auth-store", data={"is_admin": False, "updated_at": 0}),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Strong("Admin Mode"),
+                        dcc.Input(
+                            id="admin-username-input",
+                            type="text",
+                            placeholder="Admin username",
+                            maxLength=MAX_ADMIN_CRED_LENGTH,
+                            autoComplete="username",
+                            style={"minWidth": "180px"},
+                        ),
+                        dcc.Input(
+                            id="admin-password-input",
+                            type="password",
+                            placeholder="Admin password",
+                            maxLength=MAX_ADMIN_CRED_LENGTH,
+                            autoComplete="current-password",
+                            style={"minWidth": "220px"},
+                        ),
+                        html.Button("Enter Admin Mode", id="admin-login-button", n_clicks=0),
+                        html.Button(
+                            "Exit Admin Mode",
+                            id="admin-logout-button",
+                            n_clicks=0,
+                            style={"display": "none"},
+                        ),
+                    ],
+                    style={"display": "flex", "alignItems": "center", "gap": "8px", "flexWrap": "wrap"},
+                ),
+                html.Div(
+                    id="admin-auth-status",
+                    children="Admin mode is off. Log in to view ad IDs.",
+                    style=auth_ui_style(is_admin=False, is_error=False),
+                ),
+            ],
+            style={
+                "marginBottom": "12px",
+                "padding": "10px",
+                "border": "1px solid #d7d7d7",
+                "borderRadius": "8px",
+                "backgroundColor": "#fafafa",
+            },
+        ),
         html.H3("Week 3 Attack-Target Graph (Interactive)", style={"margin": "0 0 12px 0"}),
         html.Div(
             [
@@ -1228,7 +1549,8 @@ app.layout = html.Div(
                 html.H4("Selected Ad IDs", style={"margin": "12px 0 8px 0"}),
                 html.Div(id="selected-ad-ids-panel"),
             ],
-            style={"marginTop": "8px"},
+            id="selected-ad-ids-container",
+            style={"display": "none", "marginTop": "8px"},
         ),
         html.Div(
             "Bipartite layout places sponsors on the left and targets on the right. "
@@ -1260,6 +1582,115 @@ def apply_node_selection(node_name: str, node_type: str, interaction_mode: str, 
     if selected_seeds and selected_seeds[0].get("name") == node_name and selected_seeds[0].get("type") == node_type:
         return []
     return [{"name": node_name, "type": node_type}]
+
+
+@app.callback(
+    Output("admin-auth-store", "data"),
+    Output("admin-auth-status", "children"),
+    Output("admin-auth-status", "style"),
+    Output("admin-password-input", "value"),
+    Output("admin-login-button", "style"),
+    Output("admin-logout-button", "style"),
+    Input("page-location", "pathname"),
+    Input("admin-login-button", "n_clicks"),
+    Input("admin-logout-button", "n_clicks"),
+    State("admin-username-input", "value"),
+    State("admin-password-input", "value"),
+)
+def update_admin_auth_state(
+    _pathname,
+    _login_clicks,
+    _logout_clicks,
+    username_value,
+    password_value,
+):
+    login_button_style = {}
+    logout_button_style = {"display": "none"}
+    trigger = ctx.triggered_id
+
+    if trigger == "admin-logout-button":
+        clear_admin_session()
+        return (
+            auth_ui_payload(is_admin=False),
+            "Admin mode is off. Log in to view ad IDs.",
+            auth_ui_style(is_admin=False, is_error=False),
+            "",
+            login_button_style,
+            logout_button_style,
+        )
+
+    if trigger == "admin-login-button":
+        username = (username_value or "").strip()
+        password = password_value or ""
+        if not admin_auth_configured():
+            return (
+                auth_ui_payload(is_admin=False),
+                "Admin login is not configured. Set DELTA_ADMIN_USERNAME and DELTA_ADMIN_PASSWORD_HASH.",
+                auth_ui_style(is_admin=False, is_error=True),
+                "",
+                login_button_style,
+                logout_button_style,
+            )
+
+        keys = login_rate_limit_keys(username)
+        wait_seconds = LOGIN_ATTEMPT_LIMITER.check_wait_seconds(keys)
+        if wait_seconds > 0:
+            return (
+                auth_ui_payload(is_admin=False),
+                f"Too many login attempts. Try again in {wait_seconds} seconds.",
+                auth_ui_style(is_admin=False, is_error=True),
+                "",
+                login_button_style,
+                logout_button_style,
+            )
+
+        if verify_admin_credentials(username, password):
+            LOGIN_ATTEMPT_LIMITER.register_success(keys)
+            set_admin_session(username)
+            return (
+                auth_ui_payload(is_admin=True),
+                f"Admin mode enabled for {username}.",
+                auth_ui_style(is_admin=True, is_error=False),
+                "",
+                {"display": "none"},
+                {},
+            )
+
+        lock_seconds = LOGIN_ATTEMPT_LIMITER.register_failure(keys)
+        if ADMIN_FAILED_DELAY_SECONDS > 0:
+            time.sleep(ADMIN_FAILED_DELAY_SECONDS)
+        message = "Invalid username or password."
+        if lock_seconds > 0:
+            message = f"Too many failed attempts. Login locked for {lock_seconds} seconds."
+        return (
+            auth_ui_payload(is_admin=False),
+            message,
+            auth_ui_style(is_admin=False, is_error=True),
+            "",
+            login_button_style,
+            logout_button_style,
+        )
+
+    if is_admin_session_authenticated():
+        username = str(session.get(ADMIN_SESSION_USER_KEY, admin_username() or "admin"))
+        return (
+            auth_ui_payload(is_admin=True),
+            f"Admin mode enabled for {username}.",
+            auth_ui_style(is_admin=True, is_error=False),
+            "",
+            {"display": "none"},
+            {},
+        )
+
+    clear_admin_session()
+    return (
+        auth_ui_payload(is_admin=False),
+        "Admin mode is off. Log in to view ad IDs.",
+        auth_ui_style(is_admin=False, is_error=False),
+        "",
+        login_button_style,
+        logout_button_style,
+    )
 
 
 @app.callback(
@@ -1383,7 +1814,9 @@ def clear_selection(_n_clicks):
 
 
 @app.callback(
+    Output("selected-ad-ids-container", "style"),
     Output("selected-ad-ids-panel", "children"),
+    Input("admin-auth-store", "data"),
     Input("sponsor-party-filter", "value"),
     Input("target-party-filter", "value"),
     Input("target-party-mode", "value"),
@@ -1393,6 +1826,7 @@ def clear_selection(_n_clicks):
     Input("selected-seeds", "data"),
 )
 def update_selected_ad_ids_panel(
+    _admin_auth_state,
     sponsor_party_filter,
     target_party_filter,
     target_party_mode,
@@ -1401,7 +1835,10 @@ def update_selected_ad_ids_panel(
     top_n_edges,
     selected_seeds,
 ):
-    return build_selected_ad_details(
+    if not is_admin_session_authenticated():
+        return {"display": "none", "marginTop": "8px"}, []
+
+    panel = build_selected_ad_details(
         runtime=RUNTIME,
         sponsor_party_filter=sponsor_party_filter or [],
         target_party_filter=target_party_filter or [],
@@ -1411,6 +1848,7 @@ def update_selected_ad_ids_panel(
         top_n_edges=int(top_n_edges or DEFAULT_TOP_N_EDGES),
         selected_nodes=selected_seeds or [],
     )
+    return {"display": "block", "marginTop": "8px"}, panel
 
 
 @app.callback(

@@ -60,6 +60,29 @@ sudo supervisorctl start attack_target_network
 sudo supervisorctl status attack_target_network
 ```
 
+### 2.5 Admin mode credentials (required for Ad ID panel)
+
+Create a local secrets file for the Dash service:
+
+```bash
+cp /home/jzay/personal_website/projects/attack_target_network/.env.deltalab.example \
+   /home/jzay/personal_website/projects/attack_target_network/.env.deltalab
+```
+
+Then edit `.env.deltalab` and set:
+
+1. `DELTA_ADMIN_USERNAME`
+2. `DELTA_ADMIN_PASSWORD_HASH` (use a hash, not plain text)
+3. `DELTA_SECRET_KEY`
+
+Generate a hash with:
+
+```bash
+python -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('your-strong-password'))"
+```
+
+The real `.env.deltalab` file is git-ignored so secrets cannot be pushed.
+
 This is the command you expected, and it will work once config is in place:
 
 ```bash
