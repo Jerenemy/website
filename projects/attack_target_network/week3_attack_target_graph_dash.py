@@ -3,12 +3,14 @@
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 import math
 
 import dash
 from dash import Input, Output, State, dcc, html
+from dash.exceptions import PreventUpdate
 import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
@@ -292,6 +294,88 @@ def compute_layout_positions(
         return normalize_positions(nx.random_layout(layout_graph, seed=42))
 
 
+def build_visible_graph(
+    runtime: dict[str, object],
+    sponsor_party_filter: list[str],
+    target_party_filter: list[str],
+    node_type_visible: list[str],
+    min_edge_mentions: int,
+    top_n_edges: int,
+) -> tuple[nx.DiGraph, nx.DiGraph]:
+    edges: pd.DataFrame = runtime["edges"]  # type: ignore[assignment]
+    base_graph: nx.DiGraph = runtime["graph"]  # type: ignore[assignment]
+
+    ef = edges.copy()
+    ef = ef[ef["mention_count"] >= int(min_edge_mentions)]
+    if sponsor_party_filter:
+        ef = ef[ef["sponsor_party"].isin(sponsor_party_filter)]
+    if target_party_filter:
+        ef = ef[ef["target_party_inferred"].isin(target_party_filter)]
+    ef = ef.sort_values("mention_count", ascending=False)
+    ef = ef.head(int(top_n_edges))
+
+    sponsors_visible = "sponsor" in node_type_visible
+    targets_visible = "target" in node_type_visible
+
+    graph = nx.DiGraph()
+    for row in ef.itertuples(index=False):
+        graph.add_edge(
+            row.sponsor_name,
+            row.canonical_entity,
+            mention_count=int(row.mention_count),
+            ad_count=int(row.ad_count),
+            edge_attack_spend=float(row.edge_attack_spend),
+            sponsor_party=str(row.sponsor_party),
+            target_party_inferred=str(row.target_party_inferred),
+        )
+
+    if not sponsors_visible or not targets_visible:
+        to_drop: list[str] = []
+        for node in graph.nodes():
+            node_type = base_graph.nodes[node]["node_type"] if node in base_graph.nodes else "unknown"
+            if node_type == "sponsor" and not sponsors_visible:
+                to_drop.append(node)
+            if node_type == "target" and not targets_visible:
+                to_drop.append(node)
+        if to_drop:
+            graph.remove_nodes_from(to_drop)
+
+    return graph, base_graph
+
+
+def encode_node_search_value(node_name: str, node_type: str) -> str:
+    return json.dumps({"name": node_name, "type": node_type}, separators=(",", ":"))
+
+
+def decode_node_search_value(value: str | None) -> tuple[str, str] | None:
+    if not value:
+        return None
+    try:
+        decoded = json.loads(value)
+    except (TypeError, json.JSONDecodeError):
+        return None
+    node_name = decoded.get("name")
+    node_type = decoded.get("type")
+    if not node_name or node_type not in {"sponsor", "target"}:
+        return None
+    return str(node_name), str(node_type)
+
+
+def build_node_search_options(graph: nx.DiGraph, base_graph: nx.DiGraph) -> list[dict[str, str]]:
+    options: list[dict[str, str]] = []
+    for node_type in ["sponsor", "target"]:
+        for node in sorted_nodes_for_layout(graph, base_graph, node_type):
+            meta = base_graph.nodes[node]
+            party = str(meta.get("party", "UNKNOWN"))
+            options.append(
+                {
+                    "label": f"{node} ({node_type.title()}, {party})",
+                    "value": encode_node_search_value(node, node_type),
+                }
+            )
+    return options
+
+
 def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
     edges = pd.read_csv(paths.edges_path).copy()
     nodes = pd.read_csv(paths.nodes_path).copy()
@@ -416,43 +500,14 @@ def build_figure(
     top_n_edges: int,
     selected_nodes: list[dict[str, str]] | None,
 ) -> tuple[go.Figure, str]:
-    edges: pd.DataFrame = runtime["edges"]  # type: ignore[assignment]
-    base_graph: nx.DiGraph = runtime["graph"]  # type: ignore[assignment]
-
-    ef = edges.copy()
-    ef = ef[ef["mention_count"] >= int(min_edge_mentions)]
-    if sponsor_party_filter:
-        ef = ef[ef["sponsor_party"].isin(sponsor_party_filter)]
-    if target_party_filter:
-        ef = ef[ef["target_party_inferred"].isin(target_party_filter)]
-    ef = ef.sort_values("mention_count", ascending=False)
-    ef = ef.head(int(top_n_edges))
-
-    sponsors_visible = "sponsor" in node_type_visible
-    targets_visible = "target" in node_type_visible
-
-    graph = nx.DiGraph()
-    for row in ef.itertuples(index=False):
-        graph.add_edge(
-            row.sponsor_name,
-            row.canonical_entity,
-            mention_count=int(row.mention_count),
-            ad_count=int(row.ad_count),
-            edge_attack_spend=float(row.edge_attack_spend),
-            sponsor_party=str(row.sponsor_party),
-            target_party_inferred=str(row.target_party_inferred),
-        )
-
-    if not sponsors_visible or not targets_visible:
-        to_drop: list[str] = []
-        for n in graph.nodes():
-            node_type = base_graph.nodes[n]["node_type"] if n in base_graph.nodes else "unknown"
-            if node_type == "sponsor" and not sponsors_visible:
-                to_drop.append(n)
-            if node_type == "target" and not targets_visible:
-                to_drop.append(n)
-        if to_drop:
-            graph.remove_nodes_from(to_drop)
+    graph, base_graph = build_visible_graph(
+        runtime=runtime,
+        sponsor_party_filter=sponsor_party_filter,
+        target_party_filter=target_party_filter,
+        node_type_visible=node_type_visible,
+        min_edge_mentions=min_edge_mentions,
+        top_n_edges=top_n_edges,
+    )
 
     if graph.number_of_nodes() == 0:
         fig = go.Figure()
@@ -676,6 +731,18 @@ def build_figure(
 PATHS = resolve_runtime_paths()
 RUNTIME = load_runtime_data(PATHS)
 BASE_PATH = PATHS.base_path
+DEFAULT_NODE_TYPES = ["sponsor", "target"]
+DEFAULT_MIN_EDGE_MENTIONS = 2
+DEFAULT_TOP_N_EDGES = 900
+DEFAULT_VISIBLE_GRAPH, DEFAULT_BASE_GRAPH = build_visible_graph(
+    runtime=RUNTIME,
+    sponsor_party_filter=RUNTIME["sponsor_parties"],  # type: ignore[arg-type]
+    target_party_filter=RUNTIME["target_parties"],  # type: ignore[arg-type]
+    node_type_visible=DEFAULT_NODE_TYPES,
+    min_edge_mentions=DEFAULT_MIN_EDGE_MENTIONS,
+    top_n_edges=DEFAULT_TOP_N_EDGES,
+)
+DEFAULT_NODE_SEARCH_OPTIONS = build_node_search_options(DEFAULT_VISIBLE_GRAPH, DEFAULT_BASE_GRAPH)
 
 app = dash.Dash(
     __name__,
@@ -749,6 +816,47 @@ app.layout = html.Div(
                         ),
                     ],
                     style={"width": "24%", "display": "inline-block"},
+                ),
+            ],
+            style={"marginBottom": "10px"},
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Label("Search Sponsor Party"),
+                        dcc.Dropdown(
+                            id="sponsor-party-search",
+                            options=[{"label": p, "value": p} for p in RUNTIME["sponsor_parties"]],
+                            placeholder="Type to isolate a sponsor party",
+                            clearable=True,
+                        ),
+                    ],
+                    style={"width": "20%", "display": "inline-block", "paddingRight": "1%"},
+                ),
+                html.Div(
+                    [
+                        html.Label("Search Target Party"),
+                        dcc.Dropdown(
+                            id="target-party-search",
+                            options=[{"label": p, "value": p} for p in RUNTIME["target_parties"]],
+                            placeholder="Type to isolate a target party",
+                            clearable=True,
+                        ),
+                    ],
+                    style={"width": "20%", "display": "inline-block", "paddingRight": "1%"},
+                ),
+                html.Div(
+                    [
+                        html.Label("Search Visible Node"),
+                        dcc.Dropdown(
+                            id="node-search",
+                            options=DEFAULT_NODE_SEARCH_OPTIONS,
+                            placeholder="Type a sponsor or target name",
+                            clearable=True,
+                        ),
+                    ],
+                    style={"width": "58%", "display": "inline-block"},
                 ),
             ],
             style={"marginBottom": "10px"},
@@ -837,6 +945,8 @@ app.layout = html.Div(
         dcc.Graph(id="attack-target-graph", style={"height": "80vh"}, config={"displaylogo": False}),
         html.Div(
             "Bipartite layout places sponsors on the left and targets on the right. "
+            "Party search fields isolate a single sponsor or target party. "
+            "Node search only lists nodes currently visible under the active filters and selects them like a click. "
             "Accumulate mode: each click adds that node's neighborhood to the highlighted network (click again to remove). "
             "Neighbor Highlight mode: one selected node at a time. Visual cue: sponsors are squares, targets are circles.",
             style={"color": "#555", "fontSize": "0.9rem", "marginTop": "6px"},
@@ -844,6 +954,24 @@ app.layout = html.Div(
     ],
     style={"padding": "12px 16px"},
 )
+
+
+def apply_node_selection(node_name: str, node_type: str, interaction_mode: str, selected_seeds):
+    selected_seeds = list(selected_seeds or [])
+    if interaction_mode == "accumulate":
+        exists = any(seed.get("name") == node_name and seed.get("type") == node_type for seed in selected_seeds)
+        if exists:
+            return [
+                seed
+                for seed in selected_seeds
+                if not (seed.get("name") == node_name and seed.get("type") == node_type)
+            ]
+        selected_seeds.append({"name": node_name, "type": node_type})
+        return selected_seeds
+
+    if selected_seeds and selected_seeds[0].get("name") == node_name and selected_seeds[0].get("type") == node_type:
+        return []
+    return [{"name": node_name, "type": node_type}]
 
 
 @app.callback(
@@ -860,23 +988,73 @@ def update_selected_seeds(click_data, interaction_mode, selected_seeds):
         return selected_seeds or []
 
     node_name, node_type = customdata[0], customdata[1]
-    selected_seeds = list(selected_seeds or [])
+    return apply_node_selection(node_name, node_type, interaction_mode, selected_seeds)
 
-    if interaction_mode == "accumulate":
-        exists = any(seed.get("name") == node_name and seed.get("type") == node_type for seed in selected_seeds)
-        if exists:
-            return [
-                seed
-                for seed in selected_seeds
-                if not (seed.get("name") == node_name and seed.get("type") == node_type)
-            ]
-        selected_seeds.append({"name": node_name, "type": node_type})
-        return selected_seeds
 
-    # Single-select mode (Neighbor Highlight)
-    if selected_seeds and selected_seeds[0].get("name") == node_name and selected_seeds[0].get("type") == node_type:
-        return []
-    return [{"name": node_name, "type": node_type}]
+@app.callback(
+    Output("sponsor-party-filter", "value"),
+    Output("sponsor-party-search", "value"),
+    Input("sponsor-party-search", "value"),
+    prevent_initial_call=True,
+)
+def quick_select_sponsor_party(party_value):
+    if not party_value:
+        raise PreventUpdate
+    return [party_value], None
+
+
+@app.callback(
+    Output("target-party-filter", "value"),
+    Output("target-party-search", "value"),
+    Input("target-party-search", "value"),
+    prevent_initial_call=True,
+)
+def quick_select_target_party(party_value):
+    if not party_value:
+        raise PreventUpdate
+    return [party_value], None
+
+
+@app.callback(
+    Output("node-search", "options"),
+    Input("sponsor-party-filter", "value"),
+    Input("target-party-filter", "value"),
+    Input("node-type-visible", "value"),
+    Input("min-edge-mentions", "value"),
+    Input("top-n-edges", "value"),
+)
+def update_node_search_options(
+    sponsor_party_filter,
+    target_party_filter,
+    node_type_visible,
+    min_edge_mentions,
+    top_n_edges,
+):
+    graph, base_graph = build_visible_graph(
+        runtime=RUNTIME,
+        sponsor_party_filter=sponsor_party_filter or [],
+        target_party_filter=target_party_filter or [],
+        node_type_visible=node_type_visible or [],
+        min_edge_mentions=int(min_edge_mentions or DEFAULT_MIN_EDGE_MENTIONS),
+        top_n_edges=int(top_n_edges or DEFAULT_TOP_N_EDGES),
+    )
+    return build_node_search_options(graph, base_graph)
+
+
+@app.callback(
+    Output("selected-seeds", "data", allow_duplicate=True),
+    Output("node-search", "value"),
+    Input("node-search", "value"),
+    State("interaction-mode", "value"),
+    State("selected-seeds", "data"),
+    prevent_initial_call=True,
+)
+def select_node_from_search(node_search_value, interaction_mode, selected_seeds):
+    decoded = decode_node_search_value(node_search_value)
+    if decoded is None:
+        raise PreventUpdate
+    node_name, node_type = decoded
+    return apply_node_selection(node_name, node_type, interaction_mode, selected_seeds), None
 
 
 @app.callback(
