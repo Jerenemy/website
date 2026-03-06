@@ -50,6 +50,9 @@ LABEL_COLORS = {
 
 CANONICAL_ENTITY_COL = "canonical_entity"
 IS_TARGET_COL = "is_target"
+TARGET_PARTY_MODE_MONEY = "money"
+TARGET_PARTY_MODE_MENTIONS = "mentions"
+DEFAULT_TARGET_PARTY_MODE = TARGET_PARTY_MODE_MONEY
 
 
 def mode(series: pd.Series, default: str = "UNKNOWN") -> str:
@@ -71,6 +74,18 @@ def opposing_party(party: str) -> str:
     if party in {"IND", "OTHER", "UNKNOWN"}:
         return party
     return "UNKNOWN"
+
+
+def target_party_column(target_party_mode: str) -> str:
+    if target_party_mode == TARGET_PARTY_MODE_MENTIONS:
+        return "target_party_inferred_mentions"
+    return "target_party_inferred_money"
+
+
+def resolve_node_party(meta: dict, target_party_mode: str) -> str:
+    if str(meta.get("node_type", "")) == "target":
+        return str(meta.get(target_party_column(target_party_mode), meta.get("party", "UNKNOWN")))
+    return str(meta.get("party", "UNKNOWN"))
 
 
 def resolve_first_available_column(
@@ -180,16 +195,16 @@ def normalize_runtime_frames(
     return edges, nodes, mentions, harmonized
 
 
-def infer_target_party(edges: pd.DataFrame) -> pd.Series:
+def infer_target_party(frame: pd.DataFrame, weight_col: str) -> pd.Series:
     grouped = (
-        edges.groupby([CANONICAL_ENTITY_COL, "sponsor_party"], as_index=False)["mention_count"]
+        frame.groupby([CANONICAL_ENTITY_COL, "sponsor_party"], as_index=False)[weight_col]
         .sum()
-        .sort_values([CANONICAL_ENTITY_COL, "mention_count"], ascending=[True, False])
+        .sort_values([CANONICAL_ENTITY_COL, weight_col], ascending=[True, False])
     )
     out: dict[str, str] = {}
     for target, g in grouped.groupby(CANONICAL_ENTITY_COL):
-        top_count = g["mention_count"].max()
-        winners = g[g["mention_count"] == top_count]["sponsor_party"].tolist()
+        top_weight = g[weight_col].max()
+        winners = g[g[weight_col] == top_weight]["sponsor_party"].tolist()
         out[target] = opposing_party(winners[0]) if len(winners) == 1 else "UNKNOWN"
     return pd.Series(out, name="target_party_inferred")
 
@@ -235,21 +250,31 @@ def normalize_positions(pos: dict[str, tuple[float, float] | list[float]]) -> di
     }
 
 
-def sorted_nodes_for_layout(graph: nx.DiGraph, base_graph: nx.DiGraph, node_type: str) -> list[str]:
+def sorted_nodes_for_layout(
+    graph: nx.DiGraph,
+    base_graph: nx.DiGraph,
+    node_type: str,
+    target_party_mode: str = DEFAULT_TARGET_PARTY_MODE,
+) -> list[str]:
     nodes = [node for node in graph.nodes() if base_graph.nodes[node]["node_type"] == node_type]
     if node_type == "sponsor":
         key_fn = lambda node: (-graph.out_degree(node), str(base_graph.nodes[node].get("party", "UNKNOWN")), node.lower())
     else:
-        key_fn = lambda node: (-graph.in_degree(node), str(base_graph.nodes[node].get("party", "UNKNOWN")), node.lower())
+        key_fn = lambda node: (
+            -graph.in_degree(node),
+            resolve_node_party(base_graph.nodes[node], target_party_mode),
+            node.lower(),
+        )
     return sorted(nodes, key=key_fn)
 
 
 def compute_bipartite_positions(
     graph: nx.DiGraph,
     base_graph: nx.DiGraph,
+    target_party_mode: str,
 ) -> dict[str, tuple[float, float]]:
-    sponsors = sorted_nodes_for_layout(graph, base_graph, "sponsor")
-    targets = sorted_nodes_for_layout(graph, base_graph, "target")
+    sponsors = sorted_nodes_for_layout(graph, base_graph, "sponsor", target_party_mode)
+    targets = sorted_nodes_for_layout(graph, base_graph, "target", target_party_mode)
     positions: dict[str, tuple[float, float]] = {}
 
     if sponsors and targets:
@@ -270,15 +295,16 @@ def compute_layout_positions(
     graph: nx.DiGraph,
     base_graph: nx.DiGraph,
     layout_mode: str,
+    target_party_mode: str,
 ) -> dict[str, tuple[float, float]]:
     if layout_mode == "bipartite":
-        return compute_bipartite_positions(graph, base_graph)
+        return compute_bipartite_positions(graph, base_graph, target_party_mode)
 
     layout_graph = nx.Graph(graph)
     if layout_mode == "radial":
         shells: list[list[str]] = []
-        sponsors = sorted_nodes_for_layout(graph, base_graph, "sponsor")
-        targets = sorted_nodes_for_layout(graph, base_graph, "target")
+        sponsors = sorted_nodes_for_layout(graph, base_graph, "sponsor", target_party_mode)
+        targets = sorted_nodes_for_layout(graph, base_graph, "target", target_party_mode)
         if sponsors:
             shells.append(sponsors)
         if targets:
@@ -298,19 +324,21 @@ def build_visible_graph(
     runtime: dict[str, object],
     sponsor_party_filter: list[str],
     target_party_filter: list[str],
+    target_party_mode: str,
     node_type_visible: list[str],
     min_edge_mentions: int,
     top_n_edges: int,
 ) -> tuple[nx.DiGraph, nx.DiGraph]:
     edges: pd.DataFrame = runtime["edges"]  # type: ignore[assignment]
     base_graph: nx.DiGraph = runtime["graph"]  # type: ignore[assignment]
+    target_party_col = target_party_column(target_party_mode)
 
     ef = edges.copy()
     ef = ef[ef["mention_count"] >= int(min_edge_mentions)]
     if sponsor_party_filter:
         ef = ef[ef["sponsor_party"].isin(sponsor_party_filter)]
     if target_party_filter:
-        ef = ef[ef["target_party_inferred"].isin(target_party_filter)]
+        ef = ef[ef[target_party_col].isin(target_party_filter)]
     ef = ef.sort_values("mention_count", ascending=False)
     ef = ef.head(int(top_n_edges))
 
@@ -326,7 +354,7 @@ def build_visible_graph(
             ad_count=int(row.ad_count),
             edge_attack_spend=float(row.edge_attack_spend),
             sponsor_party=str(row.sponsor_party),
-            target_party_inferred=str(row.target_party_inferred),
+            target_party_inferred=str(getattr(row, target_party_col)),
         )
 
     if not sponsors_visible or not targets_visible:
@@ -361,12 +389,16 @@ def decode_node_search_value(value: str | None) -> tuple[str, str] | None:
     return str(node_name), str(node_type)
 
 
-def build_node_search_options(graph: nx.DiGraph, base_graph: nx.DiGraph) -> list[dict[str, str]]:
+def build_node_search_options(
+    graph: nx.DiGraph,
+    base_graph: nx.DiGraph,
+    target_party_mode: str,
+) -> list[dict[str, str]]:
     options: list[dict[str, str]] = []
     for node_type in ["sponsor", "target"]:
         for node in sorted_nodes_for_layout(graph, base_graph, node_type):
             meta = base_graph.nodes[node]
-            party = str(meta.get("party", "UNKNOWN"))
+            party = resolve_node_party(meta, target_party_mode)
             options.append(
                 {
                     "label": f"{node} ({node_type.title()}, {party})",
@@ -394,9 +426,7 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
     sponsor_party["sponsor_party"] = sponsor_party["sponsor_party"].replace("", "UNKNOWN")
     edges = edges.merge(sponsor_party, on="sponsor_name", how="left")
     edges["sponsor_party"] = edges["sponsor_party"].fillna("UNKNOWN")
-
-    target_party = infer_target_party(edges)
-    edges["target_party_inferred"] = edges[CANONICAL_ENTITY_COL].map(target_party).fillna("UNKNOWN")
+    target_party_mentions = infer_target_party(edges, weight_col="mention_count")
 
     target_mentions = mentions[mentions[IS_TARGET_COL]].copy()
     target_mentions = target_mentions[
@@ -407,6 +437,16 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
     spend_ads["spend_proxy"] = pd.to_numeric(spend_ads["spend_proxy"], errors="coerce").fillna(0.0)
     target_mentions = target_mentions.merge(spend_ads, on=["platform", "ad_id"], how="left")
     target_mentions["spend_proxy"] = target_mentions["spend_proxy"].fillna(0.0)
+    target_mentions = target_mentions.merge(sponsor_party, on="sponsor_name", how="left")
+    target_mentions["sponsor_party"] = target_mentions["sponsor_party"].fillna("UNKNOWN")
+
+    target_spend_by_edge = target_mentions.drop_duplicates(
+        subset=["sponsor_name", CANONICAL_ENTITY_COL, "platform", "ad_id"]
+    )
+    target_party_money = infer_target_party(target_spend_by_edge, weight_col="spend_proxy")
+    edges["target_party_inferred_mentions"] = edges[CANONICAL_ENTITY_COL].map(target_party_mentions).fillna("UNKNOWN")
+    edges["target_party_inferred_money"] = edges[CANONICAL_ENTITY_COL].map(target_party_money).fillna("UNKNOWN")
+    edges["target_party_inferred"] = edges[target_party_column(DEFAULT_TARGET_PARTY_MODE)]
 
     sponsor_attack_spend = (
         target_mentions.drop_duplicates(subset=["sponsor_name", "platform", "ad_id"])
@@ -421,7 +461,7 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
     )
 
     edge_attack_spend = (
-        target_mentions.drop_duplicates(subset=["sponsor_name", CANONICAL_ENTITY_COL, "platform", "ad_id"])
+        target_spend_by_edge
         .groupby(["sponsor_name", CANONICAL_ENTITY_COL])["spend_proxy"]
         .sum()
         .rename("edge_attack_spend")
@@ -452,6 +492,8 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
             party_mode=str(row.party_mode),
             tone_mode=str(row.tone_mode),
             sponsor_party=str(row.sponsor_party),
+            target_party_inferred_mentions=str(row.target_party_inferred_mentions),
+            target_party_inferred_money=str(row.target_party_inferred_money),
             target_party_inferred=str(row.target_party_inferred),
             edge_attack_spend=float(row.edge_attack_spend),
         )
@@ -461,7 +503,9 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
             meta = target_node_meta.loc[node]
             full_graph.nodes[node]["node_type"] = "target"
             full_graph.nodes[node]["label_mode"] = str(meta["target_label"])
-            full_graph.nodes[node]["party"] = str(target_party.get(node, "UNKNOWN"))
+            full_graph.nodes[node]["target_party_inferred_mentions"] = str(target_party_mentions.get(node, "UNKNOWN"))
+            full_graph.nodes[node]["target_party_inferred_money"] = str(target_party_money.get(node, "UNKNOWN"))
+            full_graph.nodes[node]["party"] = str(target_party_money.get(node, "UNKNOWN"))
             full_graph.nodes[node]["mention_count"] = int(meta["target_mentions"])
             full_graph.nodes[node]["ad_count"] = int(meta["target_ads"])
             full_graph.nodes[node]["sponsor_count"] = int(meta["target_sponsors"])
@@ -484,6 +528,10 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
         "graph": full_graph,
         "sponsor_parties": sorted(edges["sponsor_party"].dropna().unique().tolist()),
         "target_parties": sorted(edges["target_party_inferred"].dropna().unique().tolist()),
+        "target_parties_by_mode": {
+            TARGET_PARTY_MODE_MENTIONS: sorted(edges["target_party_inferred_mentions"].dropna().unique().tolist()),
+            TARGET_PARTY_MODE_MONEY: sorted(edges["target_party_inferred_money"].dropna().unique().tolist()),
+        },
     }
 
 
@@ -491,6 +539,7 @@ def build_figure(
     runtime: dict[str, object],
     sponsor_party_filter: list[str],
     target_party_filter: list[str],
+    target_party_mode: str,
     node_type_visible: list[str],
     layout_mode: str,
     color_mode: str,
@@ -504,6 +553,7 @@ def build_figure(
         runtime=runtime,
         sponsor_party_filter=sponsor_party_filter,
         target_party_filter=target_party_filter,
+        target_party_mode=target_party_mode,
         node_type_visible=node_type_visible,
         min_edge_mentions=min_edge_mentions,
         top_n_edges=top_n_edges,
@@ -519,7 +569,7 @@ def build_figure(
         )
         return fig, "No visible nodes. Relax filters."
 
-    pos = compute_layout_positions(graph, base_graph, layout_mode)
+    pos = compute_layout_positions(graph, base_graph, layout_mode, target_party_mode)
 
     highlight_nodes: set[str] = set(graph.nodes())
     highlight_edges: set[tuple[str, str]] = set(graph.edges())
@@ -638,7 +688,7 @@ def build_figure(
         opacity = 0.98 if (interaction_mode not in {"highlight", "accumulate"} or not has_active_selection or is_hi_node) else 0.14
 
         if color_mode == "party":
-            party = str(meta.get("party", "UNKNOWN"))
+            party = resolve_node_party(meta, target_party_mode)
             if ntype == "sponsor":
                 color = PARTY_COLORS.get(party, PARTY_COLORS["UNKNOWN"])
             else:
@@ -655,7 +705,7 @@ def build_figure(
             sponsor_cd.append([n, "sponsor"])
             sponsor_text.append(
                 f"sponsor={n}<br>"
-                f"party={meta.get('party','UNKNOWN')}<br>"
+                f"party={resolve_node_party(meta, target_party_mode)}<br>"
                 f"outgoing_edges={int(sponsor_out_degree.get(n, 0)):,}<br>"
                 f"attack_spend_total=${float(meta.get('sponsor_attack_spend', 0.0)):,.2f}"
             )
@@ -669,7 +719,7 @@ def build_figure(
             target_text.append(
                 f"target={n}<br>"
                 f"label={meta.get('label_mode','UNKNOWN')}<br>"
-                f"inferred_party={meta.get('party','UNKNOWN')}<br>"
+                f"inferred_party ({target_party_mode})={resolve_node_party(meta, target_party_mode)}<br>"
                 f"incoming_edges={int(target_in_degree.get(n, 0)):,}<br>"
                 f"received_attack_spend=${float(meta.get('target_received_spend', 0.0)):,.2f}"
             )
@@ -717,7 +767,7 @@ def build_figure(
 
     status = (
         f"Visible: {graph.number_of_nodes():,} nodes, {graph.number_of_edges():,} edges | "
-        f"Mode: layout={layout_mode}, color={color_mode}, size={size_mode}, interaction={interaction_mode}"
+        f"Mode: target_party={target_party_mode}, layout={layout_mode}, color={color_mode}, size={size_mode}, interaction={interaction_mode}"
     )
     if interaction_mode in {"highlight", "accumulate"} and has_active_selection:
         if interaction_mode == "accumulate":
@@ -737,12 +787,17 @@ DEFAULT_TOP_N_EDGES = 900
 DEFAULT_VISIBLE_GRAPH, DEFAULT_BASE_GRAPH = build_visible_graph(
     runtime=RUNTIME,
     sponsor_party_filter=RUNTIME["sponsor_parties"],  # type: ignore[arg-type]
-    target_party_filter=RUNTIME["target_parties"],  # type: ignore[arg-type]
+    target_party_filter=RUNTIME["target_parties_by_mode"][DEFAULT_TARGET_PARTY_MODE],  # type: ignore[index]
+    target_party_mode=DEFAULT_TARGET_PARTY_MODE,
     node_type_visible=DEFAULT_NODE_TYPES,
     min_edge_mentions=DEFAULT_MIN_EDGE_MENTIONS,
     top_n_edges=DEFAULT_TOP_N_EDGES,
 )
-DEFAULT_NODE_SEARCH_OPTIONS = build_node_search_options(DEFAULT_VISIBLE_GRAPH, DEFAULT_BASE_GRAPH)
+DEFAULT_NODE_SEARCH_OPTIONS = build_node_search_options(
+    DEFAULT_VISIBLE_GRAPH,
+    DEFAULT_BASE_GRAPH,
+    DEFAULT_TARGET_PARTY_MODE,
+)
 
 app = dash.Dash(
     __name__,
@@ -777,11 +832,29 @@ app.layout = html.Div(
                 ),
                 html.Div(
                     [
+                        html.Label("Target Party Inference"),
+                        dcc.RadioItems(
+                            id="target-party-mode",
+                            options=[
+                                {"label": " Money", "value": TARGET_PARTY_MODE_MONEY},
+                                {"label": " Mentions", "value": TARGET_PARTY_MODE_MENTIONS},
+                            ],
+                            value=DEFAULT_TARGET_PARTY_MODE,
+                            inline=True,
+                        ),
+                    ],
+                    style={"width": "24%", "display": "inline-block", "paddingRight": "1%"},
+                ),
+                html.Div(
+                    [
                         html.Label("Target Party Filter (Inferred)"),
                         dcc.Dropdown(
                             id="target-party-filter",
-                            options=[{"label": p, "value": p} for p in RUNTIME["target_parties"]],
-                            value=RUNTIME["target_parties"],
+                            options=[
+                                {"label": p, "value": p}
+                                for p in RUNTIME["target_parties_by_mode"][DEFAULT_TARGET_PARTY_MODE]
+                            ],
+                            value=RUNTIME["target_parties_by_mode"][DEFAULT_TARGET_PARTY_MODE],
                             multi=True,
                         ),
                     ],
@@ -800,7 +873,7 @@ app.layout = html.Div(
                             inline=True,
                         ),
                     ],
-                    style={"width": "24%", "display": "inline-block", "paddingRight": "1%"},
+                    style={"width": "16%", "display": "inline-block", "paddingRight": "1%"},
                 ),
                 html.Div(
                     [
@@ -815,7 +888,7 @@ app.layout = html.Div(
                             tooltip={"placement": "bottom", "always_visible": False},
                         ),
                     ],
-                    style={"width": "24%", "display": "inline-block"},
+                    style={"width": "34%", "display": "inline-block"},
                 ),
             ],
             style={"marginBottom": "10px"},
@@ -839,7 +912,10 @@ app.layout = html.Div(
                         html.Label("Search Target Party"),
                         dcc.Dropdown(
                             id="target-party-search",
-                            options=[{"label": p, "value": p} for p in RUNTIME["target_parties"]],
+                            options=[
+                                {"label": p, "value": p}
+                                for p in RUNTIME["target_parties_by_mode"][DEFAULT_TARGET_PARTY_MODE]
+                            ],
                             placeholder="Type to isolate a target party",
                             clearable=True,
                         ),
@@ -945,6 +1021,7 @@ app.layout = html.Div(
         dcc.Graph(id="attack-target-graph", style={"height": "80vh"}, config={"displaylogo": False}),
         html.Div(
             "Bipartite layout places sponsors on the left and targets on the right. "
+            "Target party inference can be based on money or mentions; the default is money. "
             "Party search fields isolate a single sponsor or target party. "
             "Node search only lists nodes currently visible under the active filters and selects them like a click. "
             "Accumulate mode: each click adds that node's neighborhood to the highlighted network (click again to remove). "
@@ -1004,8 +1081,8 @@ def quick_select_sponsor_party(party_value):
 
 
 @app.callback(
-    Output("target-party-filter", "value"),
-    Output("target-party-search", "value"),
+    Output("target-party-filter", "value", allow_duplicate=True),
+    Output("target-party-search", "value", allow_duplicate=True),
     Input("target-party-search", "value"),
     prevent_initial_call=True,
 )
@@ -1016,9 +1093,24 @@ def quick_select_target_party(party_value):
 
 
 @app.callback(
+    Output("target-party-filter", "options"),
+    Output("target-party-filter", "value"),
+    Output("target-party-search", "options"),
+    Output("target-party-search", "value"),
+    Input("target-party-mode", "value"),
+)
+def sync_target_party_controls(target_party_mode):
+    mode = target_party_mode or DEFAULT_TARGET_PARTY_MODE
+    parties = RUNTIME["target_parties_by_mode"].get(mode, RUNTIME["target_parties_by_mode"][DEFAULT_TARGET_PARTY_MODE])  # type: ignore[index]
+    options = [{"label": party, "value": party} for party in parties]
+    return options, parties, options, None
+
+
+@app.callback(
     Output("node-search", "options"),
     Input("sponsor-party-filter", "value"),
     Input("target-party-filter", "value"),
+    Input("target-party-mode", "value"),
     Input("node-type-visible", "value"),
     Input("min-edge-mentions", "value"),
     Input("top-n-edges", "value"),
@@ -1026,6 +1118,7 @@ def quick_select_target_party(party_value):
 def update_node_search_options(
     sponsor_party_filter,
     target_party_filter,
+    target_party_mode,
     node_type_visible,
     min_edge_mentions,
     top_n_edges,
@@ -1034,11 +1127,12 @@ def update_node_search_options(
         runtime=RUNTIME,
         sponsor_party_filter=sponsor_party_filter or [],
         target_party_filter=target_party_filter or [],
+        target_party_mode=target_party_mode or DEFAULT_TARGET_PARTY_MODE,
         node_type_visible=node_type_visible or [],
         min_edge_mentions=int(min_edge_mentions or DEFAULT_MIN_EDGE_MENTIONS),
         top_n_edges=int(top_n_edges or DEFAULT_TOP_N_EDGES),
     )
-    return build_node_search_options(graph, base_graph)
+    return build_node_search_options(graph, base_graph, target_party_mode or DEFAULT_TARGET_PARTY_MODE)
 
 
 @app.callback(
@@ -1082,6 +1176,7 @@ def clear_selection(_n_clicks):
     Output("status-text", "children"),
     Input("sponsor-party-filter", "value"),
     Input("target-party-filter", "value"),
+    Input("target-party-mode", "value"),
     Input("node-type-visible", "value"),
     Input("layout-mode", "value"),
     Input("color-mode", "value"),
@@ -1094,6 +1189,7 @@ def clear_selection(_n_clicks):
 def update_graph(
     sponsor_party_filter,
     target_party_filter,
+    target_party_mode,
     node_type_visible,
     layout_mode,
     color_mode,
@@ -1107,6 +1203,7 @@ def update_graph(
         runtime=RUNTIME,
         sponsor_party_filter=sponsor_party_filter or [],
         target_party_filter=target_party_filter or [],
+        target_party_mode=target_party_mode or DEFAULT_TARGET_PARTY_MODE,
         node_type_visible=node_type_visible or [],
         layout_mode=layout_mode or "spring",
         color_mode=color_mode or "party",
