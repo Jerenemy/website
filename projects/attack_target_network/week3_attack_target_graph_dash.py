@@ -521,15 +521,16 @@ def build_figure(
             edge_x_hi.extend([x0, x1, None])
             edge_y_hi.extend([y0, y1, None])
 
-        # Hover anchor at edge midpoint so edge details are discoverable.
-        edge_hover_x.append((x0 + x1) / 2.0)
-        edge_hover_y.append((y0 + y1) / 2.0)
-        edge_hover_text.append(
-            f"{u} -> {v}<br>"
-            f"attacks (mention_count)={int(edge_meta.get('mention_count', 0)):,}<br>"
-            f"ads={int(edge_meta.get('ad_count', 0)):,}<br>"
-            f"attack_spend=${float(edge_meta.get('edge_attack_spend', 0.0)):,.2f}"
-        )
+        if not has_active_selection or is_hi:
+            # Hover anchor at edge midpoint so edge details are discoverable.
+            edge_hover_x.append((x0 + x1) / 2.0)
+            edge_hover_y.append((y0 + y1) / 2.0)
+            edge_hover_text.append(
+                f"{u} -> {v}<br>"
+                f"attacks (mention_count)={int(edge_meta.get('mention_count', 0)):,}<br>"
+                f"ads={int(edge_meta.get('ad_count', 0)):,}<br>"
+                f"attack_spend=${float(edge_meta.get('edge_attack_spend', 0.0)):,.2f}"
+            )
 
     edge_dim_trace = go.Scatter(
         x=edge_x_dim,
@@ -754,7 +755,7 @@ app.layout = html.Div(
                                 {"label": " Force Directed", "value": "spring"},
                                 {"label": " Radial", "value": "radial"},
                             ],
-                            value="bipartite",
+                            value="spring",
                             inline=True,
                         ),
                     ],
@@ -919,7 +920,7 @@ def update_graph(
         sponsor_party_filter=sponsor_party_filter or [],
         target_party_filter=target_party_filter or [],
         node_type_visible=node_type_visible or [],
-        layout_mode=layout_mode or "bipartite",
+        layout_mode=layout_mode or "spring",
         color_mode=color_mode or "party",
         size_mode=size_mode or "topology",
         interaction_mode=interaction_mode or "highlight",
