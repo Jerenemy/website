@@ -103,16 +103,16 @@ def resolve_runtime_paths() -> RuntimePaths:
 
     edges_path = resolve_first_existing_path(
         build_input_candidates(
-            outputs_rel="outputs/week3/attack_target_edges_v1_1.csv",
-            data_inputs_rel="data_inputs/attack_target_edges_v1_1.csv",
+            outputs_rel="outputs/week3/attack_target_edges_v1_2.csv",
+            data_inputs_rel="data_inputs/attack_target_edges_v1_2.csv",
             analysis_root=analysis_root,
             project_dir=project_dir,
         )
     )
     nodes_path = resolve_first_existing_path(
         build_input_candidates(
-            outputs_rel="outputs/week3/attack_target_nodes_v1_1.csv",
-            data_inputs_rel="data_inputs/attack_target_nodes_v1_1.csv",
+            outputs_rel="outputs/week3/attack_target_nodes_v1_2.csv",
+            data_inputs_rel="data_inputs/attack_target_nodes_v1_2.csv",
             analysis_root=analysis_root,
             project_dir=project_dir,
         )
