@@ -396,7 +396,7 @@ def build_node_search_options(
 ) -> list[dict[str, str]]:
     options: list[dict[str, str]] = []
     for node_type in ["sponsor", "target"]:
-        for node in sorted_nodes_for_layout(graph, base_graph, node_type):
+        for node in sorted_nodes_for_layout(graph, base_graph, node_type, target_party_mode):
             meta = base_graph.nodes[node]
             party = resolve_node_party(meta, target_party_mode)
             options.append(
@@ -406,6 +406,193 @@ def build_node_search_options(
                 }
             )
     return options
+
+
+def filter_visible_ad_records(
+    runtime: dict[str, object],
+    sponsor_party_filter: list[str],
+    target_party_filter: list[str],
+    target_party_mode: str,
+    node_type_visible: list[str],
+    min_edge_mentions: int,
+    top_n_edges: int,
+) -> pd.DataFrame:
+    graph, _ = build_visible_graph(
+        runtime=runtime,
+        sponsor_party_filter=sponsor_party_filter,
+        target_party_filter=target_party_filter,
+        target_party_mode=target_party_mode,
+        node_type_visible=node_type_visible,
+        min_edge_mentions=min_edge_mentions,
+        top_n_edges=top_n_edges,
+    )
+    if graph.number_of_edges() == 0:
+        ad_records: pd.DataFrame = runtime["ad_records"]  # type: ignore[assignment]
+        return ad_records.iloc[0:0].copy()
+
+    visible_edges = pd.DataFrame(
+        [(u, v) for u, v in graph.edges()],
+        columns=["sponsor_name", CANONICAL_ENTITY_COL],
+    ).drop_duplicates()
+    ad_records = runtime["ad_records"]  # type: ignore[assignment]
+    return ad_records.merge(visible_edges, on=["sponsor_name", CANONICAL_ENTITY_COL], how="inner")
+
+
+def build_ad_table_rows(
+    rows: pd.DataFrame,
+    counterpart_label: str,
+) -> list:
+    grouped = (
+        rows.groupby(["platform", "ad_id"], as_index=False)
+        .agg(
+            spend_proxy=("spend_proxy", "max"),
+            counterpart=("counterpart", lambda s: ", ".join(sorted({str(v) for v in s if str(v).strip()}))),
+        )
+        .sort_values(["spend_proxy", "platform", "ad_id"], ascending=[False, True, True])
+    )
+
+    max_rows = 200
+    rendered_rows = grouped.head(max_rows)
+    table_rows = [
+        html.Tr(
+            [
+                html.Td(str(row.platform)),
+                html.Td(str(row.ad_id)),
+                html.Td(f"${float(row.spend_proxy):,.2f}"),
+                html.Td(str(row.counterpart)),
+            ]
+        )
+        for row in rendered_rows.itertuples(index=False)
+    ]
+    if len(grouped) > max_rows:
+        table_rows.append(
+            html.Tr(
+                [
+                    html.Td(
+                        f"Showing first {max_rows:,} of {len(grouped):,} visible ads",
+                        colSpan=4,
+                        style={"fontStyle": "italic", "color": "#555"},
+                    )
+                ]
+            )
+        )
+    return [
+        html.Table(
+            [
+                html.Thead(
+                    html.Tr(
+                        [
+                            html.Th("Platform"),
+                            html.Th("Ad ID"),
+                            html.Th("Spend"),
+                            html.Th(counterpart_label),
+                        ]
+                    )
+                ),
+                html.Tbody(table_rows),
+            ],
+            style={"width": "100%", "borderCollapse": "collapse"},
+        )
+    ]
+
+
+def build_selected_ad_details(
+    runtime: dict[str, object],
+    sponsor_party_filter: list[str],
+    target_party_filter: list[str],
+    target_party_mode: str,
+    node_type_visible: list[str],
+    min_edge_mentions: int,
+    top_n_edges: int,
+    selected_nodes: list[dict[str, str]] | None,
+):
+    selected_nodes = list(selected_nodes or [])
+    if not selected_nodes:
+        return html.Div(
+            "Select a sponsor or target to inspect visible ad IDs.",
+            style={"color": "#666"},
+        )
+
+    visible_ad_records = filter_visible_ad_records(
+        runtime=runtime,
+        sponsor_party_filter=sponsor_party_filter,
+        target_party_filter=target_party_filter,
+        target_party_mode=target_party_mode,
+        node_type_visible=node_type_visible,
+        min_edge_mentions=min_edge_mentions,
+        top_n_edges=top_n_edges,
+    )
+    if visible_ad_records.empty:
+        return html.Div(
+            "No visible ad IDs match the current graph filters.",
+            style={"color": "#666"},
+        )
+
+    panels: list = []
+    for seed in selected_nodes:
+        node_name = str(seed.get("name", "")).strip()
+        node_type = str(seed.get("type", "")).strip()
+        if not node_name or node_type not in {"sponsor", "target"}:
+            continue
+
+        if node_type == "sponsor":
+            rows = visible_ad_records.loc[visible_ad_records["sponsor_name"] == node_name].copy()
+            counterpart_label = "Targets"
+            rows["counterpart"] = rows[CANONICAL_ENTITY_COL]
+        else:
+            rows = visible_ad_records.loc[visible_ad_records[CANONICAL_ENTITY_COL] == node_name].copy()
+            counterpart_label = "Sponsors"
+            rows["counterpart"] = rows["sponsor_name"]
+
+        if rows.empty:
+            panels.append(
+                html.Details(
+                    [
+                        html.Summary(f"{node_name} ({node_type})"),
+                        html.Div(
+                            "No visible ad IDs for this selection under the current filters.",
+                            style={"paddingTop": "8px", "color": "#666"},
+                        ),
+                    ]
+                )
+            )
+            continue
+
+        unique_ad_count = int(rows[["platform", "ad_id"]].drop_duplicates().shape[0])
+        panels.append(
+            html.Details(
+                [
+                    html.Summary(f"{node_name} ({node_type}) - {unique_ad_count:,} visible ad IDs"),
+                    html.Div(
+                        [
+                            html.Div(
+                                "Ad IDs below reflect the currently visible graph only.",
+                                style={"padding": "8px 0", "color": "#555", "fontSize": "0.92rem"},
+                            ),
+                            html.Div(
+                                build_ad_table_rows(rows, counterpart_label),
+                                style={
+                                    "maxHeight": "320px",
+                                    "overflowY": "auto",
+                                    "border": "1px solid #ddd",
+                                    "borderRadius": "6px",
+                                    "padding": "8px",
+                                    "backgroundColor": "#fff",
+                                },
+                            ),
+                        ],
+                        style={"paddingTop": "8px"},
+                    ),
+                ]
+            )
+        )
+
+    if not panels:
+        return html.Div(
+            "Select a sponsor or target to inspect visible ad IDs.",
+            style={"color": "#666"},
+        )
+    return html.Div(panels, style={"display": "grid", "gap": "10px"})
 
 
 def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
@@ -526,6 +713,7 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
     return {
         "edges": edges,
         "graph": full_graph,
+        "ad_records": target_spend_by_edge.copy(),
         "sponsor_parties": sorted(edges["sponsor_party"].dropna().unique().tolist()),
         "target_parties": sorted(edges["target_party_inferred"].dropna().unique().tolist()),
         "target_parties_by_mode": {
@@ -1020,6 +1208,13 @@ app.layout = html.Div(
         html.Div(id="status-text", style={"marginBottom": "8px", "fontWeight": "600"}),
         dcc.Graph(id="attack-target-graph", style={"height": "80vh"}, config={"displaylogo": False}),
         html.Div(
+            [
+                html.H4("Selected Ad IDs", style={"margin": "12px 0 8px 0"}),
+                html.Div(id="selected-ad-ids-panel"),
+            ],
+            style={"marginTop": "8px"},
+        ),
+        html.Div(
             "Bipartite layout places sponsors on the left and targets on the right. "
             "Target party inference can be based on money or mentions; the default is money. "
             "Party search fields isolate a single sponsor or target party. "
@@ -1169,6 +1364,37 @@ def reset_click_data_after_selection(_selected_seeds):
 )
 def clear_selection(_n_clicks):
     return [], None
+
+
+@app.callback(
+    Output("selected-ad-ids-panel", "children"),
+    Input("sponsor-party-filter", "value"),
+    Input("target-party-filter", "value"),
+    Input("target-party-mode", "value"),
+    Input("node-type-visible", "value"),
+    Input("min-edge-mentions", "value"),
+    Input("top-n-edges", "value"),
+    Input("selected-seeds", "data"),
+)
+def update_selected_ad_ids_panel(
+    sponsor_party_filter,
+    target_party_filter,
+    target_party_mode,
+    node_type_visible,
+    min_edge_mentions,
+    top_n_edges,
+    selected_seeds,
+):
+    return build_selected_ad_details(
+        runtime=RUNTIME,
+        sponsor_party_filter=sponsor_party_filter or [],
+        target_party_filter=target_party_filter or [],
+        target_party_mode=target_party_mode or DEFAULT_TARGET_PARTY_MODE,
+        node_type_visible=node_type_visible or [],
+        min_edge_mentions=int(min_edge_mentions or DEFAULT_MIN_EDGE_MENTIONS),
+        top_n_edges=int(top_n_edges or DEFAULT_TOP_N_EDGES),
+        selected_nodes=selected_seeds or [],
+    )
 
 
 @app.callback(
