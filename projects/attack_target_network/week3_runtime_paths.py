@@ -66,8 +66,7 @@ def resolve_first_existing_path(candidates: list[Path]) -> Path:
 
 
 def build_input_candidates(
-    outputs_rel: str,
-    data_inputs_rel: str,
+    relative_paths: list[str],
     analysis_root: Path,
     project_dir: Path,
 ) -> list[Path]:
@@ -76,23 +75,17 @@ def build_input_candidates(
     data_root_env = os.getenv("DELTA_DATA_ROOT", "").strip()
     if data_root_env:
         data_root = Path(data_root_env).expanduser().resolve()
-        candidates.extend(
-            [
-                resolve_path(outputs_rel, data_root),
-                resolve_path(data_inputs_rel, data_root),
-                (data_root / Path(outputs_rel).name).resolve(),
-                (data_root / Path(data_inputs_rel).name).resolve(),
-            ]
-        )
+        for relative_path in relative_paths:
+            candidates.extend(
+                [
+                    resolve_path(relative_path, data_root),
+                    (data_root / Path(relative_path).name).resolve(),
+                ]
+            )
 
-    candidates.extend(
-        [
-            resolve_path(outputs_rel, project_dir),
-            resolve_path(data_inputs_rel, project_dir),
-            resolve_path(outputs_rel, analysis_root),
-            resolve_path(data_inputs_rel, analysis_root),
-        ]
-    )
+    for root in [project_dir, analysis_root]:
+        for relative_path in relative_paths:
+            candidates.append(resolve_path(relative_path, root))
     return candidates
 
 
@@ -103,32 +96,44 @@ def resolve_runtime_paths() -> RuntimePaths:
 
     edges_path = resolve_first_existing_path(
         build_input_candidates(
-            outputs_rel="outputs/week3/attack_target_edges_v1_2.csv",
-            data_inputs_rel="data_inputs/attack_target_edges_v1_2.csv",
+            relative_paths=[
+                "outputs/week3/attack_target_edges_v1_2.csv",
+                "data_inputs/attack_target_edges_v1_2.csv",
+                "outputs/week3/attack_target_edges_v1_1.csv",
+                "data_inputs/attack_target_edges_v1_1.csv",
+            ],
             analysis_root=analysis_root,
             project_dir=project_dir,
         )
     )
     nodes_path = resolve_first_existing_path(
         build_input_candidates(
-            outputs_rel="outputs/week3/attack_target_nodes_v1_2.csv",
-            data_inputs_rel="data_inputs/attack_target_nodes_v1_2.csv",
+            relative_paths=[
+                "outputs/week3/attack_target_nodes_v1_2.csv",
+                "data_inputs/attack_target_nodes_v1_2.csv",
+                "outputs/week3/attack_target_nodes_v1_1.csv",
+                "data_inputs/attack_target_nodes_v1_1.csv",
+            ],
             analysis_root=analysis_root,
             project_dir=project_dir,
         )
     )
     mentions_path = resolve_first_existing_path(
         build_input_candidates(
-            outputs_rel="outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz",
-            data_inputs_rel="data_inputs/entity_mentions_week3_cleaned_v1_1.csv.gz",
+            relative_paths=[
+                "outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz",
+                "data_inputs/entity_mentions_week3_cleaned_v1_1.csv.gz",
+            ],
             analysis_root=analysis_root,
             project_dir=project_dir,
         )
     )
     harmonized_path = resolve_first_existing_path(
         build_input_candidates(
-            outputs_rel="outputs/week1/harmonized_sample_week1.csv.gz",
-            data_inputs_rel="data_inputs/harmonized_sample_week1.csv.gz",
+            relative_paths=[
+                "outputs/week1/harmonized_sample_week1.csv.gz",
+                "data_inputs/harmonized_sample_week1.csv.gz",
+            ],
             analysis_root=analysis_root,
             project_dir=project_dir,
         )

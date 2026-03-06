@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import dash
 from dash import Input, Output, State, dcc, html
@@ -14,7 +15,10 @@ import plotly.graph_objects as go
 try:
     from .week3_runtime_paths import RuntimePaths, resolve_runtime_paths
 except ImportError:
-    from week3_runtime_paths import RuntimePaths, resolve_runtime_paths
+    try:
+        from week3_runtime_paths import RuntimePaths, resolve_runtime_paths
+    except ImportError:
+        from projects.attack_target_network.week3_runtime_paths import RuntimePaths, resolve_runtime_paths
 
 PARTY_COLORS = {
     "REP": "#d62728",
@@ -42,6 +46,9 @@ LABEL_COLORS = {
     "UNKNOWN": "#9e9e9e",
 }
 
+CANONICAL_ENTITY_COL = "canonical_entity"
+IS_TARGET_COL = "is_target"
+
 
 def mode(series: pd.Series, default: str = "UNKNOWN") -> str:
     s = series.dropna().astype(str)
@@ -53,14 +60,121 @@ def mode(series: pd.Series, default: str = "UNKNOWN") -> str:
     return str(m.iloc[0]).strip() or default
 
 
+def resolve_first_available_column(
+    frame: pd.DataFrame,
+    candidates: list[str],
+    dataset_name: str,
+    path: Path,
+) -> str:
+    for candidate in candidates:
+        if candidate in frame.columns:
+            return candidate
+
+    available = ", ".join(frame.columns.astype(str).tolist())
+    expected = ", ".join(candidates)
+    raise ValueError(
+        f"{dataset_name} at {path} is missing any of [{expected}]. "
+        f"Available columns: {available}"
+    )
+
+
+def require_columns(
+    frame: pd.DataFrame,
+    required: list[str],
+    dataset_name: str,
+    path: Path,
+) -> None:
+    missing = [column for column in required if column not in frame.columns]
+    if not missing:
+        return
+
+    available = ", ".join(frame.columns.astype(str).tolist())
+    raise ValueError(
+        f"{dataset_name} at {path} is missing required columns {missing}. "
+        f"Available columns: {available}"
+    )
+
+
+def normalize_runtime_frames(
+    edges: pd.DataFrame,
+    nodes: pd.DataFrame,
+    mentions: pd.DataFrame,
+    harmonized: pd.DataFrame,
+    paths: RuntimePaths,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    edges = edges.rename(
+        columns={
+            resolve_first_available_column(
+                edges,
+                ["canonical_entity", "canonical_entity_v1_2", "canonical_entity_v1_1"],
+                "edges",
+                paths.edges_path,
+            ): CANONICAL_ENTITY_COL,
+        }
+    )
+    nodes = nodes.rename(
+        columns={
+            resolve_first_available_column(
+                nodes,
+                ["canonical_entity", "canonical_entity_v1_2", "canonical_entity_v1_1"],
+                "nodes",
+                paths.nodes_path,
+            ): CANONICAL_ENTITY_COL,
+        }
+    )
+    mentions = mentions.rename(
+        columns={
+            resolve_first_available_column(
+                mentions,
+                ["canonical_entity", "canonical_entity_v1_2", "canonical_entity_v1_1"],
+                "mentions",
+                paths.mentions_path,
+            ): CANONICAL_ENTITY_COL,
+            resolve_first_available_column(
+                mentions,
+                ["is_target", "is_target_v1_2", "is_target_v1_1"],
+                "mentions",
+                paths.mentions_path,
+            ): IS_TARGET_COL,
+        }
+    )
+
+    require_columns(
+        edges,
+        [CANONICAL_ENTITY_COL, "sponsor_name", "mention_count", "ad_count", "party_mode", "tone_mode"],
+        "edges",
+        paths.edges_path,
+    )
+    require_columns(
+        nodes,
+        [CANONICAL_ENTITY_COL, "mention_count", "ad_count", "sponsor_count", "platform_count", "label_mode"],
+        "nodes",
+        paths.nodes_path,
+    )
+    require_columns(
+        mentions,
+        [CANONICAL_ENTITY_COL, IS_TARGET_COL, "platform", "ad_id", "sponsor_name", "party_std"],
+        "mentions",
+        paths.mentions_path,
+    )
+    require_columns(
+        harmonized,
+        ["platform", "ad_id", "spend_proxy"],
+        "harmonized",
+        paths.harmonized_path,
+    )
+
+    return edges, nodes, mentions, harmonized
+
+
 def infer_target_party(edges: pd.DataFrame) -> pd.Series:
     grouped = (
-        edges.groupby(["canonical_entity_v1_1", "sponsor_party"], as_index=False)["mention_count"]
+        edges.groupby([CANONICAL_ENTITY_COL, "sponsor_party"], as_index=False)["mention_count"]
         .sum()
-        .sort_values(["canonical_entity_v1_1", "mention_count"], ascending=[True, False])
+        .sort_values([CANONICAL_ENTITY_COL, "mention_count"], ascending=[True, False])
     )
     out: dict[str, str] = {}
-    for target, g in grouped.groupby("canonical_entity_v1_1"):
+    for target, g in grouped.groupby(CANONICAL_ENTITY_COL):
         top_count = g["mention_count"].max()
         winners = g[g["mention_count"] == top_count]["sponsor_party"].tolist()
         out[target] = winners[0] if len(winners) == 1 else "UNKNOWN"
@@ -86,6 +200,7 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
         compression="gzip",
         usecols=["platform", "ad_id", "spend_proxy"],
     ).copy()
+    edges, nodes, mentions, harmonized = normalize_runtime_frames(edges, nodes, mentions, harmonized, paths)
 
     sponsor_party = (
         mentions.groupby("sponsor_name", as_index=False)
@@ -96,11 +211,11 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
     edges["sponsor_party"] = edges["sponsor_party"].fillna("UNKNOWN")
 
     target_party = infer_target_party(edges)
-    edges["target_party_inferred"] = edges["canonical_entity_v1_1"].map(target_party).fillna("UNKNOWN")
+    edges["target_party_inferred"] = edges[CANONICAL_ENTITY_COL].map(target_party).fillna("UNKNOWN")
 
-    target_mentions = mentions[mentions["is_target_v1_1"]].copy()
+    target_mentions = mentions[mentions[IS_TARGET_COL]].copy()
     target_mentions = target_mentions[
-        ["platform", "ad_id", "sponsor_name", "canonical_entity_v1_1", "party_std"]
+        ["platform", "ad_id", "sponsor_name", CANONICAL_ENTITY_COL, "party_std"]
     ].drop_duplicates()
 
     spend_ads = harmonized[["platform", "ad_id", "spend_proxy"]].copy()
@@ -115,23 +230,23 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
     )
 
     target_received_spend = (
-        target_mentions.drop_duplicates(subset=["canonical_entity_v1_1", "platform", "ad_id"])
-        .groupby("canonical_entity_v1_1")["spend_proxy"]
+        target_mentions.drop_duplicates(subset=[CANONICAL_ENTITY_COL, "platform", "ad_id"])
+        .groupby(CANONICAL_ENTITY_COL)["spend_proxy"]
         .sum()
     )
 
     edge_attack_spend = (
-        target_mentions.drop_duplicates(subset=["sponsor_name", "canonical_entity_v1_1", "platform", "ad_id"])
-        .groupby(["sponsor_name", "canonical_entity_v1_1"])["spend_proxy"]
+        target_mentions.drop_duplicates(subset=["sponsor_name", CANONICAL_ENTITY_COL, "platform", "ad_id"])
+        .groupby(["sponsor_name", CANONICAL_ENTITY_COL])["spend_proxy"]
         .sum()
         .rename("edge_attack_spend")
         .reset_index()
     )
-    edges = edges.merge(edge_attack_spend, on=["sponsor_name", "canonical_entity_v1_1"], how="left")
+    edges = edges.merge(edge_attack_spend, on=["sponsor_name", CANONICAL_ENTITY_COL], how="left")
     edges["edge_attack_spend"] = edges["edge_attack_spend"].fillna(0.0)
 
     target_node_meta = (
-        nodes.groupby("canonical_entity_v1_1", as_index=False)
+        nodes.groupby(CANONICAL_ENTITY_COL, as_index=False)
         .agg(
             target_label=("label_mode", lambda s: mode(s, default="UNKNOWN")),
             target_mentions=("mention_count", "max"),
@@ -139,14 +254,14 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
             target_sponsors=("sponsor_count", "max"),
             target_platforms=("platform_count", "max"),
         )
-        .set_index("canonical_entity_v1_1")
+        .set_index(CANONICAL_ENTITY_COL)
     )
 
     full_graph = nx.DiGraph()
     for row in edges.itertuples(index=False):
         full_graph.add_edge(
             row.sponsor_name,
-            row.canonical_entity_v1_1,
+            row.canonical_entity,
             mention_count=int(row.mention_count),
             ad_count=int(row.ad_count),
             party_mode=str(row.party_mode),
@@ -227,7 +342,7 @@ def build_figure(
     for row in ef.itertuples(index=False):
         graph.add_edge(
             row.sponsor_name,
-            row.canonical_entity_v1_1,
+            row.canonical_entity,
             mention_count=int(row.mention_count),
             ad_count=int(row.ad_count),
             edge_attack_spend=float(row.edge_attack_spend),
