@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import math
 
 import dash
 from dash import Input, Output, State, dcc, html
@@ -191,6 +192,96 @@ def scale_series(values: pd.Series, lo: float = 8, hi: float = 42) -> pd.Series:
     return lo + (values - vmin) * (hi - lo) / (vmax - vmin)
 
 
+def normalized_axis_positions(count: int) -> list[float]:
+    if count <= 0:
+        return []
+    if count == 1:
+        return [0.0]
+    step = 2.0 / float(count - 1)
+    return [1.0 - (idx * step) for idx in range(count)]
+
+
+def normalize_positions(pos: dict[str, tuple[float, float] | list[float]]) -> dict[str, tuple[float, float]]:
+    if not pos:
+        return {}
+
+    xs = [float(coords[0]) for coords in pos.values()]
+    ys = [float(coords[1]) for coords in pos.values()]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    span_x = max(max_x - min_x, 1e-9)
+    span_y = max(max_y - min_y, 1e-9)
+    mid_x = (max_x + min_x) / 2.0
+    mid_y = (max_y + min_y) / 2.0
+
+    return {
+        node: (
+            (float(coords[0]) - mid_x) / span_x * 2.0,
+            (float(coords[1]) - mid_y) / span_y * 2.0,
+        )
+        for node, coords in pos.items()
+    }
+
+
+def sorted_nodes_for_layout(graph: nx.DiGraph, base_graph: nx.DiGraph, node_type: str) -> list[str]:
+    nodes = [node for node in graph.nodes() if base_graph.nodes[node]["node_type"] == node_type]
+    if node_type == "sponsor":
+        key_fn = lambda node: (-graph.out_degree(node), str(base_graph.nodes[node].get("party", "UNKNOWN")), node.lower())
+    else:
+        key_fn = lambda node: (-graph.in_degree(node), str(base_graph.nodes[node].get("party", "UNKNOWN")), node.lower())
+    return sorted(nodes, key=key_fn)
+
+
+def compute_bipartite_positions(
+    graph: nx.DiGraph,
+    base_graph: nx.DiGraph,
+) -> dict[str, tuple[float, float]]:
+    sponsors = sorted_nodes_for_layout(graph, base_graph, "sponsor")
+    targets = sorted_nodes_for_layout(graph, base_graph, "target")
+    positions: dict[str, tuple[float, float]] = {}
+
+    if sponsors and targets:
+        for node, y in zip(sponsors, normalized_axis_positions(len(sponsors))):
+            positions[node] = (-1.0, y)
+        for node, y in zip(targets, normalized_axis_positions(len(targets))):
+            positions[node] = (1.0, y)
+        return positions
+
+    lone_nodes = sponsors or targets
+    x = -0.2 if sponsors else 0.2
+    for node, y in zip(lone_nodes, normalized_axis_positions(len(lone_nodes))):
+        positions[node] = (x, y)
+    return positions
+
+
+def compute_layout_positions(
+    graph: nx.DiGraph,
+    base_graph: nx.DiGraph,
+    layout_mode: str,
+) -> dict[str, tuple[float, float]]:
+    if layout_mode == "bipartite":
+        return compute_bipartite_positions(graph, base_graph)
+
+    layout_graph = nx.Graph(graph)
+    if layout_mode == "radial":
+        shells: list[list[str]] = []
+        sponsors = sorted_nodes_for_layout(graph, base_graph, "sponsor")
+        targets = sorted_nodes_for_layout(graph, base_graph, "target")
+        if sponsors:
+            shells.append(sponsors)
+        if targets:
+            shells.append(targets)
+        return normalize_positions(nx.shell_layout(layout_graph, nlist=shells or [list(graph.nodes())]))
+
+    try:
+        k = min(0.9, max(0.24, 5.0 / math.sqrt(max(graph.number_of_nodes(), 1))))
+        return normalize_positions(nx.spring_layout(layout_graph, seed=42, k=k))
+    except ModuleNotFoundError as exc:
+        if exc.name != "scipy":
+            raise
+        return normalize_positions(nx.random_layout(layout_graph, seed=42))
+
+
 def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
     edges = pd.read_csv(paths.edges_path).copy()
     nodes = pd.read_csv(paths.nodes_path).copy()
@@ -294,17 +385,9 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
             full_graph.nodes[node]["target_received_spend"] = 0.0
             full_graph.nodes[node]["sponsor_attack_spend"] = float(sponsor_attack_spend.get(node, 0.0))
 
-    try:
-        positions = nx.spring_layout(full_graph, seed=42, k=0.42)
-    except ModuleNotFoundError as exc:
-        if exc.name != "scipy":
-            raise
-        positions = nx.random_layout(full_graph, seed=42)
-
     return {
         "edges": edges,
         "graph": full_graph,
-        "positions": positions,
         "sponsor_parties": sorted(edges["sponsor_party"].dropna().unique().tolist()),
         "target_parties": sorted(edges["target_party_inferred"].dropna().unique().tolist()),
     }
@@ -315,6 +398,7 @@ def build_figure(
     sponsor_party_filter: list[str],
     target_party_filter: list[str],
     node_type_visible: list[str],
+    layout_mode: str,
     color_mode: str,
     size_mode: str,
     interaction_mode: str,
@@ -324,7 +408,6 @@ def build_figure(
 ) -> tuple[go.Figure, str]:
     edges: pd.DataFrame = runtime["edges"]  # type: ignore[assignment]
     base_graph: nx.DiGraph = runtime["graph"]  # type: ignore[assignment]
-    pos: dict[str, tuple[float, float]] = runtime["positions"]  # type: ignore[assignment]
 
     ef = edges.copy()
     ef = ef[ef["mention_count"] >= int(min_edge_mentions)]
@@ -370,6 +453,8 @@ def build_figure(
             yaxis=dict(visible=False),
         )
         return fig, "No visible nodes. Relax filters."
+
+    pos = compute_layout_positions(graph, base_graph, layout_mode)
 
     highlight_nodes: set[str] = set(graph.nodes())
     highlight_edges: set[tuple[str, str]] = set(graph.edges())
@@ -566,7 +651,7 @@ def build_figure(
 
     status = (
         f"Visible: {graph.number_of_nodes():,} nodes, {graph.number_of_edges():,} edges | "
-        f"Mode: color={color_mode}, size={size_mode}, interaction={interaction_mode}"
+        f"Mode: layout={layout_mode}, color={color_mode}, size={size_mode}, interaction={interaction_mode}"
     )
     if interaction_mode in {"highlight", "accumulate"} and has_active_selection:
         if interaction_mode == "accumulate":
@@ -661,6 +746,22 @@ app.layout = html.Div(
             [
                 html.Div(
                     [
+                        html.Label("Layout"),
+                        dcc.RadioItems(
+                            id="layout-mode",
+                            options=[
+                                {"label": " Bipartite", "value": "bipartite"},
+                                {"label": " Force Directed", "value": "spring"},
+                                {"label": " Radial", "value": "radial"},
+                            ],
+                            value="bipartite",
+                            inline=True,
+                        ),
+                    ],
+                    style={"width": "34%", "display": "inline-block", "paddingRight": "2%"},
+                ),
+                html.Div(
+                    [
                         html.Label("Color Mode"),
                         dcc.RadioItems(
                             id="color-mode",
@@ -672,7 +773,7 @@ app.layout = html.Div(
                             inline=True,
                         ),
                     ],
-                    style={"width": "30%", "display": "inline-block"},
+                    style={"width": "22%", "display": "inline-block", "paddingRight": "2%"},
                 ),
                 html.Div(
                     [
@@ -687,7 +788,7 @@ app.layout = html.Div(
                             inline=True,
                         ),
                     ],
-                    style={"width": "22%", "display": "inline-block"},
+                    style={"width": "18%", "display": "inline-block", "paddingRight": "2%"},
                 ),
                 html.Div(
                     [
@@ -702,15 +803,20 @@ app.layout = html.Div(
                             inline=True,
                         ),
                     ],
-                    style={"width": "30%", "display": "inline-block"},
+                    style={"width": "24%", "display": "inline-block"},
                 ),
+            ],
+            style={"marginBottom": "10px"},
+        ),
+        html.Div(
+            [
                 html.Div(
                     [
                         html.Label("Top N Edges"),
                         dcc.Input(id="top-n-edges", type="number", min=50, max=5000, step=50, value=900),
                         html.Button("Clear Selection", id="clear-selection", n_clicks=0, style={"marginLeft": "8px"}),
                     ],
-                    style={"width": "18%", "display": "inline-block"},
+                    style={"width": "100%", "display": "inline-block"},
                 ),
             ],
             style={"marginBottom": "10px"},
@@ -719,6 +825,7 @@ app.layout = html.Div(
         html.Div(id="status-text", style={"marginBottom": "8px", "fontWeight": "600"}),
         dcc.Graph(id="attack-target-graph", style={"height": "80vh"}, config={"displaylogo": False}),
         html.Div(
+            "Bipartite layout places sponsors on the left and targets on the right. "
             "Accumulate mode: each click adds that node's neighborhood to the highlighted network (click again to remove). "
             "Neighbor Highlight mode: one selected node at a time. Visual cue: sponsors are squares, targets are circles.",
             style={"color": "#555", "fontSize": "0.9rem", "marginTop": "6px"},
@@ -787,6 +894,7 @@ def clear_selection(_n_clicks):
     Input("sponsor-party-filter", "value"),
     Input("target-party-filter", "value"),
     Input("node-type-visible", "value"),
+    Input("layout-mode", "value"),
     Input("color-mode", "value"),
     Input("size-mode", "value"),
     Input("interaction-mode", "value"),
@@ -798,6 +906,7 @@ def update_graph(
     sponsor_party_filter,
     target_party_filter,
     node_type_visible,
+    layout_mode,
     color_mode,
     size_mode,
     interaction_mode,
@@ -810,6 +919,7 @@ def update_graph(
         sponsor_party_filter=sponsor_party_filter or [],
         target_party_filter=target_party_filter or [],
         node_type_visible=node_type_visible or [],
+        layout_mode=layout_mode or "bipartite",
         color_mode=color_mode or "party",
         size_mode=size_mode or "topology",
         interaction_mode=interaction_mode or "highlight",
