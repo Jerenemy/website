@@ -76,6 +76,7 @@
 !projects/attack_target_network/inspect_runtime_inputs.py
 !projects/attack_target_network/docs/
 !projects/attack_target_network/docs/DELTALAB_WEBSITE_SETUP.md
+!projects/attack_target_network/docs/ATTACK_TARGET_GRAPH_PRESENTATION_NOTES.md
 !projects/attack_target_network/deploy/
 !projects/attack_target_network/deploy/*
 # data

@@ -447,6 +447,10 @@ def build_ad_table_rows(
         .agg(
             spend_proxy=("spend_proxy", "max"),
             counterpart=("counterpart", lambda s: ", ".join(sorted({str(v) for v in s if str(v).strip()}))),
+            transcript=(
+                "text_main",
+                lambda s: next((str(v).strip() for v in s if str(v).strip()), ""),
+            ),
         )
         .sort_values(["spend_proxy", "platform", "ad_id"], ascending=[False, True, True])
     )
@@ -460,6 +464,17 @@ def build_ad_table_rows(
                 html.Td(str(row.ad_id)),
                 html.Td(f"${float(row.spend_proxy):,.2f}"),
                 html.Td(str(row.counterpart)),
+                html.Td(
+                    html.Details(
+                        [
+                            html.Summary("Show transcript"),
+                            html.Div(
+                                str(row.transcript) if str(row.transcript).strip() else "No transcript available.",
+                                style={"whiteSpace": "pre-wrap", "paddingTop": "8px", "maxWidth": "640px"},
+                            ),
+                        ]
+                    )
+                ),
             ]
         )
         for row in rendered_rows.itertuples(index=False)
@@ -470,7 +485,7 @@ def build_ad_table_rows(
                 [
                     html.Td(
                         f"Showing first {max_rows:,} of {len(grouped):,} visible ads",
-                        colSpan=4,
+                        colSpan=5,
                         style={"fontStyle": "italic", "color": "#555"},
                     )
                 ]
@@ -486,6 +501,7 @@ def build_ad_table_rows(
                             html.Th("Ad ID"),
                             html.Th("Spend"),
                             html.Th(counterpart_label),
+                            html.Th("Transcript"),
                         ]
                     )
                 ),
@@ -602,7 +618,7 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
     harmonized = pd.read_csv(
         paths.harmonized_path,
         compression="gzip",
-        usecols=["platform", "ad_id", "spend_proxy"],
+        usecols=["platform", "ad_id", "spend_proxy", "text_main"],
     ).copy()
     edges, nodes, mentions, harmonized = normalize_runtime_frames(edges, nodes, mentions, harmonized, paths)
 
@@ -620,7 +636,7 @@ def load_runtime_data(paths: RuntimePaths) -> dict[str, object]:
         ["platform", "ad_id", "sponsor_name", CANONICAL_ENTITY_COL, "party_std"]
     ].drop_duplicates()
 
-    spend_ads = harmonized[["platform", "ad_id", "spend_proxy"]].copy()
+    spend_ads = harmonized[["platform", "ad_id", "spend_proxy", "text_main"]].copy()
     spend_ads["spend_proxy"] = pd.to_numeric(spend_ads["spend_proxy"], errors="coerce").fillna(0.0)
     target_mentions = target_mentions.merge(spend_ads, on=["platform", "ad_id"], how="left")
     target_mentions["spend_proxy"] = target_mentions["spend_proxy"].fillna(0.0)
