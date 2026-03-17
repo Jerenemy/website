@@ -46,8 +46,10 @@
     {% block extra_head %}{% endblock %}
 </head>
 
+{% block ambient_background %}
 <!-- Full-screen WebGL Fluid Background -->
 <div class="ambient-fluid-bg" data-high-fidelity="false"></div>
+{% endblock %}
 
 {% include "_nav.html" %}
 {% block content %}{% endblock %}
