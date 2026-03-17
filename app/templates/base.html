@@ -5,11 +5,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#000000" />
+    {% set og_title = "Jeremy Zay" %}
+    {% set og_description = "Personal website and portfolio of Jeremy Zay." %}
+    {% set og_image = url_for('static', filename='img/brand/site-preview.png', _external=True) %}
+    {% set og_url = request.url %}
 
     <!-- Open Graph / Link Preview Meta Tags -->
-    <meta property="og:title" content="Jeremy Zay" />
-    <meta property="og:description" content="Personal website and portfolio of Jeremy Zay." />
+    <meta property="og:title" content="{{ og_title }}" />
+    <meta property="og:description" content="{{ og_description }}" />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ og_url }}" />
+    <meta property="og:image" content="{{ og_image }}" />
+    <meta property="og:image:width" content="1340" />
+    <meta property="og:image:height" content="238" />
+    <meta property="og:image:alt" content="Abstract green and blue fluid background from Jeremy Zay's website." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="{{ og_title }}" />
+    <meta name="twitter:description" content="{{ og_description }}" />
+    <meta name="twitter:image" content="{{ og_image }}" />
 
     <title>{% block title %}Portfolio{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/brand/squircle-black.svg') }}">
