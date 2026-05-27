@@ -34,6 +34,9 @@
 # templates zaychess
 !app/templates/zaychess
 !app/templates/zaychess/*
+# templates sonar
+!app/templates/sonar
+!app/templates/sonar/*
 # static
 !app/static
 # static css
@@ -55,6 +58,11 @@
 !app/static/img/*
 !app/static/img/projects/*
 !app/static/img/brand/*
+# static sonar
+!app/static/sonar
+!app/static/sonar/*
+!app/static/sonar/img
+!app/static/sonar/img/*
 # files
 !app/static/files
 !app/static/files/*

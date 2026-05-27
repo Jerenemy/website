@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sonar Privacy Policy</title>
+  <meta name="description" content="Privacy policy for Sonar, an iOS app for tracking, rating, reviewing, and discovering podcast episodes.">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111114;
+      --panel: #1a1a1f;
+      --panel-2: #202027;
+      --text: #f7f7f2;
+      --muted: #a0a1aa;
+      --line: #303039;
+      --teal: #00e5c8;
+      --amber: #ffb31f;
+      --coral: #ff6f61;
+      --ink: #080b10;
+      --max: 1080px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(8, 11, 16, 0.9);
+      backdrop-filter: blur(18px);
+    }
+
+    .nav {
+      width: min(var(--max), calc(100% - 32px));
+      min-height: 72px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 1.05rem;
+    }
+
+    .brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .nav-links a {
+      padding: 10px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+      outline: none;
+    }
+
+    .hero {
+      position: relative;
+      min-height: 58vh;
+      display: grid;
+      align-items: center;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(8, 11, 16, 0.98) 0%, rgba(8, 11, 16, 0.84) 52%, rgba(8, 11, 16, 0.68) 100%),
+        url("{{ url_for('static', filename='sonar/img/app-icon.png') }}") right 8vw center / min(36vw, 430px) no-repeat,
+        var(--ink);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 120px;
+      background: linear-gradient(180deg, rgba(17, 17, 20, 0), var(--bg));
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+      padding: 80px 0 74px;
+    }
+
+    .eyebrow {
+      margin: 0 0 16px;
+      color: var(--teal);
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 780px;
+      margin-bottom: 18px;
+      font-size: clamp(3rem, 9vw, 7rem);
+      line-height: 0.92;
+      font-weight: 950;
+    }
+
+    .hero-copy {
+      max-width: 640px;
+      margin-bottom: 26px;
+      color: #dadbe0;
+      font-size: clamp(1.08rem, 2.2vw, 1.35rem);
+    }
+
+    .updated {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 0 12px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.06);
+      font-weight: 800;
+      font-size: 0.9rem;
+    }
+
+    .section {
+      padding: 76px 0;
+    }
+
+    .section.alt {
+      background: #151518;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .section-inner {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .policy-layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 44px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 96px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .toc strong {
+      display: block;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .toc a {
+      display: block;
+      padding: 8px 0;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 750;
+      font-size: 0.94rem;
+    }
+
+    .toc a:hover,
+    .toc a:focus-visible {
+      color: var(--teal);
+      outline: none;
+    }
+
+    .policy-content {
+      display: grid;
+      gap: 14px;
+    }
+
+    .policy-card {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .policy-card h2 {
+      margin-bottom: 14px;
+      font-size: clamp(1.55rem, 3vw, 2.2rem);
+      line-height: 1.08;
+      font-weight: 950;
+    }
+
+    .policy-card p {
+      color: var(--muted);
+    }
+
+    .policy-card p:last-child {
+      margin-bottom: 0;
+    }
+
+    .policy-card ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .policy-card li {
+      margin: 10px 0;
+    }
+
+    .policy-card strong {
+      color: var(--text);
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .data-card {
+      min-height: 190px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+    }
+
+    .data-card h3 {
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+
+    .data-card p {
+      margin-bottom: 0;
+      font-size: 0.94rem;
+    }
+
+    .contact-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--teal);
+      color: #07110f;
+    }
+
+    .contact-strip h2 {
+      margin-bottom: 6px;
+      font-size: clamp(1.8rem, 4vw, 3.4rem);
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .contact-strip p {
+      margin-bottom: 0;
+      max-width: 620px;
+      color: rgba(7, 17, 15, 0.76);
+      font-weight: 750;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 8px;
+      color: var(--text);
+      background: #080b10;
+      text-decoration: none;
+      font-weight: 900;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .site-footer {
+      padding: 34px 0;
+      color: var(--muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: #0d0d10;
+    }
+
+    .footer-inner {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      font-size: 0.92rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-inner a {
+      color: var(--text);
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    @media (max-width: 860px) {
+      .nav {
+        min-height: 64px;
+      }
+
+      .nav-links {
+        gap: 2px;
+      }
+
+      .hero {
+        min-height: 62vh;
+        background:
+          linear-gradient(180deg, rgba(8, 11, 16, 0.74) 0%, rgba(8, 11, 16, 0.96) 56%, #080b10 100%),
+          url("{{ url_for('static', filename='sonar/img/app-icon.png') }}") center 26px / min(68vw, 320px) no-repeat,
+          var(--ink);
+      }
+
+      .hero-inner {
+        align-self: end;
+        padding-top: 230px;
+      }
+
+      .section {
+        padding: 58px 0;
+      }
+
+      .policy-layout,
+      .data-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+      }
+
+      .contact-strip,
+      .footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .nav {
+        width: min(var(--max), calc(100% - 20px));
+      }
+
+      .brand span {
+        display: none;
+      }
+
+      .nav-links a {
+        padding: 9px 8px;
+      }
+
+      .hero-inner,
+      .section-inner,
+      .footer-inner {
+        width: min(var(--max), calc(100% - 24px));
+      }
+
+      .button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="{{ url_for('public.sonar') }}" aria-label="Sonar home">
+        <img src="{{ url_for('static', filename='sonar/img/app-icon.png') }}" alt="">
+        <span>Sonar</span>
+      </a>
+      <div class="nav-links">
+        <a href="{{ url_for('public.sonar') }}">Home</a>
+        <a href="{{ url_for('public.sonar_support') }}">Support</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-inner">
+        <p class="eyebrow">Privacy policy</p>
+        <h1>How Sonar handles your data.</h1>
+        <p class="hero-copy">Sonar is built around your podcast activity: the episodes you log, rate, review, save, love, and discover through people you follow.</p>
+        <span class="updated">Last updated: May 27, 2026</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner policy-layout">
+        <aside class="toc" aria-label="Privacy policy sections">
+          <strong>Policy Sections</strong>
+          <a href="#overview">Overview</a>
+          <a href="#collect">Information We Collect</a>
+          <a href="#use">How We Use Information</a>
+          <a href="#share">How We Share Information</a>
+          <a href="#choices">Your Choices</a>
+          <a href="#retention">Retention and Security</a>
+          <a href="#children">Children</a>
+          <a href="#changes">Changes</a>
+          <a href="#contact">Contact</a>
+        </aside>
+
+        <div class="policy-content">
+          <article class="policy-card" id="overview">
+            <h2>Overview</h2>
+            <p>This Privacy Policy explains how Sonar collects, uses, and protects information when you use the Sonar iOS app and related support pages.</p>
+            <p>Sonar does not sell your personal information. Sonar uses your information to provide the app experience, save your podcast activity, show social and community features, maintain account security, and respond to support requests.</p>
+          </article>
+
+          <article class="policy-card" id="collect">
+            <h2>Information We Collect</h2>
+            <p>Sonar collects information you provide directly, information created through your activity in the app, and limited technical information needed to operate the service.</p>
+            <div class="data-grid">
+              <section class="data-card">
+                <h3>Account Information</h3>
+                <p>Username, email address, authentication identifiers, and related profile details used to create and access your account.</p>
+              </section>
+              <section class="data-card">
+                <h3>Podcast Activity</h3>
+                <p>Episode ratings, reviews, listened status, loved status, listen later saves, timestamps, followed podcasts, followers, and following relationships.</p>
+              </section>
+              <section class="data-card">
+                <h3>Support Information</h3>
+                <p>Messages, screenshots, device details, app version details, and any other information you choose to send when contacting support.</p>
+              </section>
+            </div>
+          </article>
+
+          <article class="policy-card" id="use">
+            <h2>How We Use Information</h2>
+            <ul>
+              <li><strong>Provide Sonar:</strong> Create accounts, authenticate users, save episode logs, sync profile stats, and display feeds.</li>
+              <li><strong>Power discovery:</strong> Search podcasts and episodes, show trending catalog results, and connect app activity to podcast metadata.</li>
+              <li><strong>Support social features:</strong> Show public profile activity, followers, following, podcast follows, reviews, and community rating summaries.</li>
+              <li><strong>Respond to support:</strong> Investigate bugs, account issues, missing podcast metadata, search issues, and review or rating problems.</li>
+              <li><strong>Protect the service:</strong> Maintain security, prevent misuse, debug errors, and keep Sonar reliable.</li>
+            </ul>
+          </article>
+
+          <article class="policy-card" id="share">
+            <h2>How We Share Information</h2>
+            <p>Sonar uses service providers to operate the app. Supabase provides authentication, database, and backend services. Podcast Index provides podcast catalog search and metadata. Search requests and podcast identifiers may be used to return catalog results.</p>
+            <p>Your public-facing Sonar activity may be visible in the app, including your username, profile, ratings, reviews, followers, following, and podcast activity that powers feeds and community pages.</p>
+            <p>Sonar may disclose information when required to comply with law, protect rights and safety, investigate abuse, or complete a business transfer such as a merger, acquisition, or asset sale.</p>
+          </article>
+
+          <article class="policy-card" id="choices">
+            <h2>Your Choices</h2>
+            <ul>
+              <li><strong>Update activity:</strong> You can edit or remove episode logs, ratings, reviews, loved status, and listen later status in the app.</li>
+              <li><strong>Manage social data:</strong> You can change who you follow and which podcasts you follow from within Sonar.</li>
+              <li><strong>Request help:</strong> You can contact support to ask about accessing, correcting, exporting, or deleting account information.</li>
+              <li><strong>Limit support data:</strong> When contacting support, only send screenshots or device details you are comfortable sharing.</li>
+            </ul>
+          </article>
+
+          <article class="policy-card" id="retention">
+            <h2>Retention and Security</h2>
+            <p>Sonar keeps account and podcast activity information for as long as needed to provide the service, maintain your account, resolve disputes, enforce agreements, and meet legal obligations.</p>
+            <p>Sonar uses technical and organizational safeguards designed to protect information. No internet service can guarantee absolute security, but Sonar works to keep account and activity data protected.</p>
+          </article>
+
+          <article class="policy-card" id="children">
+            <h2>Children</h2>
+            <p>Sonar is not intended for children under 13. If you believe a child has provided personal information through Sonar, contact support so the information can be reviewed and removed where appropriate.</p>
+          </article>
+
+          <article class="policy-card" id="changes">
+            <h2>Changes to This Policy</h2>
+            <p>Sonar may update this Privacy Policy from time to time. When the policy changes, the updated date on this page will be revised. Material changes may also be communicated through the app or another appropriate channel.</p>
+          </article>
+
+          <article class="contact-strip" id="contact">
+            <div>
+              <h2>Privacy questions?</h2>
+              <p>Contact Sonar support for privacy requests, account questions, or data access and deletion requests.</p>
+            </div>
+            <a class="button" href="mailto:support@sonar.app?subject=Sonar%20Privacy%20Request">Email Support</a>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>Sonar Privacy Policy</span>
+      <div class="footer-links">
+        <a href="{{ url_for('public.sonar') }}">Home</a>
+        <a href="{{ url_for('public.sonar_support') }}">Support</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

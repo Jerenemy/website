@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sonar Support</title>
+  <meta name="description" content="Get help with Sonar accounts, podcast search, episode logs, ratings, reviews, and support requests.">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111114;
+      --panel: #1a1a1f;
+      --panel-2: #202027;
+      --text: #f7f7f2;
+      --muted: #a0a1aa;
+      --line: #303039;
+      --teal: #00e5c8;
+      --amber: #ffb31f;
+      --coral: #ff6f61;
+      --ink: #080b10;
+      --max: 1080px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(8, 11, 16, 0.9);
+      backdrop-filter: blur(18px);
+    }
+
+    .nav {
+      width: min(var(--max), calc(100% - 32px));
+      min-height: 72px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 1.05rem;
+    }
+
+    .brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .nav-links a {
+      padding: 10px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+      outline: none;
+    }
+
+    .hero {
+      position: relative;
+      min-height: 58vh;
+      display: grid;
+      align-items: center;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(8, 11, 16, 0.98) 0%, rgba(8, 11, 16, 0.82) 52%, rgba(8, 11, 16, 0.7) 100%),
+        url("{{ url_for('static', filename='sonar/img/app-icon.png') }}") right 8vw center / min(36vw, 430px) no-repeat,
+        var(--ink);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 120px;
+      background: linear-gradient(180deg, rgba(17, 17, 20, 0), var(--bg));
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+      padding: 80px 0 74px;
+    }
+
+    .eyebrow {
+      margin: 0 0 16px;
+      color: var(--teal);
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin-bottom: 18px;
+      font-size: clamp(3rem, 9vw, 7rem);
+      line-height: 0.92;
+      font-weight: 950;
+    }
+
+    .hero-copy {
+      max-width: 620px;
+      margin-bottom: 30px;
+      color: #dadbe0;
+      font-size: clamp(1.08rem, 2.2vw, 1.35rem);
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: #07110f;
+      background: var(--teal);
+      text-decoration: none;
+      font-weight: 900;
+    }
+
+    .button.dark {
+      color: var(--text);
+      border-color: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .section {
+      padding: 76px 0;
+    }
+
+    .section.alt {
+      background: #151518;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .section-inner {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .section-heading {
+      display: grid;
+      grid-template-columns: minmax(0, 0.75fr) minmax(280px, 0.55fr);
+      gap: 40px;
+      align-items: end;
+      margin-bottom: 34px;
+    }
+
+    h2 {
+      margin-bottom: 0;
+      font-size: clamp(2rem, 4.8vw, 4rem);
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .section-heading p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .help-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .help-card {
+      min-height: 260px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .help-card h3 {
+      margin-bottom: 12px;
+      font-size: 1.22rem;
+    }
+
+    .help-card p {
+      color: var(--muted);
+      margin-bottom: 0;
+    }
+
+    .help-mark {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 22px;
+      border-radius: 8px;
+      color: #07110f;
+      font-weight: 950;
+    }
+
+    .help-card:nth-child(1) .help-mark {
+      background: var(--teal);
+    }
+
+    .help-card:nth-child(2) .help-mark {
+      background: var(--amber);
+    }
+
+    .help-card:nth-child(3) .help-mark {
+      background: var(--coral);
+    }
+
+    .contact-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 0.78fr) minmax(320px, 0.52fr);
+      gap: 44px;
+      align-items: start;
+    }
+
+    .contact-copy p {
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .support-list {
+      margin: 28px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 14px;
+    }
+
+    .support-list li {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 14px;
+      padding: 15px 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .support-list strong {
+      color: var(--text);
+    }
+
+    .check {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      color: #07110f;
+      background: var(--teal);
+      font-weight: 950;
+    }
+
+    .contact-panel {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .contact-panel h3 {
+      margin-bottom: 10px;
+      font-size: 1.35rem;
+    }
+
+    .contact-panel p {
+      color: var(--muted);
+    }
+
+    .contact-panel .button {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .meta-box {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .meta-box strong {
+      color: var(--text);
+    }
+
+    .faq {
+      display: grid;
+      gap: 12px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 18px 20px;
+      font-weight: 900;
+    }
+
+    details p {
+      margin: 0;
+      padding: 0 20px 20px;
+      color: var(--muted);
+    }
+
+    .site-footer {
+      padding: 34px 0;
+      color: var(--muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: #0d0d10;
+    }
+
+    .footer-inner {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      font-size: 0.92rem;
+    }
+
+    .footer-inner a {
+      color: var(--text);
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 820px) {
+      .nav {
+        min-height: 64px;
+      }
+
+      .nav-links {
+        gap: 2px;
+      }
+
+      .hero {
+        min-height: 62vh;
+        background:
+          linear-gradient(180deg, rgba(8, 11, 16, 0.74) 0%, rgba(8, 11, 16, 0.96) 56%, #080b10 100%),
+          url("{{ url_for('static', filename='sonar/img/app-icon.png') }}") center 26px / min(68vw, 320px) no-repeat,
+          var(--ink);
+      }
+
+      .hero-inner {
+        align-self: end;
+        padding-top: 230px;
+      }
+
+      .section {
+        padding: 58px 0;
+      }
+
+      .section-heading,
+      .help-grid,
+      .contact-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .nav {
+        width: min(var(--max), calc(100% - 20px));
+      }
+
+      .brand span {
+        display: none;
+      }
+
+      .nav-links a {
+        padding: 9px 8px;
+      }
+
+      .hero-inner,
+      .section-inner,
+      .footer-inner {
+        width: min(var(--max), calc(100% - 24px));
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .section-heading {
+        gap: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="{{ url_for('public.sonar') }}" aria-label="Sonar home">
+        <img src="{{ url_for('static', filename='sonar/img/app-icon.png') }}" alt="">
+        <span>Sonar</span>
+      </a>
+      <div class="nav-links">
+        <a href="{{ url_for('public.sonar') }}">Home</a>
+        <a href="#quick-help">Help</a>
+        <a href="#contact">Contact</a>
+        <a href="{{ url_for('public.sonar_privacy') }}">Privacy</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-inner">
+        <p class="eyebrow">Sonar support</p>
+        <h1>Help with your podcast log.</h1>
+        <p class="hero-copy">Find answers for account access, podcast search, ratings, reviews, listen later, and issues with your Sonar activity feed.</p>
+        <a class="button" href="#contact">Contact Support</a>
+      </div>
+    </section>
+
+    <section class="section" id="quick-help">
+      <div class="section-inner">
+        <div class="section-heading">
+          <h2>Quick help.</h2>
+          <p>Start here for the most common Sonar issues before sending a support request.</p>
+        </div>
+        <div class="help-grid">
+          <article class="help-card">
+            <div class="help-mark" aria-hidden="true">01</div>
+            <h3>Account access</h3>
+            <p>Confirm the username or email tied to your account, check for typos, and try signing in again on a stable network connection.</p>
+          </article>
+          <article class="help-card">
+            <div class="help-mark" aria-hidden="true">02</div>
+            <h3>Podcast search</h3>
+            <p>Sonar uses the open Podcast Index catalog. If a show or episode is missing, include the podcast title and RSS feed URL in your request.</p>
+          </article>
+          <article class="help-card">
+            <div class="help-mark" aria-hidden="true">03</div>
+            <h3>Logs and reviews</h3>
+            <p>Ratings, reviews, loved episodes, and listen later updates save automatically. Reopen the episode page if a change does not appear right away.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="contact">
+      <div class="section-inner contact-layout">
+        <div class="contact-copy">
+          <p class="eyebrow">Contact</p>
+          <h2>Send the details that help us fix it.</h2>
+          <p>For account, search, sync, rating, review, or feed issues, include enough context to reproduce what happened.</p>
+          <ul class="support-list">
+            <li>
+              <span class="check" aria-hidden="true">1</span>
+              <div><strong>Your account:</strong> Sonar username and the email address you use to sign in.</div>
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">2</span>
+              <div><strong>Your device:</strong> iPhone model, iOS version, and Sonar app version if available.</div>
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">3</span>
+              <div><strong>The issue:</strong> Podcast name, episode title, screenshots, and the exact action that failed.</div>
+            </li>
+          </ul>
+        </div>
+        <aside class="contact-panel" aria-label="Support email">
+          <h3>Email Sonar Support</h3>
+          <p>Use the button below to start a support email with a prepared subject line.</p>
+          <a class="button" href="mailto:support@sonar.app?subject=Sonar%20Support%20Request">Email support@sonar.app</a>
+          <div class="meta-box">
+            <p><strong>Typical topics:</strong> sign in, missing podcasts, feed refresh, ratings, reviews, listen later, followers, and profile stats.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <div class="section-inner">
+        <div class="section-heading">
+          <h2>FAQ.</h2>
+          <p>Short answers for support questions that come up often.</p>
+        </div>
+        <div class="faq">
+          <details>
+            <summary>Why is a podcast or episode missing?</summary>
+            <p>Sonar searches the Podcast Index catalog. Some publishers have delayed metadata, alternate show names, or RSS feed changes. Send the title and RSS feed URL so it can be checked.</p>
+          </details>
+          <details>
+            <summary>Why did my rating or review not appear immediately?</summary>
+            <p>Sonar saves changes automatically and refreshes the feed after updates. If the feed looks stale, reopen the episode or profile page and check your network connection.</p>
+          </details>
+          <details>
+            <summary>Can I delete or edit a review?</summary>
+            <p>Reviews are tied to your episode log. Open the episode or review detail in Sonar to update the text, change the rating, or remove the log.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>Sonar Support</span>
+      <div class="footer-links">
+        <a href="{{ url_for('public.sonar') }}">Home</a>
+        <a href="{{ url_for('public.sonar_privacy') }}">Privacy</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
