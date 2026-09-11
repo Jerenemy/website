@@ -31,6 +31,9 @@ def create_app():
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(ear_bp, url_prefix="/ear")
+    from .wtt import bp as wtt_bp, init_db_command
+    app.register_blueprint(wtt_bp)
+    app.cli.add_command(init_db_command)
     
     # initialize extensions
     mail.init_app(app)

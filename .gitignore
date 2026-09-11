@@ -9,6 +9,9 @@
 !app/
 !app/config.py
 !app/extensions.py
+!app/wtt.py
+# !tests/
+# !tests/test_wtt.py
 # blueprints
 !app/blueprints
 # blueprints admin

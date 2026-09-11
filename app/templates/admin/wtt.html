@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}WTT Signups{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+{% block content %}
+<section class="admin">
+  <div class="admin__panel glassy">
+    <div class="admin__header">
+      <h1 class="admin__title">WTT Signups ({{ signups|length }})</h1>
+      <div class="admin__actions">
+        <a class="admin-button" href="{{ url_for('wtt.export') }}">Download CSV</a>
+        <a class="admin-button admin-button--ghost" href="{{ url_for('admin.portfolio_list') }}">Back to admin</a>
+      </div>
+    </div>
+    <div class="admin-table__wrap">
+      <table class="admin-table">
+        <thead><tr><th>Email</th><th>Signed up (UTC)</th></tr></thead>
+        <tbody>
+          {% for signup in signups %}
+          <tr><td data-label="Email">{{ signup.email }}</td><td data-label="Signed up (UTC)">{{ signup.created_at }}</td></tr>
+          {% else %}<tr><td colspan="2">No signups yet.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

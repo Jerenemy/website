@@ -27,6 +27,58 @@ poetry install --no-root
 - Password-protected admin area to add/edit/delete portfolio items (JSON-backed) with image uploads, preview, and delete confirmation
 - Admin site settings to update the home description/background, resume PDF, and theme colors
 
+## WTT Email Signup
+
+- Public form: `https://jeremyzay.com/wtt` (also accepts `/wtt/`). Collects emails only; no email is sent.
+- Private list: `/admin/wtt`; CSV download: `/admin/wtt/export.csv`. Both require the existing admin login. The portfolio admin links to the list.
+- Printable QR assets: `app/static/files/wtt-qr.svg` (vector) and `app/static/files/wtt-qr.png` (raster). They encode exactly `https://jeremyzay.com/wtt`, with a white quiet zone; preserve that border when printing.
+- Stores normalized, case-insensitive unique email addresses and UTC signup times. Duplicate signups receive the same success message. CSV cells beginning with spreadsheet formula characters are prefixed with an apostrophe for safe spreadsheet use.
+
+### Storage and deployment
+
+SQLite uses Python's standard library; no new runtime package or database service is needed. The default is the Git-ignored `instance/wtt.sqlite3`, outside `/static`. For production, put it in a persistent private directory owned by the supervisor process user (`jzay`) so replacing a checkout does not remove signups:
+
+```bash
+install -d -m 700 /home/jzay/personal_website_data
+```
+
+Set these in the server's `.env` (keep existing admin credentials):
+
+```dotenv
+WTT_DATABASE_PATH=/home/jzay/personal_website_data/wtt.sqlite3
+SECRET_KEY=your-existing-stable-secret-key
+```
+
+Use a fixed `SECRET_KEY` shared by all three Gunicorn workers; a per-process random fallback makes form CSRF tokens unreliable. Keep the database path outside static directories and preserve the data directory across deployments. Initialize as `jzay` from `/home/jzay/personal_website`:
+
+```bash
+.venv/bin/flask --app app:create_app init-wtt-db
+sudo supervisorctl restart personal_website
+sudo supervisorctl status personal_website
+```
+
+Initialization is idempotent and also happens on first database access. Existing tables and signups are preserved. No Nginx or Supervisor configuration change is required. If moving an existing database, stop the app, back it up to the new location, update the path, and restart.
+
+### Backup and verification
+
+Use SQLite's backup API for a consistent backup while the app is running. Run from the project directory with the same environment as the app; choose a private, persistent destination, and copy backups off the server as part of your normal backup routine:
+
+```bash
+.venv/bin/python - <<'PY'
+import sqlite3
+from contextlib import closing
+from app import create_app
+app = create_app()
+with closing(sqlite3.connect(app.config['WTT_DATABASE_PATH'])) as source:
+    with closing(sqlite3.connect('/home/jzay/personal_website_data/wtt-backup.sqlite3')) as backup:
+        source.backup(backup)
+PY
+```
+
+Restore with the app stopped, placing the backup at `WTT_DATABASE_PATH` with ownership and permissions allowing `jzay` to write to both the file and its directory, then restart the process. Neither emails nor backups belong in Git or static files.
+
+Run `.venv/bin/python -m unittest discover -s tests -v` for signup, validation, concurrent duplicate, persistence, storage failure, CSRF, spam-trap, and admin/export checks. After deploying, scan the QR code on a phone, submit a test signup, verify it under `/admin/wtt`, and download the CSV. Check `/var/log/personal_website/personal_website.err.log` for storage errors if a signup fails.
+
 ## Tech Stack
 - Python 3.13
 - Flask 3

@@ -19,6 +19,9 @@ class Config:
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", MAIL_USERNAME)
     EAR_BASE_DIR = os.getenv("EAR_BASE_DIR")
+    WTT_DATABASE_PATH = os.getenv(
+        "WTT_DATABASE_PATH", os.path.join(_project_root, "instance", "wtt.sqlite3")
+    )
 
     SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(32).hex())
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")

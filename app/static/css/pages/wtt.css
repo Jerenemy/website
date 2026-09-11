@@ -1,0 +1,13 @@
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 24px; background: #faf9f6; color: #202020; font-family: system-ui, sans-serif; }
+main { width: 100%; max-width: 380px; }
+h1 { margin: 0 0 12px; font-size: 56px; letter-spacing: -3px; }
+p { line-height: 1.6; margin: 0 0 28px; }
+label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+input[type="email"], button { width: 100%; min-height: 50px; padding: 14px 16px; border-radius: 10px; font: inherit; }
+input[type="email"] { border: 1px solid #aaa; background: #fff; color: #202020; }
+button { margin-top: 14px; border: 0; background: #202020; color: #fff; font-weight: 600; cursor: pointer; }
+button:hover { background: #404040; }
+:focus-visible { outline: 3px solid #2864c5; outline-offset: 3px; }
+.error { margin: 12px 0 0; color: #a12222; font-size: 14px; }
+.honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
