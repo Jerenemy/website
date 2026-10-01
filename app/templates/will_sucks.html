@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Will Sucks · Friendly Battles{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/will_sucks.css') }}">{% endblock %}
+{% block content %}
+<main class="clash-page">
+  <h1>Will Sucks</h1>
+  <p>Friendly battle bragging rights. Each cell shows wins by the row player against the column player.</p>
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+  <p class="clash-message {{ category }}" role="status">{{ message }}</p>
+  {% endfor %}
+  {% if not configured %}<p role="status">Tracking unavailable: the server API token is not configured. Starting scores are preserved.</p>
+  {% elif not verified %}<p role="status">Score tracking awaits live friendly-battle verification.</p>{% endif %}
+  <div class="clash-table" tabindex="0" role="region" aria-label="Head-to-head wins, scroll horizontally">
+    <table><caption>Wins by row player against column player</caption><thead><tr><th scope="col">Player</th>{% for p in players %}<th scope="col">{{ p.name }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for p in players %}<tr><th scope="row">{{ p.name }}<small>{{ p.tag }}</small></th>{% for opponent in players %}<td>{% if p.tag == opponent.tag %}<span aria-label="Not applicable">—</span>{% else %}{{ scores.get((p.tag, opponent.tag), 0) }}{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
+  </div>
+  <div class="clash-actions">
+    <form method="post" action="{{ url_for('clash.change', action='accounts') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="player-tag">Player tag</label><input id="player-tag" name="tag" placeholder="#PLAYER TAG" maxlength="16" required autocomplete="off">
+      <button type="submit" {% if not configured %}disabled{% endif %}>Add Account</button>
+    </form>
+    <form method="post" action="{{ url_for('clash.change', action='sync') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" {% if not configured %}disabled{% endif %}>Sync Now</button>
+    </form>
+  </div>
+  <p>Last sync: {% if last_sync %}<time datetime="{{ last_sync }}">{{ last_sync }}</time>{% else %}Not yet synced{% endif %}. Automatic sync runs daily at 4 a.m. Eastern.</p>
+  <p class="clash-note">Only new 1v1 friendly battles between accounts in this table count. Recent battle logs are limited; matches can be missed between daily syncs. Sync after playing to help preserve results.</p>
+  {% for p in players %}{% if p.error %}<p role="status">{{ p.name }}: {{ p.error }}</p>{% endif %}{% if p.gap %}<p role="status">{{ p.name }}: possible gap in battle history; some matches may have been missed.</p>{% endif %}{% endfor %}
+</main>
+{% endblock %}

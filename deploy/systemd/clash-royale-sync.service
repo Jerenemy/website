@@ -1,0 +1,12 @@
+[Unit]
+Description=Sync friendly Clash Royale battles
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=jzay
+WorkingDirectory=/home/jzay/personal_website
+ExecStart=/home/jzay/personal_website/.venv/bin/flask --app app:create_app sync-clash
+TimeoutStartSec=30min
+UMask=0077

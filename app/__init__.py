@@ -35,6 +35,11 @@ def create_app():
     app.register_blueprint(wtt_bp)
     app.cli.add_command(init_db_command)
     
+    from .clash_royale import bp as clash_bp, init_command, sync_command, verify_command
+    app.register_blueprint(clash_bp)
+    for command in (init_command, sync_command, verify_command):
+        app.cli.add_command(command)
+
     # initialize extensions
     mail.init_app(app)
     return app

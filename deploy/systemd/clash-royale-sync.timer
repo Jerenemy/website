@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Clash Royale friendly battle sync
+
+[Timer]
+OnCalendar=*-*-* 04:00:00 America/New_York
+Persistent=true
+Unit=clash-royale-sync.service
+
+[Install]
+WantedBy=timers.target

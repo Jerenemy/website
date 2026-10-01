@@ -23,6 +23,10 @@ class Config:
         "WTT_DATABASE_PATH", os.path.join(_project_root, "instance", "wtt.sqlite3")
     )
 
+    CLASH_ROYALE_API_TOKEN = os.getenv("CLASH_ROYALE_API_TOKEN") or os.getenv("CLASH_ROYALE_API_KEY")
+    CLASH_ROYALE_API_BASE_URL = os.getenv("CLASH_ROYALE_API_BASE_URL", "https://api.clashroyale.com/v1")
+    CLASH_ROYALE_DATABASE_PATH = os.getenv("CLASH_ROYALE_DATABASE_PATH", os.path.join(_project_root, "instance", "clash.sqlite3"))
+
     SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(32).hex())
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
     ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH")

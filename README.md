@@ -225,3 +225,58 @@ Run `.venv/bin/python -m unittest discover -s tests -v` for signup, validation, 
 - Add tagging, search, and filtering for portfolio items.
 
 - Fix colors of contact fields to be consistent with the rest of the defaults.
+
+## Clash Royale friendly battle table
+
+`/will-sucks` displays the seeded Jer/Will/Win/Leo head-to-head wins. Anyone can add a player tag or sync; forms use CSRF protection, a 60-second shared sync cooldown, and five add attempts per client IP per ten minutes. Diagonals show a dash. Only completed `friendly` 1v1 matches between registered players count; draws and all other modes are excluded. Initial logs are baselined so existing scores are not counted again.
+
+### Configuration and activation
+
+Set these in the server's private `.env`:
+
+```dotenv
+CLASH_ROYALE_API_KEY=your-developer-key
+CLASH_ROYALE_DATABASE_PATH=/home/jzay/personal_website_data/clash.sqlite3
+# Optional; defaults to the official endpoint:
+CLASH_ROYALE_API_BASE_URL=https://api.clashroyale.com/v1
+```
+
+`CLASH_ROYALE_API_TOKEN` is also supported and takes precedence over `CLASH_ROYALE_API_KEY`. Retain a stable `SECRET_KEY` across Gunicorn workers. The database defaults locally to ignored `instance/clash.sqlite3`; keep production data outside the checkout, owned by `jzay`, and outside public/static directories.
+
+Create a developer key at [Clash Royale Developers](https://developer.clashroyale.com/) allowing the server's public outgoing IP. HTTP 403 can indicate an unapproved IP. For servers without a stable IP, follow the [RoyaleAPI proxy instructions](https://docs.royaleapi.com/proxy.html), whitelist their documented IP, and set the base URL to `https://proxy.royaleapi.dev/v1`. Never expose the key in browser code or commit `.env`.
+
+From `/home/jzay/personal_website`, as `jzay`:
+
+```bash
+install -d -m 700 /home/jzay/personal_website_data
+.venv/bin/flask --app app:create_app init-clash-db
+.venv/bin/flask --app app:create_app verify-clash-friendly
+.venv/bin/flask --app app:create_app sync-clash
+```
+
+Verification must find a live friendly 1v1 match with valid tags, battle time, crowns, and mode data in one registered player's recent log. Play a friendly and retry if none is available. Score updates remain disabled until verification succeeds; the first successful verified sync baselines each account. Accounts with failed initial fetches begin counting only after their first successful baseline. A verified account added later starts at registration with zero wins. Seed labels stay fixed; added accounts use their API name.
+
+Restart the website after changing environment settings. The existing Nginx configuration now overwrites `X-Real-IP`; deploy it and reload Nginx so account-add limits distinguish users behind the loopback-bound Gunicorn server. Forwarded IPs are trusted only when requests originate on loopback.
+
+### Daily scheduling
+
+Install the supplied units on the production Linux server:
+
+```bash
+sudo cp deploy/systemd/clash-royale-sync.service deploy/systemd/clash-royale-sync.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now clash-royale-sync.timer
+sudo systemctl start clash-royale-sync.service
+sudo systemctl list-timers clash-royale-sync.timer
+sudo journalctl -u clash-royale-sync.service
+```
+
+The timer runs at 4 a.m. `America/New_York`, follows daylight saving time, and catches up after downtime. It runs the same sync code as the button. The database lease prevents concurrent jobs across workers. API failures preserve previous logs and scores; successful accounts can still contribute results, and partial failures cause a nonzero CLI exit for monitoring.
+
+Recent logs are finite. Daily syncing cannot guarantee every match is captured. The page always explains this and flags possible gaps when consecutive nonempty logs have no matches in common. Cached logs and globally deduplicated processed matches prevent double counting; they cannot reconstruct disappeared history.
+
+### Backup and smoke test
+
+Use SQLite's backup API, as in the WTT backup instructions, with source `CLASH_ROYALE_DATABASE_PATH` and a private destination such as `/home/jzay/personal_website_data/clash-backup.sqlite3`. Copy backups off-server. Stop both the timer and website before restoring; restore ownership, then restart both. Initialization preserves existing players and scores.
+
+Run `.venv/bin/python -m unittest discover -s tests -v`. After deployment, verify the exact starting matrix, activate tracking and baseline, play a new friendly between two registered accounts, and click Sync Now. Only the winner's cell should increment. After the cooldown, repeat the sync and confirm it does not increment again. Check mobile horizontal scrolling, keyboard form access, duplicate-tag handling, scheduler status, and the journal for failures.

@@ -106,3 +106,10 @@ app/blog/__pycache__/
 app/blog/*.pyc
 !app/blog_posts
 !app/blog_posts/*
+
+# Clash Royale tracker source, tests, and scheduler (runtime data stays ignored)
+!app/clash_royale.py
+!tests/
+!tests/test_clash_royale.py
+!deploy/systemd/
+!deploy/systemd/*
