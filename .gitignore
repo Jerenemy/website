@@ -113,3 +113,8 @@ app/blog/*.pyc
 !tests/test_clash_royale.py
 !deploy/systemd/
 !deploy/systemd/*
+
+# Versioned portfolio content
+!app/data/
+!app/data/.gitignore
+!app/data/portfolio.json
