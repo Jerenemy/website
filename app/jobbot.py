@@ -60,11 +60,19 @@ def _job_path(job_id, suffix=""):
     return f"/api/jobs/{quote(job_id, safe='')}{suffix}"
 
 
+def _signature(job):
+    """Changes whenever the page should reload: job status, submission status, latest edit status."""
+    sub = job.get("submission") or {}
+    edits = job.get("edits") or []
+    last = edits[-1] if edits else {}
+    return "|".join([job.get("status") or "", sub.get("status") or "", last.get("id") or "", last.get("status") or ""])
+
+
 def _category(job):
     sub = job.get("submission") or {}
     if job["status"] == "applied" or sub.get("status") == "applied":
         return "applied"
-    if sub.get("status") in ACTIVE:
+    if sub.get("status") in ACTIVE or job.get("editing"):
         return "active"
     if sub.get("status") in ("failed", "unconfirmed"):
         return "attention"
@@ -115,6 +123,19 @@ def jobbot_answer(field):
     return value
 
 
+@bp.app_template_filter("jobbot_change_value")
+def jobbot_change_value(change, key):
+    value = change.get(key)
+    if value is None or value == "" or value == []:
+        return "(empty)"
+    if isinstance(value, list):
+        value = ", ".join(str(v) for v in value)
+    value = str(value)
+    if key == "old" and len(value) > 80:
+        value = value[:77] + "..."
+    return value
+
+
 @bp.after_request
 def private_response(response):
     response.headers["Cache-Control"] = "no-store"
@@ -152,9 +173,18 @@ def job_detail(job_id):
         flash(error.message, "error")
         return redirect(url_for("jobbot.job_list"))
     sub = job.get("submission") or {}
-    can_submit = job["status"] == "dry_run_ok" and sub.get("status") not in (*ACTIVE, "applied")
-    return render_template("admin/job_detail.html", job=job, sub=sub, active=sub.get("status") in ACTIVE,
-                           can_submit=can_submit, needs_force=sub.get("status") == "unconfirmed",
+    edits = job.get("edits") or []
+    editing = bool(job.get("editing"))
+    for field in job.get("fields") or []:
+        field.setdefault("education_index", None)
+    busy = sub.get("status") in ACTIVE or editing
+    can_submit = job["status"] == "dry_run_ok" and sub.get("status") not in (*ACTIVE, "applied") and not editing
+    can_chat = job["status"] in ("dry_run_ok", "failed") and bool(job.get("fields")) and not busy
+    last_done = next((e for e in reversed(edits) if e.get("status") == "done"), None)
+    edited = {(c.get("label"), c.get("education_index")) for c in (last_done or {}).get("changes") or []}
+    return render_template("admin/job_detail.html", job=job, sub=sub, active=busy, editing=editing,
+                           can_submit=can_submit, can_chat=can_chat, edits=edits, edited=edited,
+                           signature=_signature(job), needs_force=sub.get("status") == "unconfirmed",
                            csrf_token=_csrf_token())
 
 
@@ -177,10 +207,11 @@ def job_status(job_id):
         job = _api("GET", _job_path(job_id)).json()["job"]
     except JobBotError as error:
         return jsonify({"error": error.message}), error.status
-    return jsonify({"status": job["status"], "submission": job.get("submission")})
+    return jsonify({"status": job["status"], "submission": job.get("submission"), "editing": bool(job.get("editing")),
+                    "signature": _signature(job)})
 
 
-def _action(job_id, action, payload, success):
+def _action(job_id, action, payload, success, anchor=""):
     if not _validate_csrf(request.form.get("csrf_token")):
         flash("Invalid or missing CSRF token.", "error")
     else:
@@ -189,7 +220,7 @@ def _action(job_id, action, payload, success):
             flash(success, "success")
         except JobBotError as error:
             flash(error.message, "error")
-    return redirect(url_for("jobbot.job_detail", job_id=job_id))
+    return redirect(url_for("jobbot.job_detail", job_id=job_id) + anchor)
 
 
 @bp.post("/<path:job_id>/submit")
@@ -210,6 +241,13 @@ def job_code(job_id):
 @admin_required
 def job_cancel(job_id):
     return _action(job_id, "cancel", {}, "Submission cancelled.")
+
+
+@bp.post("/<path:job_id>/edit")
+@admin_required
+def job_edit(job_id):
+    return _action(job_id, "edit", {"message": request.form.get("message", "")},
+                   "Working on it: the bot is changing the answers and re-filling the form.", anchor="#chat")
 
 
 @bp.post("/<path:job_id>/skip")

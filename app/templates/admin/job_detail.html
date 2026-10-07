@@ -21,7 +21,7 @@
 
     <div class="jobs__status" id="job-status" data-active="{{ 'true' if active else 'false' }}"
          data-status-url="{{ url_for('jobbot.job_status', job_id=job.id) }}"
-         data-current="{{ (sub.status or '') ~ '|' ~ job.status }}">
+         data-current="{{ signature }}">
       <p><strong>Status:</strong> {{ job.status | jobbot_status }}{% if job.note %} &middot; {{ job.note }}{% endif %}</p>
 
       {% if sub.status %}
@@ -41,6 +41,9 @@
         </form>
       {% elif sub.status in ("queued", "running") %}
         <p class="admin-form__hint">The bot is working on it. This page refreshes when it finishes.</p>
+      {% endif %}
+      {% if editing %}
+        <p class="jobs__notice">Changing the answers and re-filling the form. This page comes back here when it's done.</p>
       {% endif %}
 
       {% if job.missing_required %}
@@ -75,6 +78,51 @@
       </div>
     </div>
 
+    <div class="jobs__chat" id="chat">
+      <h2 class="admin-form__subtitle">Ask for changes</h2>
+      {% if edits %}
+        <ol class="jobs__messages">
+          {% for edit in edits %}
+            <li class="jobs__message jobs__message--you">{{ edit.message }}</li>
+            <li class="jobs__message jobs__message--bot">
+              {% if edit.status in ("queued", "running") %}
+                <span class="jobs__badge jobs__badge--running">{{ "Working on it" if edit.status == "running" else "Queued" }}</span>
+              {% else %}
+                {% if edit.status == "failed" %}<span class="jobs__badge jobs__badge--failed">Failed</span>{% endif %}
+                {{ edit.reply or "" }}
+                {% if edit.changes %}
+                  <ul class="jobs__changes">
+                    {% for change in edit.changes %}
+                      <li class="{{ '' if change.applied else 'jobs__error' }}">
+                        <strong>{{ change.label }}</strong>:
+                        {{ change | jobbot_change_value("old") }} &rarr; {{ change | jobbot_change_value("value") }}
+                        {% if not change.applied %}(didn't take){% endif %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <p class="admin-form__hint">Tell the bot what to change, e.g. "say I can start in June 2027" or
+          "make the why-us answer mention their robotics work". It updates the answers, fills the form again
+          and brings you back to Submit. Questions about the answers work too.</p>
+      {% endif %}
+      {% if can_chat %}
+        <form class="admin-form jobs__chat-form" method="post" action="{{ url_for('jobbot.job_edit', job_id=job.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <label class="admin-form__label" for="message">Message</label>
+          <textarea class="admin-form__input admin-form__textarea" id="message" name="message" rows="3"
+                    maxlength="2000" required placeholder="What should change?"></textarea>
+          <button class="admin-button" type="submit">Send</button>
+        </form>
+      {% elif not editing and job.status not in ("dry_run_ok", "failed") %}
+        <p class="admin-form__hint">Only dry runs that haven't been submitted can be changed.</p>
+      {% endif %}
+    </div>
+
     <div class="jobs__layout">
       <div class="jobs__shot">
         <h2 class="admin-form__subtitle">Form at the Submit button</h2>
@@ -101,7 +149,7 @@
             <thead><tr><th>Question</th><th>Answer</th><th class="jobs__from">From</th></tr></thead>
             <tbody>
               {% for field in job.fields %}
-                <tr class="{% if not field.ok %}jobs__row--error{% endif %}">
+                <tr class="{% if not field.ok %}jobs__row--error{% elif (field.label, field.education_index) in edited %}jobs__row--edited{% endif %}">
                   <td data-label="Question">{{ field.label }}{% if field.required %} <span class="jobs__required" title="required">*</span>{% endif %}</td>
                   <td data-label="Answer" class="jobs__answer">{{ field | jobbot_answer }}{% if field.error %}<br><span class="jobs__error">{{ field.error }}</span>{% endif %}</td>
                   <td data-label="From" class="jobs__from"><span class="jobs__source jobs__source--{{ (field.source or '').split(':')[0] | lower }}">{{ field.source }}</span></td>
@@ -130,8 +178,9 @@
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (!data) return;
-        const now = ((data.submission && data.submission.status) || "") + "|" + data.status;
-        if (now !== box.dataset.current) window.location.reload();
+        if (data.signature === box.dataset.current) return;
+        // back to the status box with the Submit button once the change (or submission) is done
+        window.location.href = window.location.pathname + "?updated=" + Date.now() + "#job-status";
       })
       .catch(() => {});
     setInterval(check, 3000);

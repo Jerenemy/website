@@ -157,7 +157,43 @@ class JobBotPageTests(unittest.TestCase):
         self.login()
         self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, submission={"status": "running"})})
         data = self.client.get("/admin/jobs/url:abc123/status.json").get_json()
-        self.assertEqual(data, {"status": "dry_run_ok", "submission": {"status": "running"}})
+        self.assertEqual(data["status"], "dry_run_ok")
+        self.assertEqual(data["submission"], {"status": "running"})
+        self.assertEqual(data["signature"], "dry_run_ok|running||")
+
+    def test_chat_box_and_history(self):
+        self.login()
+        edits = [{"id": "e1", "message": "say I can start in June 2027", "status": "done",
+                  "reply": "Updated your start date.", "created_at": "", "updated_at": "",
+                  "changes": [{"label": "First Name", "education_index": None, "old": "Jeremy", "value": "Jay", "applied": True}]}]
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, edits=edits, editing=False)})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn("Ask for changes", page)
+        self.assertIn('action="/admin/jobs/url:abc123/edit"', page)
+        self.assertIn("say I can start in June 2027", page)
+        self.assertIn("Updated your start date.", page)
+        self.assertRegex(page, r"Jeremy\s*&rarr;\s*Jay")
+        self.assertIn("jobs__row--edited", page)  # the changed answer is highlighted
+        self.assertIn("Submit application", page)
+
+    def test_chat_hides_buttons_while_editing(self):
+        self.login()
+        edits = [{"id": "e1", "message": "make it shorter", "status": "running", "reply": None, "changes": [],
+                  "created_at": "", "updated_at": ""}]
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, edits=edits, editing=True)})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn("Working on it", page)
+        self.assertIn("re-filling the form", page)
+        self.assertNotIn("Submit application", page)
+        self.assertNotIn('name="message"', page)
+        self.assertIn('data-active="true"', page)
+
+    def test_chat_message_is_sent_to_the_bot(self):
+        self.login()
+        self.responses[("POST", "/api/jobs/url%3Aabc123/edit")] = FakeResponse(202, {"edit": {"status": "queued"}})
+        response = self.client.post("/admin/jobs/url:abc123/edit", data={"csrf_token": "csrf", "message": "pick Remote"})
+        self.assertTrue(response.headers["Location"].endswith("/admin/jobs/url:abc123#chat"))
+        self.assertEqual(self.calls[-1][:3], ("POST", "http://bot.test/api/jobs/url%3Aabc123/edit", {"message": "pick Remote"}))
 
     def test_unconfigured_bot(self):
         self.login()

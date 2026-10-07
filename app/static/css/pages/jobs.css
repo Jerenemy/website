@@ -165,6 +165,69 @@
   opacity: 1;
 }
 
+.jobs__row--edited td {
+  background: rgba(79, 195, 247, 0.16);
+}
+
+.jobs__source--edit {
+  color: #4fc3f7;
+  opacity: 1;
+}
+
+.jobs__chat {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.jobs__chat .admin-form__subtitle {
+  margin-top: 0;
+}
+
+.jobs__messages {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.jobs__message {
+  max-width: 85%;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.jobs__message--you {
+  align-self: flex-end;
+  background: rgba(79, 195, 247, 0.25);
+}
+
+.jobs__message--bot {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.1);
+  white-space: normal;
+}
+
+#job-status,
+#chat {
+  scroll-margin-top: 6.5rem; /* clear the fixed site header when jumping back here */
+}
+
+.jobs__changes {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  white-space: normal;
+}
+
+.jobs__chat-form textarea {
+  min-height: 4.5rem;
+}
+
 @media (max-width: 900px) {
   .jobs__layout {
     grid-template-columns: 1fr;
