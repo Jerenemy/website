@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}{{ job.company }} application{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/jobs.css') }}">
+{% endblock %}
+{% block content %}
+<section id="admin" class="admin jobs jobs--detail">
+  <div class="admin__panel glassy">
+    <div class="admin__header">
+      <div>
+        <h1 class="admin__title">{{ job.company or "Unknown company" }}</h1>
+        <p class="jobs__subtitle">{{ job.title }} &middot; <a class="admin-link" href="{{ job.url }}" target="_blank" rel="noopener noreferrer">job posting</a></p>
+      </div>
+      <div class="admin__actions">
+        <a class="admin-button admin-button--ghost" href="{{ url_for('jobbot.job_list') }}">All applications</a>
+      </div>
+    </div>
+
+    {% include "admin/_flash.html" %}
+
+    <div class="jobs__status" id="job-status" data-active="{{ 'true' if active else 'false' }}"
+         data-status-url="{{ url_for('jobbot.job_status', job_id=job.id) }}"
+         data-current="{{ (sub.status or '') ~ '|' ~ job.status }}">
+      <p><strong>Status:</strong> {{ job.status | jobbot_status }}{% if job.note %} &middot; {{ job.note }}{% endif %}</p>
+
+      {% if sub.status %}
+        <p><strong>Submission:</strong> <span class="jobs__badge jobs__badge--{{ sub.status }}">{{ sub.status | jobbot_status }}</span>
+          {% if sub.updated_at %}<span class="admin-form__hint">updated {{ sub.updated_at | jobbot_time }}</span>{% endif %}</p>
+        {% if sub.note %}<p class="jobs__note">{{ sub.note }}</p>{% endif %}
+      {% endif %}
+
+      {% if sub.status == "needs_code" %}
+        <form class="admin-form jobs__code" method="post" action="{{ url_for('jobbot.job_code', job_id=job.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <label class="admin-form__label" for="code">{{ sub.prompt or "Enter the code the company emailed you" }}</label>
+          <div class="admin-form__row">
+            <input class="admin-form__input jobs__code-input" id="code" name="code" autocomplete="one-time-code" required autofocus>
+            <button class="admin-button" type="submit">Send code</button>
+          </div>
+        </form>
+      {% elif sub.status in ("queued", "running") %}
+        <p class="admin-form__hint">The bot is working on it. This page refreshes when it finishes.</p>
+      {% endif %}
+
+      {% if job.missing_required %}
+        <p class="jobs__notice jobs__notice--error">Unanswered required questions: {{ job.missing_required | join(", ") }}</p>
+      {% endif %}
+
+      <div class="admin__actions jobs__buttons">
+        {% if can_submit %}
+          <form method="post" action="{{ url_for('jobbot.job_submit', job_id=job.id) }}"
+                onsubmit="return confirm({{ ('Submit this application to ' ~ (job.company or 'this company') ~ ' for real? This cannot be undone.') | tojson }});">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            {% if needs_force %}
+              <input type="hidden" name="force" value="1">
+              <button class="admin-button jobs__danger" type="submit">Retry submission anyway</button>
+            {% else %}
+              <button class="admin-button jobs__submit" type="submit">Submit application</button>
+            {% endif %}
+          </form>
+        {% endif %}
+        {% if sub.status in ("queued", "needs_code") %}
+          <form method="post" action="{{ url_for('jobbot.job_cancel', job_id=job.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="admin-button admin-button--ghost" type="submit">Cancel submission</button>
+          </form>
+        {% endif %}
+        {% if job.status not in ("applied", "skipped") and not active %}
+          <form method="post" action="{{ url_for('jobbot.job_skip', job_id=job.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="admin-button admin-button--ghost" type="submit">Skip</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="jobs__layout">
+      <div class="jobs__shot">
+        <h2 class="admin-form__subtitle">Form at the Submit button</h2>
+        {% if job.has_screenshot %}
+          <a href="{{ url_for('jobbot.job_screenshot', job_id=job.id) }}" target="_blank" rel="noopener">
+            <img src="{{ url_for('jobbot.job_screenshot', job_id=job.id) }}" alt="Filled application form for {{ job.company }}" loading="lazy">
+          </a>
+        {% else %}
+          <p class="admin-form__hint">No screenshot on the server for this job.</p>
+        {% endif %}
+        {% if sub.has_screenshot %}
+          <h2 class="admin-form__subtitle">After the last submission</h2>
+          <a href="{{ url_for('jobbot.job_screenshot', job_id=job.id, kind='submission') }}" target="_blank" rel="noopener">
+            <img src="{{ url_for('jobbot.job_screenshot', job_id=job.id, kind='submission') }}" alt="Page after submitting" loading="lazy">
+          </a>
+        {% endif %}
+      </div>
+
+      <div class="jobs__answers">
+        <h2 class="admin-form__subtitle">Answers ({{ job.fields | length }})</h2>
+        {% if job.application_location %}<p class="admin-form__hint">Applying from: {{ job.application_location }}</p>{% endif %}
+        <div class="admin-table__wrap">
+          <table class="admin-table">
+            <thead><tr><th>Question</th><th>Answer</th><th class="jobs__from">From</th></tr></thead>
+            <tbody>
+              {% for field in job.fields %}
+                <tr class="{% if not field.ok %}jobs__row--error{% endif %}">
+                  <td data-label="Question">{{ field.label }}{% if field.required %} <span class="jobs__required" title="required">*</span>{% endif %}</td>
+                  <td data-label="Answer" class="jobs__answer">{{ field | jobbot_answer }}{% if field.error %}<br><span class="jobs__error">{{ field.error }}</span>{% endif %}</td>
+                  <td data-label="From" class="jobs__from"><span class="jobs__source jobs__source--{{ (field.source or '').split(':')[0] | lower }}">{{ field.source }}</span></td>
+                </tr>
+              {% else %}
+                <tr><td colspan="3">No answers were recorded.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% for issue in job.validation_errors %}
+          <p class="jobs__error">{{ issue.field or "Form" }}: {{ issue.messages | join("; ") }}</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+  (function () {
+    const box = document.getElementById("job-status");
+    if (!box || box.dataset.active !== "true") return;
+    const check = () => fetch(box.dataset.statusUrl, { credentials: "same-origin", cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        const now = ((data.submission && data.submission.status) || "") + "|" + data.status;
+        if (now !== box.dataset.current) window.location.reload();
+      })
+      .catch(() => {});
+    setInterval(check, 3000);
+  })();
+</script>
+{% endblock %}

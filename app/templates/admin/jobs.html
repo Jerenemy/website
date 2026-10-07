@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Job Applications{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/jobs.css') }}">
+{% endblock %}
+{% block content %}
+<section id="admin" class="admin jobs">
+  <div class="admin__panel glassy">
+    <div class="admin__header">
+      <h1 class="admin__title">Job Applications</h1>
+      <div class="admin__actions">
+        <a class="admin-button admin-button--ghost" href="{{ url_for('admin.portfolio_list') }}">Back to admin</a>
+      </div>
+    </div>
+
+    {% include "admin/_flash.html" %}
+
+    {% if error %}
+      <p class="jobs__notice jobs__notice--error">{{ error }}</p>
+    {% else %}
+      {% for job in waiting %}
+        <a class="jobs__notice jobs__notice--urgent" href="{{ url_for('jobbot.job_detail', job_id=job.id) }}">
+          {{ job.company }} is waiting for an emailed verification code. Enter it now &rarr;
+        </a>
+      {% endfor %}
+
+      <nav class="jobs__tabs" aria-label="Filter applications">
+        {% for key, label in filters.items() %}
+          <a class="jobs__tab{% if key == show %} jobs__tab--active{% endif %}"
+             href="{{ url_for('jobbot.job_list', show=key) }}">{{ label }} <span>{{ counts.get(key, 0) }}</span></a>
+        {% endfor %}
+      </nav>
+
+      <div class="admin-table__wrap">
+        <table class="admin-table">
+          <thead><tr><th>Company</th><th>Role</th><th>Status</th><th>Last attempt</th><th></th></tr></thead>
+          <tbody>
+            {% for job in jobs %}
+              {% set sub = job.submission or {} %}
+              <tr>
+                <td data-label="Company">{{ job.company or "?" }}</td>
+                <td data-label="Role">{{ job.title or "?" }}</td>
+                <td data-label="Status">
+                  <span class="jobs__badge jobs__badge--{{ job.category }}">
+                    {% if sub.status %}{{ sub.status | jobbot_status }}{% else %}{{ job.status | jobbot_status }}{% endif %}
+                  </span>
+                  {% if job.missing_required %}<span class="jobs__badge jobs__badge--attention">{{ job.missing_required | length }} unanswered</span>{% endif %}
+                </td>
+                <td data-label="Last attempt">{{ job.last_attempt | jobbot_time }}</td>
+                <td><a class="admin-link" href="{{ url_for('jobbot.job_detail', job_id=job.id) }}">Review</a></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5">Nothing here yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if last_pass %}<p class="admin-form__hint">Last bot pass: {{ last_pass | jobbot_time }}</p>{% endif %}
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

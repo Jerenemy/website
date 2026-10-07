@@ -118,3 +118,6 @@ app/blog/*.pyc
 !app/data/
 !app/data/.gitignore
 !app/data/portfolio.json
+# Job application bot review pages (admin) and their tests
+!app/jobbot.py
+!tests/test_jobbot.py

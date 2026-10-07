@@ -27,6 +27,27 @@ poetry install --no-root
 - Password-protected admin area to add/edit/delete portfolio items (JSON-backed) with image uploads, preview, and delete confirmation
 - Admin site settings to update the home description/background, resume PDF, and theme colors
 
+## Job Application Review
+
+Admin-only pages at `/admin/jobs` for the getmeajob bot: every application the bot filled and stopped
+at the Submit button, with its screenshot and each question's answer, a **Submit** button that has the
+bot really submit it, a box for emailed verification codes, and Skip/Cancel. The bot's email alerts
+link straight to `/admin/jobs/<job id>`.
+
+The pages call the bot's private API (`getmeajob serve`, localhost:5003) from the server; the browser
+never reaches the bot, and screenshots (which show personal details) are proxied behind the admin
+login instead of living in `/static`. Add to the server's `.env`:
+
+```dotenv
+JOBBOT_API_URL=http://127.0.0.1:5003      # the default
+JOBBOT_API_TOKEN=<same value as REVIEW_API_TOKEN in the bot's .env>
+```
+
+Then `sudo supervisorctl restart personal_website`. No Nginx change: the bot's port must stay
+private. If the bot is not running, the page says so instead of failing. Code lives in
+`app/jobbot.py`, `app/templates/admin/jobs.html`, `app/templates/admin/job_detail.html` and
+`app/static/css/pages/jobs.css`; tests in `tests/test_jobbot.py`.
+
 ## WTT Email Signup
 
 - Public form: `https://jeremyzay.com/wtt` (also accepts `/wtt/`). Collects emails only; no email is sent.
