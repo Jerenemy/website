@@ -1,0 +1,50 @@
+name: Deploy
+
+# Every push to main fast-forwards the server's checkout and restarts the supervisor programs
+# whose code changed. The server keeps local edits made through the admin pages (theme.css,
+# portfolio.json, résumé PDFs); --ff-only stops the deploy, untouched, if a pull would clash.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull and restart on the server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            set -eu
+            cd /home/jzay/personal_website
+            OLD=$(git rev-parse HEAD)
+            git fetch origin main
+            git checkout main
+            git merge --ff-only origin/main
+            NEW=$(git rev-parse HEAD)
+            CHANGED=$(git diff --name-only "$OLD" "$NEW")
+            echo "Deployed $OLD -> $NEW"
+            echo "$CHANGED"
+
+            # The site restarts on every deploy (or a manual run); the two side services only
+            # when their own folder changed.
+            sudo supervisorctl restart personal_website
+            if echo "$CHANGED" | grep -q '^projects/ear/'; then
+              sudo supervisorctl restart ear_service
+            fi
+            if echo "$CHANGED" | grep -q '^projects/attack_target_network/'; then
+              sudo supervisorctl restart attack_target_network
+            fi
+            if echo "$CHANGED" | grep -q '^poetry.lock$'; then
+              echo "::warning::poetry.lock changed: run 'poetry install --no-root' on the server and restart"
+            fi
+            sudo supervisorctl status
