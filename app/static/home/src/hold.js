@@ -35,6 +35,11 @@ export const RISER_SEEN = 0.04;   // beams of a riser standing above the tread i
 
 export function createHold(tribar) {
   const { blocks } = tribar, n = blocks.length, R = SHADING.lightRadius, [h0, h1] = SHADING.lanternHold;
+  // The block whose face a step's riser walls in (the next one in the loop, a corner cube at a side's
+  // end), and how far the riser stands above that face: a step's rise, or nothing at a corner, where
+  // the last step is flush with the cube and only its lift shows its riser.
+  const riserOver = (i) => (i + 1) % n;
+  const riserHeight = (i, lift) => (blocks[riserOver(i)].step >= 0 ? DIM.rise : 0) + lift[i] - lift[riserOver(i)];
   const [letGo0, letGo1] = SHADING.lanternLetGo, take0 = SHADING.lanternReach, take1 = take0 * 4 / 3;
   // Each block's place in the loop (a corner cube takes its side's first step: they stand together)
   // and the run of its tread plane along its travel.
@@ -62,6 +67,7 @@ export function createHold(tribar) {
 
   return {
     loopOf,
+    riserHeight,
     /**
      * @param light  per block (3 each): the light as that block sees it, structure space
      * @param lift   per block: its lift along its tread
@@ -93,12 +99,13 @@ export function createHold(tribar) {
         }
       }
       for (let i = 0; i < n; i++) {
-        const b = blocks[i], next = blocks[i + 1], k = i * 3 + b.travel;
-        // A step's riser (its leading face) walls in the next step's tread; a cube's leading face is covered.
-        own[k] = b.step >= 0 && next && next.side === b.side && next.step >= 0
-          ? front[k] * own[(i + 1) * 3 + next.tread] * smoothstep(0, RISER_SEEN, DIM.rise + lift[i] - lift[i + 1]) : 0;
-        for (let a = 0; a < 3; a++) own[i * 3 + a] *= strength;
+        const b = blocks[i], k = i * 3 + b.travel;
+        // A step's riser (its leading face) walls in the face in front of it along its tread: the next
+        // step's tread, or, for a side's last step, the next corner cube's face flush with its tread,
+        // which the riser stands above only by its lift. A cube's leading face is covered.
+        own[k] = b.step >= 0 ? front[k] * own[riserOver(i) * 3 + b.tread] * smoothstep(0, RISER_SEEN, riserHeight(i, lift)) : 0;
       }
+      for (let q = 0; q < n * 3; q++) own[q] *= strength;
       return own;
     },
   };
