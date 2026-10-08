@@ -135,6 +135,26 @@ sudo supervisorctl restart personal_website
 
 From then on the admin writes `instance/portfolio.json` and the tracked file only seeds new checkouts: works changed in the repository no longer reach the live site (change them in the admin). To undo, and before any rollback to the old code, delete that line from `.env` and restart.
 
+## Automatic deploys
+
+`.github/workflows/deploy.yml` runs on every push to `main` (and by hand from the Actions tab). It SSHes into the server, fast-forwards `/home/jzay/personal_website` to `origin/main`, restarts `personal_website`, and restarts `ear_service` or `attack_target_network` only when their folder under `projects/` changed. A pull that would overwrite a file edited on the server (the admin pages' `theme.css`, `portfolio.json`) fails the run and leaves the server as it was. It never touches the Python environment: `pyproject.toml` and `poetry.lock` are untracked, so the server and the Mac each keep their own, and a new dependency is installed on the server by hand.
+
+One-time setup:
+
+1. On the server, as `jzay`, make a key for the workflow and authorize it:
+
+```bash
+ssh-keygen -t ed25519 -N '' -C github-deploy -f ~/.ssh/github_deploy && cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
+```
+
+2. Let `jzay` restart the programs without a password (`sudo visudo -f /etc/sudoers.d/github-deploy`):
+
+```
+jzay ALL=(root) NOPASSWD: /usr/bin/supervisorctl restart personal_website, /usr/bin/supervisorctl restart ear_service, /usr/bin/supervisorctl restart attack_target_network, /usr/bin/supervisorctl status
+```
+
+3. In GitHub, Settings → Secrets and variables → Actions, add `DEPLOY_HOST` (the server's address), `DEPLOY_USER` (`jzay`), `DEPLOY_SSH_KEY` (the contents of `~/.ssh/github_deploy`) and, if SSH is not on 22, `DEPLOY_PORT`.
+
 ## WTT Email Signup
 
 - Public form: `https://jeremyzay.com/wtt` (also accepts `/wtt/`). Collects emails only; no email is sent.
