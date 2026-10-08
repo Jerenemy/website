@@ -35,6 +35,9 @@ def create_app():
     app.register_blueprint(wtt_bp)
     app.cli.add_command(init_db_command)
     
+    from .jobbot import bp as jobbot_bp
+    app.register_blueprint(jobbot_bp)
+
     from .clash_royale import bp as clash_bp, init_command, sync_command, verify_command
     app.register_blueprint(clash_bp)
     for command in (init_command, sync_command, verify_command):

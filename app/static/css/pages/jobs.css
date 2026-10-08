@@ -1,0 +1,239 @@
+/* Job application review pages (admin). Builds on admin.css. */
+#admin.jobs {
+  max-width: 1200px;
+}
+
+.jobs__subtitle {
+  margin: 0.35rem 0 0;
+  opacity: 0.8;
+}
+
+.jobs__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.5rem;
+}
+
+.jobs__tab {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.jobs__tab span {
+  opacity: 0.65;
+  margin-left: 0.25rem;
+}
+
+.jobs__tab--active {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.jobs__badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.15);
+  white-space: nowrap;
+}
+
+.jobs__badge--review { background: rgba(79, 195, 247, 0.3); }
+.jobs__badge--active,
+.jobs__badge--queued,
+.jobs__badge--running { background: rgba(255, 193, 7, 0.35); }
+.jobs__badge--needs_code,
+.jobs__badge--attention,
+.jobs__badge--unconfirmed,
+.jobs__badge--failed { background: rgba(212, 73, 73, 0.45); }
+.jobs__badge--applied { background: rgba(76, 175, 80, 0.45); }
+
+.jobs__notice {
+  display: block;
+  margin: 0 0 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius);
+  color: var(--fg);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.jobs__notice--error,
+.jobs__notice--urgent {
+  background: rgba(212, 73, 73, 0.3);
+}
+
+.jobs__status {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.jobs__status p {
+  margin: 0 0 0.6rem;
+}
+
+.jobs__note {
+  opacity: 0.85;
+  word-break: break-word;
+}
+
+.jobs__code {
+  margin: 0.75rem 0;
+}
+
+.jobs__code-input {
+  max-width: 14rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.15em;
+}
+
+.jobs__buttons {
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.jobs .admin-button.jobs__submit {
+  background: rgba(76, 175, 80, 0.55);
+}
+
+.jobs .admin-button.jobs__danger {
+  background: rgba(212, 73, 73, 0.55);
+}
+
+.jobs__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.jobs__shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #fff;
+}
+
+.jobs__answer {
+  white-space: pre-wrap;
+}
+
+.jobs__required {
+  color: #ff8a80;
+}
+
+.jobs__error {
+  color: #ff8a80;
+  font-size: 0.9rem;
+}
+
+.jobs__row--error td {
+  background: rgba(212, 73, 73, 0.12);
+}
+
+.jobs button {
+  font: inherit;
+}
+
+.jobs .admin-table td.jobs__from,
+.jobs .admin-table th.jobs__from {
+  width: 1%;
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.jobs__source {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.jobs__source--llm {
+  color: #ffd54f;
+  opacity: 1;
+}
+
+.jobs__source--fallback,
+.jobs__source--error {
+  color: #ff8a80;
+  opacity: 1;
+}
+
+.jobs__row--edited td {
+  background: rgba(79, 195, 247, 0.16);
+}
+
+.jobs__source--edit {
+  color: #4fc3f7;
+  opacity: 1;
+}
+
+.jobs__chat {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.jobs__chat .admin-form__subtitle {
+  margin-top: 0;
+}
+
+.jobs__messages {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.jobs__message {
+  max-width: 85%;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.jobs__message--you {
+  align-self: flex-end;
+  background: rgba(79, 195, 247, 0.25);
+}
+
+.jobs__message--bot {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.1);
+  white-space: normal;
+}
+
+#job-status,
+#chat {
+  scroll-margin-top: 6.5rem; /* clear the fixed site header when jumping back here */
+}
+
+.jobs__changes {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  white-space: normal;
+}
+
+.jobs__chat-form textarea {
+  min-height: 4.5rem;
+}
+
+@media (max-width: 900px) {
+  .jobs__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin__header {
+    flex-wrap: wrap;
+  }
+}

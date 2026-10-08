@@ -27,6 +27,10 @@ class Config:
     CLASH_ROYALE_API_BASE_URL = os.getenv("CLASH_ROYALE_API_BASE_URL", "https://api.clashroyale.com/v1")
     CLASH_ROYALE_DATABASE_PATH = os.getenv("CLASH_ROYALE_DATABASE_PATH", os.path.join(_project_root, "instance", "clash.sqlite3"))
 
+    # Job application bot (getmeajob `serve`): private API on the same machine, same token as its REVIEW_API_TOKEN.
+    JOBBOT_API_URL = os.getenv("JOBBOT_API_URL", "http://127.0.0.1:5003")
+    JOBBOT_API_TOKEN = os.getenv("JOBBOT_API_TOKEN")
+
     SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(32).hex())
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
     ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH")

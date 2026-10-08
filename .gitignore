@@ -163,3 +163,7 @@ app/blog/*.pyc
 !design/homepage-demo/site
 !design/homepage-demo/tools/
 !design/homepage-demo/tools/*
+
+# Job application bot review pages (admin) and their tests
+!app/jobbot.py
+!tests/test_jobbot.py
