@@ -100,6 +100,8 @@ export const THEME_GLSL = /* glsl */ `
     vec3 up;        // the unit axis of the block's tread (its top; the light hovers above it)
     float onTop;    // 1 on the block's top face, 0 on its two walls
     float fromTop;  // beams down from the block's top face (0 along its top edge): moss creeping down a wall, a nosing
+                    // (each side's up is a different structure axis, so by up a thing "runs down" a different way
+                    // per side; what the picture shows as down at every roll is structure -y: for drips, use rest.y)
     float block;    // the block's index round the loop: each block its own piece
     float isStep;   // 1 on a step (one per work), 0 on a plain block of a side
     float time;     // seconds

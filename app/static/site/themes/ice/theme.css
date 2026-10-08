@@ -1,5 +1,5 @@
-/* THEME: ice. Hard, cold, bright, unfriendly: the blocks are ice, the air a freezer's glare over
-   a steel-blue field, the light a cold electric cyan. Loaded after static/site/tokens.css, it
+/* THEME: ice. Cold, clean, bright: the blocks are ice cubes starting to melt, the air a cold
+   gradient, the light a cold electric cyan. Loaded after static/site/tokens.css, it
    overrides only what it changes; see that file for the contract. The world (the ice, the
    air, the light, the snow) is scene.js beside this file.
 
@@ -28,7 +28,7 @@
   --select-ink: #e6edf3;
 
   /* Over the scene's bright air: dark ink, dark marks. */
-  --world-bg: #8aa0b4;
+  --world-bg: #8ea5bb;
   --world-ink: #0a1421;
   --world-ink-2: #1f3144;
   --world-ink-3: #2f4357;
