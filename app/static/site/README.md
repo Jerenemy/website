@@ -27,7 +27,8 @@ boxes, numbers for order, and **one point of colour per page that means "you are
   `?theme=<name>`.
 * New theme: a folder `themes/<name>/` with a `theme.css` whose `:root { … }` overrides only what
   changes; it appears in the switcher at once. The homepage's interface is drawn in `--world-*`
-  over the scene's air, so a theme whose air is bright sets them dark, and the light in the scene
+  over the scene's air, so a theme whose air is bright sets them dark (`--world-bg` is also what
+  the canvas fades from and to, so it should sit near the air's tone), and the light in the scene
   is `--accent`.
 * A theme that changes the **world** (the blocks, the air, the light, the dust) adds a `scene.js`
   beside its `theme.css`: a plain ES module with no imports, exporting `{ config, glsl }`.

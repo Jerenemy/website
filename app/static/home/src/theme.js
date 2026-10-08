@@ -29,6 +29,10 @@
 // and PALETTE.coreDisplay beside a `light` (LANTERN.haloSize still sizes the quad, trailGain the
 // comet). Known limit: the light is screened over the frame (it can only brighten), so over a bright
 // air a halo thins toward white; a bright theme draws its lamp mostly as the core and the face it holds.
+// Derivatives (fwidth, dFdx) are available in every hook: a thin procedural line (a crack, a grain
+// line) is antialiased by the fwidth of the smooth coordinate it is drawn on, never of the line
+// itself. A chunk is a JS template literal: a backtick inside a GLSL comment ends it early, and the
+// module then fails to load (the console warns and the scene keeps its own world).
 // Mind GLSL's reserved words when naming variables: `half`, `patch`, `filter`, `input`, `output`,
 // `sample`, `fixed`, `long`, `short`, `double` are among the ones that fail to compile.
 //

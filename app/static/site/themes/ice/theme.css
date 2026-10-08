@@ -1,0 +1,46 @@
+/* THEME: ice. Hard, cold, bright, unfriendly: the blocks are ice, the air a freezer's glare over
+   a steel-blue field, the light a cold electric cyan. Loaded after static/site/tokens.css, it
+   overrides only what it changes; see that file for the contract. The world (the ice, the
+   air, the light, the snow) is scene.js beside this file.
+
+   The homepage's interface is drawn in --world-* over the scene's air: that air is bright, so
+   the interface here is dark, a cold navy. The other pages are the same cold: a blue-white
+   page, slate inks, thin wide type. */
+:root {
+  color-scheme: light;
+
+  --bg: #e6edf3;
+  --surface: #d9e3ec;
+  --surface-2: #cbd8e4;
+
+  --ink: #0a1421;
+  --ink-2: #33465a;
+  --ink-3: #566a7e;
+  --tick: #8fa3b6;
+
+  --hair: rgba(10, 20, 33, 0.36);
+  --rule: rgba(10, 20, 33, 0.13);
+
+  /* The light: a cold electric cyan, the one colour the ice does not have. */
+  --accent: #3fd9ff;
+
+  --select-bg: #0a1421;
+  --select-ink: #e6edf3;
+
+  /* Over the scene's bright air: dark ink, dark marks. */
+  --world-bg: #8aa0b4;
+  --world-ink: #0a1421;
+  --world-ink-2: #1f3144;
+  --world-ink-3: #2f4357;
+  --world-tick: #3d5266;
+  --world-hair: rgba(10, 20, 33, 0.42);
+  --world-rule: rgba(10, 20, 33, 0.16);
+
+  /* Thin, sharp type: lighter titles, wider labels. */
+  --title-weight: 200;
+  --title-track: -0.01em;
+  --heading-weight: 300;
+  --track: 0.22em;
+
+  --shadow-device: 0 40px 100px -50px rgba(10, 30, 50, 0.5), 0 0 0 1px var(--rule);
+}

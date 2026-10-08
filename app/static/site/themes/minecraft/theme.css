@@ -1,0 +1,75 @@
+/* THEME: minecraft. The site as the game's interface: its pixel typeface, its dark dirt
+   backdrop with white text, square corners, chunky device frames. Loaded after
+   static/site/tokens.css, it overrides only what it changes; see that file for the contract.
+   The homepage's world (grass blocks, a pixel sky, a torch, square particles) is scene.js.
+
+   Type: Minecraft (IdreesInc/Minecraft-Font, SIL OFL 1.1, LICENSE-minecraft-font.txt), the game's
+   proportional face, for everything; Monocraft (IdreesInc/Monocraft, SIL OFL 1.1,
+   LICENSE-monocraft.txt) for code. Both subset to Latin and served from this folder. Each glyph
+   is drawn on a 2-unit grid in an 18-unit em, so sizes that are multiples of 9px land on whole
+   screen pixels; the label and the small sizes trade that for legibility. */
+@font-face {
+  font-family: "Minecraft";
+  src: url("minecraft.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Monocraft";
+  src: url("monocraft.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+:root {
+  color-scheme: dark;
+  font-synthesis: none;                  /* one weight, one style: never a faux bold or italic */
+
+  /* The options screen: dirt, darkened, under white text. */
+  --bg: #1f160f;
+  --surface: #3b3b3b;
+  --surface-2: #585858;
+
+  --ink: #ffffff;
+  --ink-2: #e0e0e0;
+  --ink-3: #a8a8a8;
+  --tick: #7a7a7a;
+
+  --hair: rgba(255, 255, 255, 0.38);
+  --rule: rgba(255, 255, 255, 0.15);
+
+  /* The torch. */
+  --accent: #ff9a1f;
+
+  /* The homepage's interface over a night sky: white ink, as the HUD. */
+  --world-bg: #0a1230;
+  --world-ink: #ffffff;
+  --world-ink-2: #c9cfe0;
+  --world-ink-3: #9aa3bd;
+  --world-tick: #6b7490;
+  --world-hair: rgba(230, 236, 255, 0.4);
+  --world-rule: rgba(230, 236, 255, 0.16);
+
+  --font: "Minecraft", "Monocraft", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Monocraft", "Minecraft", ui-monospace, monospace;
+  --track: 0.04em;
+
+  --label-size: 12px;   --label-lead: 16px;
+  --small-size: 14px;   --small-lead: 20px;
+  --text-size: 18px;    --text-lead: 28px;
+  --lede-size: 22px;    --lede-lead: 32px;
+  --h2-size: 27px;      --h2-lead: 36px;
+  --title-size: clamp(36px, 6vw, 72px);
+  --title-lead: 1.1;
+  --title-weight: 400;
+  --title-track: 0;
+  --heading-weight: 400;
+  --strong-weight: 400;
+
+  --radius: 0px;
+  --radius-phone: 0px;
+  --radius-window: 0px;
+  --shadow-device: 0 0 0 2px #000000, 0 0 0 5px var(--surface-2);
+
+}
