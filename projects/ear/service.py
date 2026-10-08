@@ -44,8 +44,34 @@ def override_url_for():
         if endpoint == 'public.blog': return '/blog'
         if endpoint == 'public.game': return '/game'
         if endpoint == 'public.zaychess': return '/zaychess'
+        if endpoint == 'public.resume': return '/resume'
+        if endpoint == 'public.contact': return '/contact'
         return flask_url_for(endpoint, **values)
     return dict(url_for=custom_url_for)
+
+# The site's page (app/templates/layout.html) reads what the main site's app/design.py gives
+# every template: the frame's name and links, the year, the theme, the page's place among the
+# works. EAR is not one of the works and keeps the default theme. Keep the links in step with
+# _home_person() in app/blueprints/public/routes.py.
+@app.context_processor
+def site_frame():
+    from datetime import date
+    return dict(
+        frame={
+            'name': 'Jeremy Zay',
+            'links': [
+                {'id': 'resume', 'label': 'Résumé', 'href': '/resume'},
+                {'id': 'writing', 'label': 'Writing', 'href': '/blog'},
+                {'id': 'github', 'label': 'GitHub', 'href': 'https://github.com/Jerenemy'},
+                {'id': 'linkedin', 'label': 'LinkedIn', 'href': 'https://www.linkedin.com/in/jeremy-zay/'},
+                {'id': 'contact', 'label': 'Contact', 'href': '/contact'},
+            ],
+        },
+        year=date.today().year,
+        work_nav=None,
+        site_theme='void',
+        site_theme_css=None,
+    )
 
 # Force CPU
 device = "cpu"

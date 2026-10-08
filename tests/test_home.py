@@ -13,6 +13,7 @@ from app.portfolio.store import KINDS, PortfolioStore
 ROOT = Path(__file__).resolve().parents[1]
 SHIPPED_PORTFOLIO = ROOT / "app" / "data" / "portfolio.json"
 HOME_STATIC = ROOT / "app" / "static" / "home"
+SITE_STATIC = ROOT / "app" / "static" / "site"
 
 
 class Page(HTMLParser):
@@ -242,12 +243,15 @@ class HomeTests(unittest.TestCase):
             response = self.client.get(path)
             self.assertEqual(response.status_code, 200, path)
         page = parse(response.text)
-        self.assertEqual(page.forms, [{"id": "contact-form", "method": "post", "action": "/api/contact"}])
+        self.assertEqual([{k: f.get(k) for k in ("id", "method", "action")} for f in page.forms],
+                         [{"id": "contact-form", "method": "post", "action": "/api/contact"}])
         self.assertEqual([(f.get("name"), "required" in f) for f in page.fields],
                          [("name", True), ("email", True), ("message", True), ("website", False)])
         self.assertIn({"src": "/static/js/contact.js", "defer": None}, page.scripts)
         self.assertIn('id="contact-status"', response.text)
-        self.assertIn('href="/static/home/styles.css"', response.text)
+        # The contact page is built on the design system (templates/layout.html), like every page.
+        self.assertIn('href="/static/site/tokens.css"', response.text)
+        self.assertIn('href="/static/site/site.css"', response.text)
         self.assertNotIn("<canvas", response.text)
         self.assertIn('href="/contact" rel="noopener" aria-label="Contact" aria-current="page"', response.text)
         self.assertNotIn("<!--", response.text)
@@ -422,9 +426,10 @@ class ShippedAssetsTests(unittest.TestCase):
     .gitignore is an allowlist: a file without its own entry silently never deploys)."""
 
     def needed(self):
-        files = [HOME_STATIC / "styles.css", HOME_STATIC / "contact.css",
+        files = [HOME_STATIC / "styles.css", SITE_STATIC / "tokens.css", SITE_STATIC / "site.css", SITE_STATIC / "site.js",
                  HOME_STATIC / "vendor" / "three-r186" / "three.module.min.js"]
         files += sorted((HOME_STATIC / "src").glob("*.js"))
+        files += sorted((SITE_STATIC / "themes").glob("*.css")) + sorted((SITE_STATIC / "works").glob("*.css"))
         return files
 
     def test_scene_modules_resolve(self):
@@ -442,11 +447,12 @@ class ShippedAssetsTests(unittest.TestCase):
     def test_homepage_files_are_not_git_ignored(self):
         paths = [str(p.relative_to(ROOT)) for p in self.needed()]
         paths += ["app/templates/home.html", "app/templates/contact.html", "app/templates/_preview_meta.html",
+                  "app/templates/layout.html", "app/templates/_ui.html", "app/templates/_theme.html", "app/design.py",
                   "app/static/img/brand/tribar-preview.jpg", "tests/test_home.py"]
         # The design record and the proofs that guard the paradox rule (design/homepage-demo).
         demo = "design/homepage-demo/"
         paths += [demo + name for name in ("CONCEPT.md", "INTEGRATION.md", "index.html", "data.js", "package.json",
-                                           "src", "styles.css", "vendor")]
+                                           "src", "styles.css", "vendor", "site")]
         paths += [str(p.relative_to(ROOT)) for p in sorted((ROOT / demo / "tools").glob("*"))]
         result = subprocess.run(["git", "-C", str(ROOT), "check-ignore", "--no-index", *paths],
                                 capture_output=True, text=True)

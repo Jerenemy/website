@@ -1,22 +1,23 @@
 /* One typeface family, one scale, an 8px grid. Colour: neutral greys only. The accent
-   never appears in the DOM: it exists once, in the world, as the light. */
+   never appears in the DOM: it exists once, in the world, as the light. The values are the
+   site's (static/site/tokens.css, which home.html loads first). */
 :root {
-  --void: #050505;
-  --stone: #dcdcdc;
-  --stone-mid: #9a9a9a;
-  --stone-low: #707070;   /* the quietest text: 4:1 on the void, readable on a dim laptop */
-  --tick: #5e5e5e;        /* the bare rail ticks, which need not be read */
-  --hair: rgba(220, 220, 220, 0.28);
-  --rule: rgba(220, 220, 220, 0.12);
-  --font: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --track: 0.16em;
+  /* Every value here comes from static/site/tokens.css (the theme): the homepage's world is
+     --world-*, the type and the curve are the whole site's. Only the scene's own layout and
+     the timings it publishes (src/config.js) are set below. */
+  --void: var(--world-bg);
+  --stone: var(--world-ink);
+  --stone-mid: var(--world-ink-2);
+  --stone-low: var(--world-ink-3);   /* the quietest text: 4:1 on the void, readable on a dim laptop */
+  --tick: var(--world-tick);         /* the bare rail ticks, which need not be read */
+  --hair: var(--world-hair);
+  --rule: var(--world-rule);
   --margin: 40px;
   --rest-x: 33vw;
   --rest-y: 50vh;
   --cap-x: var(--margin);     /* the caption's left edge: the margin, or closer to the light on a wide monitor */
   --rail-right: var(--margin);
   --cap-no: 7ch;        /* width of the caption's "NN / NN"; measured by src/interface.js */
-  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
   /* Timings shared with src/config.js, published from there (src/interface.js). */
   --door-fade: 0.16s;
   --detail-dip: 110ms;

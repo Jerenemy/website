@@ -1,0 +1,80 @@
+/* EAR, the audio-visual search (templates/ear/index.html) and its loss visualizer
+   (templates/ear/ce_loss.html). Only what the interactive demo needs that site.css lacks: the
+   states the inline scripts show and hide by id, the rows of matches, the recorder, the chart's
+   room and the slider. Every value is a token (static/site/tokens.css). */
+
+/* ---------------------------------------------------------------- the query */
+.ear-actions { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); }
+.sect__title + .ear-actions { margin-top: var(--s4); }
+/* A file input is opened by its label, which wears the action's hairline. */
+.ear-actions .file-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.ear-actions label.open:focus-within::after { background: var(--ink); }
+
+/* The scripts open these with style.display; until then they are closed. */
+#preview-area, #results-wrapper, #loader, #media-overlay, #overlay-camera, #overlay-mic { display: none; }
+
+#preview-area {
+  flex-direction: column; align-items: flex-start; gap: var(--s2);
+  margin-top: var(--s6); padding-top: var(--s3); border-top: 1px solid var(--rule);
+}
+#preview-content img, .preview-media { max-width: calc(var(--s20) + var(--s5)); border: 1px solid var(--rule); }
+#preview-content audio { width: min(100%, calc(var(--s20) * 2)); }
+#loader { color: var(--ink-2); animation: ear-breathe 1.4s var(--ease) infinite; }
+#error-msg:empty { display: none; }
+
+/* ---------------------------------------------------------------- the matches
+   Two columns (same modality, cross modality), each a list of rows on rules. */
+.columns-container { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s5); }
+.column-header { padding-bottom: var(--s2); color: var(--ink-2); }
+.column-header span { display: block; margin-top: 4px; color: var(--ink-3); }
+.results-list { border-bottom: 1px solid var(--rule); }
+.results-list > .note { padding: var(--s2) 0; border-top: 1px solid var(--rule); }
+
+.result-card {
+  display: grid; grid-template-columns: var(--s12) 1fr; column-gap: var(--s3); align-items: center;
+  padding: var(--s2) 0; border-top: 1px solid var(--rule);
+}
+.card-media { width: var(--s12); height: var(--s12); overflow: hidden; background: var(--surface); }
+.card-media img { width: 100%; height: 100%; object-fit: cover; }
+/* A sound has no picture: its player takes the row, its name and score under it. */
+.result-card--audio { grid-template-columns: 1fr; row-gap: var(--s1); }
+.result-card--audio .card-media { width: 100%; height: auto; background: none; }
+.result-card--audio .card-media audio { display: block; width: 100%; }
+.card-label { color: var(--ink); font-size: var(--text-size); line-height: var(--text-lead); }
+.card-label::first-letter { text-transform: uppercase; }
+.card-score { margin-top: 4px; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+
+/* ---------------------------------------------------------------- the camera and the recorder
+   Over the page, on its own ground. */
+#media-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  justify-content: center; align-items: center; padding: var(--margin);
+  background: var(--bg);
+}
+.overlay-content { width: min(100%, calc(var(--s20) * 3)); }
+.overlay-content > * + * { margin-top: var(--s3); }
+#camera-stream { width: 100%; background: var(--surface); border: 1px solid var(--rule); }
+.audio-wave {
+  display: flex; align-items: center; gap: var(--s2);
+  height: var(--s12); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+}
+.recording-dot { width: var(--s1); height: var(--s1); border-radius: 50%; background: var(--ink); animation: ear-breathe 1s var(--ease) infinite; }
+
+@keyframes ear-breathe { 50% { opacity: 0.35; } }
+
+/* ---------------------------------------------------------------- the loss visualizer */
+.ear-metrics dd { font-size: var(--h2-size); line-height: var(--h2-lead); font-weight: var(--title-weight); }
+.chart-container { position: relative; height: calc(var(--s16) * 3); margin-top: var(--s6); }
+.ear-range { margin-top: var(--s5); }
+.ear-range .labels { display: flex; justify-content: space-between; gap: var(--s2); margin-top: var(--s1); }
+/* The slider: a hairline to slide along, a small square of ink on it. */
+.field.ear-range input[type="range"] { height: var(--s3); padding: 0; border: 0; cursor: pointer; background: none; }
+.ear-range input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: var(--hair); }
+.ear-range input[type="range"]::-moz-range-track { height: 1px; background: var(--hair); }
+.ear-range input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: calc(var(--s1) * 1.5); height: calc(var(--s1) * 1.5); margin-top: calc(var(--s1) * -0.75); border: 0; border-radius: 0; background: var(--ink); }
+.ear-range input[type="range"]::-moz-range-thumb { width: calc(var(--s1) * 1.5); height: calc(var(--s1) * 1.5); border: 0; border-radius: 0; background: var(--ink); }
+
+@media (max-width: 640px) {
+  .columns-container { grid-template-columns: 1fr; }
+  .chart-container { height: calc(var(--s20) * 2); }
+}

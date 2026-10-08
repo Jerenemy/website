@@ -137,7 +137,11 @@ def poster_diffusion_2025():
     
 @bp.get('/zaychess', strict_slashes=False)  
 def zaychess():
-    return render_template('zaychess/zaychess.html')
+    return render_template(
+        'zaychess/zaychess.html',
+        zaychess_current_version=ZAYCHESS_CURRENT_VERSION,
+        zaychess_min_macos=ZAYCHESS_MIN_MACOS,
+    )
 
 @bp.get('/zaychess/support', strict_slashes=False)
 def zaychess_support():

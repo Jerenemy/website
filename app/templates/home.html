@@ -9,7 +9,7 @@
   {#- Not shown on the page (the homepage carries almost no text); it still serves search and link previews. #}
   <meta name="description" content="{{ site_settings.home_description | striptags }}">
   {%- include "_preview_meta.html" %}
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23050505'/%3E%3Cpath d='M16 6 27 25H5z' fill='none' stroke='%23d8d8d8' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ccircle cx='5' cy='25' r='3.2' fill='%23ff4a1c'/%3E%3C/svg%3E">
+  {%- include "_theme.html" %}
   <link rel="stylesheet" href="{{ url_for('static', filename='home/styles.css') }}">
   <script>
     // Before first paint. An old link to the contact section goes to the contact page. The scene's
