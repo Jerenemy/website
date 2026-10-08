@@ -233,6 +233,11 @@ details.index__item .index__answer > * + * { margin-top: var(--s2); }
 .pair > :last-child { position: sticky; top: var(--s5); }
 .pair > :last-child > * + * { margin-top: var(--s4); }
 .figure--plain a { display: block; cursor: zoom-in; }
+/* Drawn from its PDF: the canvas lies exactly over the stand-in image and fades in once whole. */
+.figure--pdf .figure__frame { position: relative; display: block; border: 1px solid var(--rule); cursor: zoom-in; }
+.figure--pdf .figure__frame img { width: 100%; }
+.figure--pdf canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity var(--t-slow) var(--ease); }
+.figure--pdf.is-drawn canvas { opacity: 1; }
 
 /* The showcase: words on one side, the rendering on the other, alternating down the page. */
 .show { display: grid; grid-template-columns: var(--label-col) var(--body-col); column-gap: var(--s5); align-items: center; margin-top: var(--s16); }

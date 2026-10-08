@@ -119,10 +119,10 @@ def resume():
     
 # The posters page: each poster's text and images are its portfolio item (editable in
 # /admin/portfolio, unpublished so the homepage shows them as the one Posters work); the year and
-# the PDF route are fixed here. Newest first.
+# the PDF (its route and its file) are fixed here. Newest first.
 POSTERS = (
-    ("diffusion", "2025", "public.poster_diffusion_2025"),
-    ("reinforcement-learning", "2024", "public.poster_rl_2024"),
+    ("diffusion", "2025", "public.poster_diffusion_2025", "files/poster-diffusion-2025.pdf"),
+    ("reinforcement-learning", "2024", "public.poster_rl_2024", "files/poster-rl-2024.pdf"),
 )
 
 
@@ -130,11 +130,13 @@ POSTERS = (
 def posters():
     store = get_portfolio_store()
     shown = []
-    for item_id, year, pdf in POSTERS:
+    for item_id, year, pdf, pdf_file in POSTERS:
         item = store.get_item(item_id)
         if item is None:
             continue
-        shown.append({**item, "year": year, "pdf": url_for(pdf)})
+        # The page draws each poster from its PDF (static, so nginx serves and caches it) and
+        # links to the poster's own address.
+        shown.append({**item, "year": year, "pdf": url_for(pdf), "pdf_file": url_for("static", filename=pdf_file)})
     return render_template("posters.html", posters=shown)
 
 

@@ -54,6 +54,12 @@
 !app/static/vendor
 !app/static/vendor/glightbox
 !app/static/vendor/glightbox/*
+# pdf.js (Mozilla, Apache-2.0), versioned by its folder: renders the posters from their PDFs
+# (static/site/pdf-figure.js). The .mjs builds are renamed .js so any nginx serves them as JavaScript.
+!app/static/vendor/pdfjs-6.4.299/
+!app/static/vendor/pdfjs-6.4.299/*
+!app/static/vendor/pdfjs-6.4.299/standard_fonts/
+!app/static/vendor/pdfjs-6.4.299/standard_fonts/*
 # static js
 !/app/static/js
 !/app/static/js/*
