@@ -3,7 +3,7 @@
 {% block title %}eQoScan · Reusable container tracking{% endblock %}
 {% block description %}eQoScan is a credit-based system for tracking reusable food containers on university campuses.{% endblock %}
 {% block content %}
-  {% call ui.head("eQoScan", line="A credit-based system for tracking reusable food containers on university campuses.", where="Project") %}
+  {% call ui.head("eQoScan", line="A credit-based system for tracking reusable food containers on university campuses. Winner of the Internship Prize at WesHack.", where="Project") %}
     {{ ui.open("#contact", "Request access") }}
   {% endcall %}
 
@@ -32,8 +32,26 @@
     </ol>
   {% endcall %}
 
+  {% call ui.sect("04", "Facts") %}
+    <dl class="facts">
+      <div><dt>Recognition</dt><dd>Internship Prize, WesHack</dd></div>
+      <div><dt>Built for</dt><dd>University dining programs</dd></div>
+      <div><dt>Sign-in</dt><dd>University Google accounts</dd></div>
+      <div><dt>Web app</dt><dd>Python, Flask, Bootstrap, JavaScript</dd></div>
+      <div><dt>Mobile app</dt><dd>Swift</dd></div>
+      <div><dt>Database</dt><dd>Firebase, real time</dd></div>
+    </dl>
+  {% endcall %}
+
   {#- The script below posts this form to /api/contact as JSON, the organisation folded into the message. #}
-  {% call ui.sect("04", "Contact", id="contact") %}
+  {% call ui.sect("05", "Team") %}
+    <div class="prose">
+      <p class="lede">Built in a weekend at WesHack, Wesleyan's hackathon, where it won the Internship Prize.</p>
+      <p>Two applications work in concert. With Yehor Mishchyriak, I built the web application: a dynamic QR code system, an interactive dashboard for the institution running the program, and the real-time database that bridges the web and mobile apps. Ambrose Vannier and Samvit Prem Singhal built the mobile app in Swift.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("06", "Contact", id="contact") %}
     <h2 class="sect__title">Bring eQoScan to your campus.</h2>
     <p class="note">Request a demo or technical documentation.</p>
     <form id="contact-form" class="form">

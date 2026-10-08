@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% import "_ui.html" as ui with context %}
+{#- Every research poster, newest first: the poster itself (it opens full size), where it was
+    shown, what it argues, and its PDF. The text and images are each poster's portfolio item. #}
+{% block title %}Posters · {{ frame.name }}{% endblock %}
+{% block description %}Research posters by Jeremy Zay on diffusion models and reinforcement learning for designing molecules that target mutant p53.{% endblock %}
+{% block content %}
+  {{ ui.head("Posters", line=work_nav.work.line if work_nav else None, where="Research") }}
+
+  {%- for p in posters %}
+  {% call ui.sect('%02d' % loop.index, p.year ~ " · " ~ p.title, id=p.id, wide=True) %}
+    <div class="pair">
+    <figure class="figure figure--plain">
+      <a href="{{ url_for('static', filename=p.image_full) }}" data-no-transition aria-label="{{ p.title }} poster, full size">
+        <img src="{{ url_for('static', filename=p.image_thumb or p.image_full) }}" alt="{{ p.image_alt or p.title ~ ' poster' }}" loading="{{ 'eager' if loop.first else 'lazy' }}" decoding="async">
+      </a>
+      <figcaption><span class="no">Fig {{ '%02d' % loop.index }}</span><span class="t">{{ p.title }}, {{ p.year }}</span></figcaption>
+    </figure>
+    <div>
+      <h2 class="sect__title">{{ p.title }}</h2>
+      <div class="prose">
+        {%- if p.short_desc %}<p class="lede">{{ p.short_desc | striptags }}</p>{% endif %}
+        {%- if p.long_desc %}<p>{{ p.long_desc | striptags }}</p>{% endif %}
+      </div>
+      <div class="actions">
+        {{ ui.open(p.pdf, "PDF", external=True) }}
+        {{ ui.open(url_for('static', filename=p.image_full), "Full image", external=True, quiet=True) }}
+      </div>
+    </div>
+    </div>
+  {% endcall %}
+  {%- endfor %}
+{% endblock %}

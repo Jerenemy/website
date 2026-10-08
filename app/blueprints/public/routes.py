@@ -117,6 +117,27 @@ def resume():
             return send_from_directory(files_dir, "resume.pdf", mimetype="application/pdf")
         raise
     
+# The posters page: each poster's text and images are its portfolio item (editable in
+# /admin/portfolio, unpublished so the homepage shows them as the one Posters work); the year and
+# the PDF route are fixed here. Newest first.
+POSTERS = (
+    ("diffusion", "2025", "public.poster_diffusion_2025"),
+    ("reinforcement-learning", "2024", "public.poster_rl_2024"),
+)
+
+
+@bp.get("/posters", strict_slashes=False)
+def posters():
+    store = get_portfolio_store()
+    shown = []
+    for item_id, year, pdf in POSTERS:
+        item = store.get_item(item_id)
+        if item is None:
+            continue
+        shown.append({**item, "year": year, "pdf": url_for(pdf)})
+    return render_template("posters.html", posters=shown)
+
+
 @bp.get("/poster-rl-2024")
 def poster_rl_2024():
     # serves the file from static/files/

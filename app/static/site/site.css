@@ -228,6 +228,12 @@ details.index__item .index__answer > * + * { margin-top: var(--s2); }
 .device--phone > .screen { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: calc(var(--radius-phone) - 10px); }
 .device--phone > .screen > img { width: 100%; height: 100%; object-fit: cover; }
 
+/* A pair: a large figure and the words about it beside it, which stay in view as it scrolls by. */
+.pair { display: grid; grid-template-columns: 3fr 2fr; gap: var(--s6); align-items: start; }
+.pair > :last-child { position: sticky; top: var(--s5); }
+.pair > :last-child > * + * { margin-top: var(--s4); }
+.figure--plain a { display: block; cursor: zoom-in; }
+
 /* The showcase: words on one side, the rendering on the other, alternating down the page. */
 .show { display: grid; grid-template-columns: var(--label-col) var(--body-col); column-gap: var(--s5); align-items: center; margin-top: var(--s16); }
 .show__copy { align-self: start; padding-top: var(--s3); border-top: 1px solid var(--rule); }
@@ -330,7 +336,8 @@ html.from-void body::after {
 /* ---------------------------------------------------------------- narrower
    The margin column folds above its content; the frame keeps one row; the margin halves. */
 @media (max-width: 900px) {
-  .sect, .show, .show--flip, .show--phone { grid-template-columns: 1fr; row-gap: var(--s3); }
+  .sect, .show, .show--flip, .show--phone, .pair { grid-template-columns: 1fr; row-gap: var(--s3); }
+  .pair > :last-child { position: static; }
   .show--flip .show__copy { order: 0; }
   .show { row-gap: var(--s5); }
   .sect--wide .sect__body { margin-top: 0; }
