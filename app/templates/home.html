@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <title>Jeremy Zay</title>
+  {#- Not shown on the page (the homepage carries almost no text); it still serves search and link previews. #}
+  <meta name="description" content="{{ site_settings.home_description | striptags }}">
+  {%- include "_preview_meta.html" %}
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23050505'/%3E%3Cpath d='M16 6 27 25H5z' fill='none' stroke='%23d8d8d8' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ccircle cx='5' cy='25' r='3.2' fill='%23ff4a1c'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{{ url_for('static', filename='home/styles.css') }}">
+  <script>
+    // Before first paint. An old link to the contact section goes to the contact page. The scene's
+    // layout is adopted as soon as the scene can run (WebGL 2, import maps), so the index never
+    // flashes; main.js withdraws it if the context cannot be made. And if the scene's modules fail
+    // before they have started (a file that did not load, one they cannot resolve, an error while
+    // they evaluate), the layout is withdrawn too: the server-rendered list is then the page.
+    (function () {
+      if (location.hash === '#contact') { location.replace({{ url_for('public.contact') | tojson }}); return; }
+      var root = document.documentElement, S = window.HTMLScriptElement;
+      if (/[?&]nogl=1(&|$)/.test(location.search) || !('WebGL2RenderingContext' in window) || !(S && S.supports && S.supports('importmap'))) return;
+      root.classList.add('gl');
+      addEventListener('error', function () { if (!window.__demo) root.classList.remove('gl'); }, true);
+    })();
+  </script>
+  {%- set three = url_for('static', filename='home/vendor/three-r186/three.module.min.js') %}
+  <script type="importmap">{ "imports": { "three": {{ three | tojson }} } }</script>
+  {#- Every module up front, so the browser fetches them together instead of one import depth at a time. #}
+  <link rel="modulepreload" href="{{ three }}">
+  {%- for module in home_modules %}
+  <link rel="modulepreload" href="{{ url_for('static', filename='home/src/' ~ module) }}">
+  {%- endfor %}
+</head>
+<body>
+  {#- Everything below is server-rendered from the portfolio store; static/home/src/interface.js
+      adopts it. Without JavaScript or WebGL this markup, styled as a list, is the whole page. #}
+  <canvas id="stage" aria-hidden="true"></canvas>
+
+  <header class="masthead" id="masthead">
+    <h1 class="name"><a href="{{ url_for('public.index') }}" id="home" aria-label="{{ person.name }}, home">{{ person.name }}</a></h1>
+  </header>
+
+  <main>
+    <nav class="rail" aria-label="Works"><ol id="rail">
+      {%- for w in works %}
+      <li><a href="{{ w.href }}" data-index="{{ loop.index0 }}" data-id="{{ w.id }}"{% if loop.first %} aria-current="true"{% endif %}><span class="label" aria-hidden="true"><span class="no">{{ '%02d' % loop.index }}</span><span class="t">{{ w.title }}</span></span><span class="sr">{{ w.title }}, {% if w.kind_label %}{{ w.kind_label }}, {% endif %}</span><span class="line">{{ w.line }}</span></a></li>
+      {%- endfor %}
+    </ol></nav>
+    <section class="caption" id="caption" aria-label="Current work">
+      <p class="head" id="head" aria-hidden="true">
+        <span class="cap is-on" id="cap-a"><span class="no">{% if works %}01 / {{ '%02d' % works | length }}{% endif %}</span><span class="title">{{ works[0].title if works else '' }}</span></span>
+        <span class="cap" id="cap-b"><span class="no"></span><span class="title"></span></span>
+      </p>
+      <div class="detail" id="detail">
+        <p class="kind" id="cap-kind" aria-hidden="true"></p>
+        <p class="line" id="cap-line"></p>
+        <a class="open" id="cap-open" href="#" tabindex="-1" aria-label="Open" aria-describedby="cap-hint"><span aria-hidden="true">Open</span><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 8 8 2M3.5 2H8v4.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg></a>
+      </div>
+      <p class="sr" id="announce" aria-live="polite" aria-atomic="true"></p>
+      <p class="sr" id="cap-hint">Selected. Press Enter to open.</p>
+    </section>
+  </main>
+
+  <nav class="links" id="links-nav" aria-label="Elsewhere"><ul id="links">
+    {%- for l in person.links %}
+    <li><a href="{{ l.href }}" rel="noopener" aria-label="{{ l.label }}">{{ l.label }}</a></li>
+    {%- endfor %}
+  </ul></nav>
+
+  <div class="leader" id="leader" aria-hidden="true"></div>
+  <div class="dock" id="dock" aria-hidden="true"></div>
+  <div class="tag" id="tag" aria-hidden="true"><span class="no" id="tag-no"></span><span id="tag-title"></span></div>
+
+  {#- The scene's data: the same works as the rail above, read by static/home/src/content.js. #}
+  <script type="application/json" id="site-data">{{ site_data | tojson }}</script>
+  <script type="module" src="{{ url_for('static', filename='home/src/main.js') }}"></script>
+</body>
+</html>

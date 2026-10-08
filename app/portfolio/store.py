@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -8,6 +9,16 @@ from pathlib import Path
 from threading import Lock
 
 _STORE_LOCK = Lock()
+
+# What a work is, for the homepage's caption and the screen reader ("Title, Kind, line").
+KINDS = ("research", "engineering", "product", "play")
+_SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
+def normalize_kind(value) -> str:
+    """One of KINDS, or "" when missing or unknown (older items carry no kind)."""
+    kind = str(value or "").strip().lower()
+    return kind if kind in KINDS else ""
 
 
 @dataclass
@@ -23,6 +34,12 @@ class PortfolioItem:
     is_published: bool = True
     created_at: str = ""
     updated_at: str = ""
+    # The homepage (templates/home.html): what kind of work it is, one short plain-text
+    # sentence, and where the work lives (a site path like /zaychess or an https:// URL).
+    # Defaults keep items saved before these fields existed loading as they were.
+    kind: str = ""
+    line: str = ""
+    href: str = ""
 
     @classmethod
     def from_dict(cls, data: dict) -> "PortfolioItem":
@@ -38,6 +55,9 @@ class PortfolioItem:
             is_published=bool(data.get("is_published", True)),
             created_at=str(data.get("created_at", "")),
             updated_at=str(data.get("updated_at", "")),
+            kind=normalize_kind(data.get("kind")),
+            line=str(data.get("line") or ""),
+            href=str(data.get("href") or ""),
         )
 
     def to_dict(self) -> dict:
@@ -75,7 +95,7 @@ class PortfolioStore:
 
             now = _timestamp()
             item = PortfolioItem(
-                id=uuid.uuid4().hex,
+                id=self._new_id(payload.get("title", ""), items),
                 title=payload.get("title", ""),
                 short_desc=payload.get("short_desc", ""),
                 long_desc=payload.get("long_desc", ""),
@@ -86,6 +106,9 @@ class PortfolioStore:
                 is_published=bool(payload.get("is_published", True)),
                 created_at=now,
                 updated_at=now,
+                kind=normalize_kind(payload.get("kind")),
+                line=payload.get("line", ""),
+                href=payload.get("href", ""),
             ).to_dict()
 
             items.append(item)
@@ -110,6 +133,10 @@ class PortfolioStore:
                 current.image_full = payload.get("image_full", current.image_full)
                 current.image_thumb = payload.get("image_thumb", current.image_thumb)
                 current.image_alt = payload.get("image_alt", current.image_alt)
+                if payload.get("kind") is not None:
+                    current.kind = normalize_kind(payload.get("kind"))
+                current.line = payload.get("line", current.line)
+                current.href = payload.get("href", current.href)
                 if payload.get("sort_order") is not None:
                     current.sort_order = int(payload.get("sort_order"))
                 if payload.get("is_published") is not None:
@@ -137,6 +164,18 @@ class PortfolioStore:
             data["items"] = filtered
             self._write(data)
             return True
+
+    def _new_id(self, title: str, items: list[dict]) -> str:
+        """A readable, unique id from the title (it names the work in the homepage's URL,
+        /#curve-explorer); a random one when the title has no letters or digits."""
+        base = _SLUG_RE.sub("-", str(title).lower()).strip("-")[:48].strip("-")
+        if not base:
+            return uuid.uuid4().hex
+        taken = {str(item.get("id", "")) for item in items}
+        candidate, n = base, 2
+        while candidate in taken:
+            candidate, n = f"{base}-{n}", n + 1
+        return candidate
 
     def _next_sort_order(self, items: list[dict]) -> int:
         if not items:
