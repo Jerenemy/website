@@ -247,6 +247,10 @@ class HomeTests(unittest.TestCase):
         for pdf in ("/poster-diffusion-2025", "/poster-rl-2024"):
             self.assertIn(f'href="{pdf}"', html)
             self.assertEqual(self.client.get(pdf).status_code, 200, pdf)
+            # Each poster is drawn from its PDF file (static/site/pdf-figure.js), its image standing in.
+            self.assertIn(f'data-pdf="/static/files{pdf}.pdf"', html)
+            self.assertEqual(self.client.get(f"/static/files{pdf}.pdf").status_code, 200, pdf)
+        self.assertIn('src="/static/site/pdf-figure.js"', html)
 
     def test_contact_page_renders_the_form(self):
         for path in ("/contact", "/contact/"):
@@ -440,6 +444,9 @@ class ShippedAssetsTests(unittest.TestCase):
                  HOME_STATIC / "vendor" / "three-r186" / "three.module.min.js"]
         files += sorted((HOME_STATIC / "src").glob("*.js"))
         files += sorted((SITE_STATIC / "themes").glob("*.css")) + sorted((SITE_STATIC / "works").glob("*.css"))
+        files += [SITE_STATIC / "pdf-figure.js"]
+        pdfjs = ROOT / "app" / "static" / "vendor" / "pdfjs-6.4.299"
+        files += [pdfjs / "pdf.min.js", pdfjs / "pdf.worker.min.js"] + sorted((pdfjs / "standard_fonts").glob("*"))
         return files
 
     def test_scene_modules_resolve(self):

@@ -74,3 +74,17 @@
   </div>
 </section>
 {%- endmacro %}
+
+{#- A figure drawn from its PDF's first page, sharp at any screen density (static/site/pdf-figure.js,
+    which the page must load). `image` stands in until the PDF has drawn, and for good without it;
+    the figure links to the PDF itself. -#}
+{% macro pdf_figure(pdf, image, alt, href=None, no=None, caption=None, eager=False) -%}
+<figure class="figure figure--pdf" data-pdf="{{ pdf }}">
+  <a class="figure__frame" href="{{ href or pdf }}" target="_blank" rel="noopener" data-no-transition aria-label="{{ alt }} (PDF, opens in a new tab)">
+    <img src="{{ image }}" alt="{{ alt }}" loading="{{ 'eager' if eager else 'lazy' }}" decoding="async">
+  </a>
+  {%- if caption %}
+  <figcaption>{% if no %}<span class="no">{{ no }}</span>{% endif %}<span class="t">{{ caption }}</span></figcaption>
+  {%- endif %}
+</figure>
+{%- endmacro %}
