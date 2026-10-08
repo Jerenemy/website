@@ -1,0 +1,21 @@
+{#- The private pages' own pieces, on top of _ui.html. Their styles are static/css/pages/admin.css
+    (jobs.css for the application pages). Import with: {% import "admin/_admin.html" as admin with context %} -#}
+{% import "_ui.html" as ui %}
+
+{#- The admin's own pages, as tabs under the head, the current one lit; logging out closes the row. -#}
+{% macro nav(current) -%}
+<nav class="tabs admin-tabs" aria-label="Admin" data-reveal>
+  {%- for key, endpoint, text in [("works", "admin.portfolio_list", "Works"), ("jobs", "jobbot.job_list", "Applications"), ("signups", "wtt.signups", "Signups"), ("settings", "admin.site_settings", "Settings")] %}
+  <a href="{{ url_for(endpoint) }}"{% if key == current %} aria-current="page"{% endif %}>{{ text }}</a>
+  {%- endfor %}
+  <form class="admin-tabs__out" method="post" action="{{ url_for('admin.logout') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit">Log out</button>
+  </form>
+</nav>
+{%- endmacro %}
+
+{#- A form's action: the site's one action style, as a button. -#}
+{% macro button(label, quiet=False, type="submit", id=None) -%}
+<button class="open{% if quiet %} open--quiet{% endif %}" type="{{ type }}"{% if id %} id="{{ id }}"{% endif %}><span>{{ label }}</span>{{ ui.arrow() }}</button>
+{%- endmacro %}

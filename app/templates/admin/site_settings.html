@@ -1,67 +1,47 @@
-{% extends "base.html" %}
-{% block title %}Site Settings{% endblock %}
-{% block extra_head %}
+{% extends "layout.html" %}
+{% import "_ui.html" as ui with context %}
+{% import "admin/_admin.html" as admin with context %}
+{% block title %}Settings · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
 {% endblock %}
 {% block content %}
-<section id="admin" class="admin">
-  <div class="admin__panel glassy">
-    <div class="admin__header">
-      <h1 class="admin__title">Site Settings</h1>
-      <div class="admin__actions">
-        <a class="admin-button admin-button--ghost" href="{{ url_for('admin.portfolio_list') }}">Portfolio Admin</a>
-        <form method="post" action="{{ url_for('admin.logout') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="admin-button admin-button--ghost" type="submit">Log out</button>
-        </form>
+  {{ ui.head("Settings", where="Admin") }}
+  {{ admin.nav("settings") }}
+
+  <form method="post" action="{{ url_for('admin.site_settings') }}" class="admin-form" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    {% call ui.sect("01", "Home panel") %}
+      {% include "admin/_flash.html" %}
+      <div class="field">
+        <label for="home_description">Description</label>
+        <textarea id="home_description" name="home_description" rows="6" required>{{ settings.home_description | e }}</textarea>
+        <p class="note">HTML is allowed for links and emphasis.</p>
       </div>
-    </div>
+    {% endcall %}
 
-    {% include "admin/_flash.html" %}
-
-    <form method="post" action="{{ url_for('admin.site_settings') }}" class="admin-form" enctype="multipart/form-data">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-      <h2 class="admin-form__subtitle">Home Panel</h2>
-      <label class="admin-form__label" for="home_description">Description</label>
-      <textarea class="admin-form__input admin-form__textarea" id="home_description" name="home_description" rows="6"
-        required>{{ settings.home_description | e }}</textarea>
-      <div class="admin-form__hint">HTML is allowed for links and emphasis.</div>
-
-      <h2 class="admin-form__subtitle">Resume</h2>
-      <div class="admin-form__hint">Current file: {{ settings.resume_filename | e }}</div>
-      <a class="admin-link" href="{{ url_for('public.resume') }}" target="_blank" rel="noopener">View current resume</a>
-
-      <label class="admin-form__label" for="resume_file">Upload New Resume (PDF)</label>
-      <input class="admin-form__input" type="file" id="resume_file" name="resume_file" accept="application/pdf,.pdf">
-      <div class="admin-form__hint">The new file will be served at /resume.</div>
-
-      <h2 class="admin-form__subtitle">Theme Colors</h2>
-      <div class="admin-form__row">
-        <div>
-          <label class="admin-form__label" for="theme_bg">Background</label>
-          <input class="admin-form__input" type="color" id="theme_bg" name="theme_bg"
-            value="{{ settings.theme.bg | e }}">
-        </div>
-        <div>
-          <label class="admin-form__label" for="theme_fg">Text</label>
-          <input class="admin-form__input" type="color" id="theme_fg" name="theme_fg"
-            value="{{ settings.theme.fg | e }}">
-        </div>
-        <div>
-          <label class="admin-form__label" for="theme_accent">Accent</label>
-          <input class="admin-form__input" type="color" id="theme_accent" name="theme_accent"
-            value="{{ settings.theme.accent | e }}">
-        </div>
-        <div>
-          <label class="admin-form__label" for="squircle_bg_color">Squircle Background</label>
-          <input class="admin-form__input" type="color" id="squircle_bg_color" name="squircle_bg_color"
-            value="{{ settings.theme.squircle_bg_color | default('#111111') | e }}">
-        </div>
+    {% call ui.sect("02", "Résumé") %}
+      <p class="small">Current file: {{ settings.resume_filename | e }} · <a class="link" href="{{ url_for('public.resume') }}" target="_blank" rel="noopener">View</a></p>
+      <div class="field">
+        <label for="resume_file">Upload a new résumé (PDF)</label>
+        <input type="file" id="resume_file" name="resume_file" accept="application/pdf,.pdf">
+        <p class="note">The new file is served at /resume.</p>
       </div>
+    {% endcall %}
 
-      <button class="admin-button" type="submit">Save Settings</button>
-    </form>
-  </div>
-</section>
+    {% call ui.sect("03", "Older pages") %}
+      <p class="note">Colours for the pages still on the old look; the rest of the site takes its colours from static/site/tokens.css.</p>
+      <div class="admin-swatches">
+        {%- for name, label, value in [("theme_bg", "Background", settings.theme.bg), ("theme_fg", "Text", settings.theme.fg), ("theme_accent", "Accent", settings.theme.accent), ("squircle_bg_color", "Squircle", settings.theme.squircle_bg_color | default('#111111'))] %}
+        <div class="field">
+          <label for="{{ name }}">{{ label }}</label>
+          <input type="color" id="{{ name }}" name="{{ name }}" value="{{ value | e }}">
+        </div>
+        {%- endfor %}
+      </div>
+      <div class="send">{{ admin.button("Save settings") }}</div>
+    {% endcall %}
+  </form>
 {% endblock %}
