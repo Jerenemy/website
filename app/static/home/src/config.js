@@ -23,6 +23,20 @@ export const PALETTE = {
   accentLinear: [1.0, 0.0685, 0.0116], // the same colour in linear light, for lighting the stone
 };
 
+// The light is the theme's --accent (static/site/tokens.css), when there is a page to read it
+// from and it is a #rrggbb colour; otherwise (Node, the proofs, an odd value) the vermilion above.
+{
+  const hex = typeof document === 'undefined' ? ''
+    : getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (m) {
+    const display = m.slice(1).map((h) => parseInt(h, 16) / 255);
+    const linear = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    PALETTE.accentDisplay = display;
+    PALETTE.accentLinear = display.map(linear);
+  }
+}
+
 export const PLACE = {
   // The air of the hall, in linear light. For scale: the monument's darkest lit family is
   // about 0.05 (67/255), so even the brightest air here sits far below the stone.

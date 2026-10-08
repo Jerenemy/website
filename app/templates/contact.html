@@ -1,55 +1,35 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#050505">
-  <title>Contact · Jeremy Zay</title>
-  <meta name="description" content="{{ site_settings.home_description | striptags }}">
+{% extends "layout.html" %}
+{% import "_ui.html" as ui with context %}
+{#- The contact form; static/js/contact.js posts it to /api/contact as JSON. method/action matter
+    only without JavaScript: the browser then posts the form itself (never into a URL) and
+    /api/contact answers with this page again, its outcome in the status line. #}
+{% block title %}Contact · {{ frame.name }}{% endblock %}
+{% block description %}{{ site_settings.home_description | striptags }}{% endblock %}
+{% block preview %}
   {%- set preview_title = "Contact · Jeremy Zay" %}
   {%- include "_preview_meta.html" %}
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23050505'/%3E%3Cpath d='M16 6 27 25H5z' fill='none' stroke='%23d8d8d8' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ccircle cx='5' cy='25' r='3.2' fill='%23ff4a1c'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="{{ url_for('static', filename='home/styles.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='home/contact.css') }}">
-</head>
-<body class="contact-page">
-  {#- The homepage's index layout (static/home/styles.css without the scene), holding the
-      contact form; static/js/contact.js posts it to /api/contact as JSON. #}
-  <header class="masthead">
-    <p class="name"><a href="{{ url_for('public.index') }}" aria-label="{{ person.name }}, home">{{ person.name }}</a></p>
-  </header>
-
-  <main class="contact">
-    <h1 class="sr">Contact</h1>
-    {#- method/action matter only without JavaScript: the browser then posts the form itself (never
-        into a URL) and /api/contact answers with this page again, its outcome in the status line. #}
-    <form id="contact-form" method="post" action="{{ url_for('api.api_contact') }}">
-      <p class="field">
-        <label for="contact-name">Name</label>
-        <input id="contact-name" name="name" autocomplete="name" required>
-      </p>
-      <p class="field">
-        <label for="contact-email">Email</label>
-        <input id="contact-email" name="email" type="email" autocomplete="email" required>
-      </p>
-      <p class="field">
-        <label for="contact-message">Message</label>
-        <textarea id="contact-message" name="message" rows="6" required></textarea>
-      </p>
-      {#- Not rendered, so no person (or autofill) fills it; a form-filling bot does, and is not mailed. #}
-      <p hidden><label>Leave empty <input name="website" tabindex="-1" autocomplete="off"></label></p>
-      <button type="submit" class="open send"><span>Send</span><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 8 8 2M3.5 2H8v4.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg></button>
-      <p id="contact-status" class="status" role="status" aria-live="polite">{{ status }}</p>
-    </form>
-  </main>
-
-  <nav class="links" aria-label="Elsewhere"><ul>
-    {%- for l in person.links %}
-    <li><a href="{{ l.href }}" rel="noopener" aria-label="{{ l.label }}"{% if l.id == 'contact' %} aria-current="page"{% endif %}>{{ l.label }}</a></li>
-    {%- endfor %}
-  </ul></nav>
-
+{%- endblock %}
+{% block content %}
+  {{ ui.head("Contact", where="Contact") }}
+  <form id="contact-form" class="form" method="post" action="{{ url_for('api.api_contact') }}" data-reveal>
+    <p class="field">
+      <label for="contact-name">Name</label>
+      <input id="contact-name" name="name" autocomplete="name" required>
+    </p>
+    <p class="field">
+      <label for="contact-email">Email</label>
+      <input id="contact-email" name="email" type="email" autocomplete="email" required>
+    </p>
+    <p class="field">
+      <label for="contact-message">Message</label>
+      <textarea id="contact-message" name="message" rows="6" required></textarea>
+    </p>
+    {#- Not rendered, so no person (or autofill) fills it; a form-filling bot does, and is not mailed. #}
+    <p hidden><label>Leave empty <input name="website" tabindex="-1" autocomplete="off"></label></p>
+    <button type="submit" class="open send"><span>Send</span>{{ ui.arrow() }}</button>
+    <p id="contact-status" class="status" role="status" aria-live="polite">{{ status }}</p>
+  </form>
+{% endblock %}
+{% block scripts %}
   <script src="{{ url_for('static', filename='js/contact.js') }}" defer></script>
-</body>
-</html>
+{% endblock %}

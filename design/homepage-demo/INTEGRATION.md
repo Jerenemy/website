@@ -1,7 +1,7 @@
 # The homepage in Flask
 
 **One copy of the code.** The runtime lives in `app/static/home/`: `src/` (plain ES modules,
-no build step), `styles.css`, `contact.css`, `vendor/`, and a `package.json` that marks it ES
+no build step), `styles.css` (whose values come from the site's `static/site/tokens.css`, linked here as `site`), `vendor/`, and a `package.json` that marks it ES
 modules for Node. Here `src`, `styles.css` and `vendor` are relative symlinks into it, so this
 demo, `tools/` (regress, shots, the proofs) and the harness run the production code.
 

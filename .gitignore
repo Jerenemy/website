@@ -10,6 +10,7 @@
 !app/config.py
 !app/extensions.py
 !app/wtt.py
+!app/design.py
 # !tests/
 # !tests/test_wtt.py
 # blueprints
@@ -59,12 +60,18 @@
 !app/static/home/
 !app/static/home/package.json
 !app/static/home/styles.css
-!app/static/home/contact.css
 !app/static/home/src/
 !app/static/home/src/*.js
 !app/static/home/vendor/
 !app/static/home/vendor/three-r186/
 !app/static/home/vendor/three-r186/three.module.min.js
+# static site: the design system (tokens, themes, pieces, motion, works' renderings, its guide)
+!app/static/site/
+!app/static/site/*
+!app/static/site/themes/
+!app/static/site/themes/*.css
+!app/static/site/works/
+!app/static/site/works/*.css
 # static images
 !app/static/img
 !app/static/img/*
@@ -142,5 +149,6 @@ app/blog/*.pyc
 !design/homepage-demo/src
 !design/homepage-demo/styles.css
 !design/homepage-demo/vendor
+!design/homepage-demo/site
 !design/homepage-demo/tools/
 !design/homepage-demo/tools/*

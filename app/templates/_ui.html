@@ -1,0 +1,76 @@
+{#- The pieces every page is built from, as macros. Their styles are static/site/site.css; the
+    written guide is static/site/README.md. Import with: {% import "_ui.html" as ui %} -#}
+
+{#- The arrow that leaves: on every action. -#}
+{% macro arrow() -%}
+<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 8 8 2M3.5 2H8v4.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
+{%- endmacro %}
+
+{#- An action: the homepage's OPEN. external opens in a new tab and says so to a screen reader. -#}
+{% macro open(href, label, external=False, quiet=False, back=False) -%}
+<a class="open{% if quiet %} open--quiet{% endif %}{% if back %} open--back{% endif %}" href="{{ href }}"{% if external %} target="_blank" rel="noopener"{% endif %}><span>{{ label }}</span>{% if external %}<span class="sr"> (opens in a new tab)</span>{% endif %}{{ arrow() }}</a>
+{%- endmacro %}
+
+{#- The page's head. `where` names a page that is not a work (Writing, Contact); a work's
+    page is placed in the loop by app/design.py (work_nav) without being told. `mark` is an
+    app icon's URL. The caller's body is the actions row. -#}
+{% macro head(title, line=None, where=None, mark=None, mark_alt="") -%}
+<header class="head{% if title | length > 32 %} head--long{% endif %}">
+  {%- if mark %}
+  <div class="head__mark" data-reveal><img src="{{ mark }}" alt="{{ mark_alt }}" width="72" height="72"></div>
+  {%- endif %}
+  <p class="head__where label" data-reveal>
+    <span class="here" aria-hidden="true"></span>
+    {%- if work_nav %}
+    <span><span class="sr">Work </span>{{ '%02d' % work_nav.no }} / {{ '%02d' % work_nav.total }}</span>
+    {%- if work_nav.work.kind_label %}<span>{{ work_nav.work.kind_label }}</span>{% endif %}
+    {%- elif where %}
+    <span>{{ where }}</span>
+    {%- endif %}
+  </p>
+  <h1 class="head__title" data-reveal>{{ title }}</h1>
+  {%- if line %}
+  <p class="head__line" data-reveal>{{ line }}</p>
+  {%- endif %}
+  {%- if caller %}
+  {%- set actions = caller() %}
+  {%- if actions | trim %}
+  <div class="head__actions" data-reveal>{{ actions }}</div>
+  {%- endif %}
+  {%- endif %}
+</header>
+{%- endmacro %}
+
+{#- A page's own pages: [(href, label, current), ...]. -#}
+{% macro tabs(items, label="Pages") -%}
+<nav class="tabs" aria-label="{{ label }}" data-reveal>
+  {%- for href, text, current in items %}
+  <a href="{{ href }}"{% if current %} aria-current="page"{% endif %}>{{ text }}</a>
+  {%- endfor %}
+</nav>
+{%- endmacro %}
+
+{#- A section: a rule, its number and name in the margin column, its content beside it. -#}
+{% macro sect(no, name, id=None, wide=False) -%}
+<section class="sect{% if wide %} sect--wide{% endif %}"{% if id %} id="{{ id }}"{% endif %}{% if name %} aria-label="{{ name }}"{% endif %}>
+  <p class="sect__name label" data-reveal aria-hidden="true">{% if no %}<span class="no">{{ no }}</span>{% endif %}<span class="t">{{ name }}</span></p>
+  <div class="sect__body" data-reveal>{{ caller() }}</div>
+</section>
+{%- endmacro %}
+
+{#- A rendering of the work beside the words that explain it. device: "window", "phone" or
+    "plain"; flip puts the words on the right. The caller's body is the media. -#}
+{% macro show(no, title, text, device="window", flip=False) -%}
+<section class="show{% if flip %} show--flip{% endif %}{% if device == 'phone' %} show--phone{% endif %}">
+  <div class="show__copy" data-reveal>
+    {%- if no %}<span class="no">{{ no }}</span>{% endif %}
+    <h2>{{ title }}</h2>
+    {%- if text %}<p>{{ text }}</p>{% endif %}
+  </div>
+  <div class="show__media" data-reveal>
+    {%- if device == 'plain' %}{{ caller() }}
+    {%- elif device == 'phone' %}<div class="device--phone"><div class="screen">{{ caller() }}</div></div>
+    {%- else %}<div class="device--window">{{ caller() }}</div>{% endif %}
+  </div>
+</section>
+{%- endmacro %}

@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% import "_ui.html" as ui with context %}
+{#- Any page that does not exist, or failed: the frame stays, so the way on is always in view. #}
+{% block title %}{{ code }} · {{ frame.name }}{% endblock %}
+{% block content %}
+  {% call ui.head(heading, where=code) %}
+    {{ ui.open(url_for('public.index'), "All works", back=True) }}
+  {% endcall %}
+{% endblock %}

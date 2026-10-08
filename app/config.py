@@ -47,6 +47,9 @@ class Config:
         "SITE_THEME_CSS_PATH",
         os.path.join(_project_root, "app", "static", "css", "theme.css"),
     )
+    # The site's theme: static/site/themes/<name>.css over static/site/tokens.css ("void" is
+    # tokens.css alone). See app/design.py.
+    SITE_THEME = os.getenv("SITE_THEME", "void")
     BLOG_POSTS_DIR = os.getenv(
         "BLOG_POSTS_DIR",
         os.path.join(_project_root, "app", "blog_posts"),

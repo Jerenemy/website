@@ -1,0 +1,19 @@
+{% import "_ui.html" as ui with context %}
+{#- What Sonar's three pages share: the head (its icon, its place in the loop, its one line) and
+    the tabs between them. `current` is the page's endpoint. -#}
+{% macro sonar_head(current, title=None) -%}
+{% call ui.head(title or "Sonar", line=work_nav.work.line if work_nav else "Podcast ratings and reviews for iOS",
+                mark=url_for('static', filename='sonar/img/app-icon.png'), mark_alt="Sonar app icon") %}
+  {%- if current == 'public.sonar' %}
+  {{ ui.open(url_for('public.sonar_support'), "Support") }}
+  {{ ui.open("mailto:support@sonar.show?subject=Sonar%20Support%20Request", "support@sonar.show", quiet=True) }}
+  {%- elif current == 'public.sonar_support' %}
+  {{ ui.open("mailto:support@sonar.show?subject=Sonar%20Support%20Request", "Email support") }}
+  {%- endif %}
+{% endcall %}
+{{ ui.tabs([
+  (url_for('public.sonar'), "Overview", current == 'public.sonar'),
+  (url_for('public.sonar_support'), "Support", current == 'public.sonar_support'),
+  (url_for('public.sonar_privacy'), "Privacy", current == 'public.sonar_privacy'),
+], label="Sonar") }}
+{%- endmacro %}
