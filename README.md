@@ -137,7 +137,7 @@ From then on the admin writes `instance/portfolio.json` and the tracked file onl
 
 ## Automatic deploys
 
-`.github/workflows/deploy.yml` runs on every push to `main` (and by hand from the Actions tab). It SSHes into the server, fast-forwards `/home/jzay/personal_website` to `origin/main`, restarts `personal_website`, and restarts `ear_service` or `attack_target_network` only when their folder under `projects/` changed. A pull that would overwrite a file edited on the server (the admin pages' `theme.css`, `portfolio.json`) fails the run and leaves the server as it was. A change to `poetry.lock` is flagged, not installed.
+`.github/workflows/deploy.yml` runs on every push to `main` (and by hand from the Actions tab). It SSHes into the server, fast-forwards `/home/jzay/personal_website` to `origin/main`, restarts `personal_website`, and restarts `ear_service` or `attack_target_network` only when their folder under `projects/` changed. A pull that would overwrite a file edited on the server (the admin pages' `theme.css`, `portfolio.json`) fails the run and leaves the server as it was. It never touches the Python environment: `pyproject.toml` and `poetry.lock` are untracked, so the server and the Mac each keep their own, and a new dependency is installed on the server by hand.
 
 One-time setup:
 

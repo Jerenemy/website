@@ -6,7 +6,8 @@
 !.github/workflows/
 !.github/workflows/*
 # !pyproject.toml
-!poetry.lock
+# pyproject.toml and poetry.lock stay per machine: the server keeps its own Python env
+# !poetry.lock
 !README.md
 !__init__.py
 # app
