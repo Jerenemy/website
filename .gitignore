@@ -1,6 +1,10 @@
 *
 # except
 !.gitignore
+# github actions
+!.github/
+!.github/workflows/
+!.github/workflows/*
 # !pyproject.toml
 !poetry.lock
 !README.md
