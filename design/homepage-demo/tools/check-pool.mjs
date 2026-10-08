@@ -22,7 +22,7 @@
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DIM, MOTION } from '../src/config.js';
+import { MOTION } from '../src/config.js';
 import { buildTribar } from '../src/tribar.js';
 import { lightFor } from '../src/door.js';
 import { createHold, RISER_SEEN } from '../src/hold.js';
@@ -62,7 +62,7 @@ for (let n = 3; n <= 40; n++) {
       const held = [];
       for (let q = 0; q < N * 3; q++) {
         const i = Math.floor(q / 3), b = t.blocks[i];
-        const sliver = q % 3 === b.travel && b.step >= 0 && DIM.rise + lift[i] - lift[i + 1] < RISER_SEEN;
+        const sliver = q % 3 === b.travel && b.step >= 0 && hold.riserHeight(i, lift) < RISER_SEEN;
         faces++;
         check(sliver || own[q] <= 0.02 || own[q] >= 0.98, `n=${n} station ${j} ${tag}: block ${i} +${'xyz'[q % 3]} is ${own[q].toFixed(3)} held`);
         if (own[q] >= 0.98) held.push((b.step < 0 ? 'cube' : i === presentedBlock ? 'its step' : 'the step behind') + (q % 3 === b.tread ? ' tread' : q % 3 === b.travel ? ' riser' : ' wall'));
