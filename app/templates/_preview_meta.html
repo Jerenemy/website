@@ -1,0 +1,19 @@
+{#- Link previews (LinkedIn, Slack, iMessage, X) for the homepage and the contact page: a frame of
+    the homepage itself at 1200 x 630, so a shared link shows what the visitor will find. #}
+{%- set og_title = preview_title | default("Jeremy Zay") %}
+{%- set og_description = "Personal website and portfolio of Jeremy Zay." %}
+{%- set og_image = url_for('static', filename='img/brand/tribar-preview.jpg', _external=True) %}
+  <meta property="og:title" content="{{ og_title }}">
+  <meta property="og:description" content="{{ og_description }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.base_url }}">
+  <meta property="og:image" content="{{ og_image }}">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Jeremy Zay's homepage: a Penrose tribar of grey stone steps in the dark, the first step lit by a single vermilion light.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ og_title }}">
+  <meta name="twitter:description" content="{{ og_description }}">
+  <meta name="twitter:image" content="{{ og_image }}">
+  <meta name="twitter:image:alt" content="Jeremy Zay's homepage: a Penrose tribar of grey stone steps in the dark, the first step lit by a single vermilion light.">

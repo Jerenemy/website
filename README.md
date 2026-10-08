@@ -27,6 +27,114 @@ poetry install --no-root
 - Password-protected admin area to add/edit/delete portfolio items (JSON-backed) with image uploads, preview, and delete confirmation
 - Admin site settings to update the home description/background, resume PDF, and theme colors
 
+## Homepage (TRIBAR)
+
+`/` renders `app/templates/home.html`: the published items of `app/data/portfolio.json` as a server-rendered list (the whole page without JavaScript or WebGL 2, or if the scene's files fail to load) plus the same data as JSON in `#site-data`, which the WebGL scene in `app/static/home/` reads. Each published item is one step of the monument, in `sort_order`; adding or reordering works in `/admin/portfolio` needs no code change. `/contact` is the contact form in the same style (it also works without JavaScript); old `/#contact` links land there. The scene is plain ES modules (`app/static/home/src/`, no build step, all preloaded by `home.html`); three.js is one minified file, `app/static/home/vendor/three-r186/three.module.min.js`, versioned by its folder. Link previews use `app/static/img/brand/tribar-preview.jpg` (1200 x 630, a frame of the homepage). The design notes and the proofs (`tools/check-geometry.mjs`, `tools/regress.sh`) live in `design/homepage-demo/`, whose `src`, `styles.css` and `vendor` are symlinks to the production files.
+
+### Deploying the homepage
+
+**On your Mac**, stage everything and read the list before committing:
+
+```bash
+cd ~/Desktop/coding_projects/websites/personal_website
+git add -A
+git status --short   # 49 A, 13 M, 4 D: only under app/, design/homepage-demo/, deploy/, tests/, plus README.md and .gitignore; nothing from .env, instance/ or __pycache__
+```
+
+Then commit and push (or merge into `main` and push that):
+
+```bash
+git commit -m 'feat: TRIBAR homepage' && git push -u origin homepage-redesign
+```
+
+**On the server**, as `jzay`. No new Python packages; `.env`, `instance/` and `site_settings.json` are untouched. Every block can be run again: the rollback point and the backups are taken on the first run only.
+
+1. Check what the deploy will touch:
+
+```bash
+cd /home/jzay/personal_website
+REF=origin/homepage-redesign                       # or origin/main once the branch is merged
+git fetch origin
+[ -e ~/pre-homepage.rev ] || git rev-parse HEAD > ~/pre-homepage.rev                          # for the rollback
+[ -e ~/portfolio.pre-homepage.json ] || cp app/data/portfolio.json ~/portfolio.pre-homepage.json
+git diff --name-only HEAD "$REF" | xargs -r git status --short --   # files the deploy changes that were edited here: must print nothing
+```
+
+A plain `git status` on the server also lists files the admin pages write, which this deploy does not touch and git carries across: ` M app/static/css/theme.css` (the theme colours) and `?? app/static/files/resume-….pdf` (the current résumé). They are expected; never `git checkout`, `stash` or `clean` them. If the check above lists `app/data/portfolio.json`, the works were edited in `/admin/portfolio` here: the copy just made keeps those edits; run `git checkout -- app/data/portfolio.json` and re-enter them in the admin after the deploy.
+
+EAR (`/ear/`) ships unpublished, because its service is down (502). It comes back as a work once it answers (an admin edit: see "Editing works on the server" below):
+
+```bash
+sudo supervisorctl status ear_service
+curl -s -o /dev/null -w '%{http_code}\n' https://jeremyzay.com/ear/   # 200: publish EAR in /admin/portfolio after the deploy
+```
+
+2. nginx first: gzip for CSS/JS/JSON/SVG, a year's cache for the versioned three.js, five minutes for the rest of `/static/`, and HTTP/2. The current app runs unchanged under it. The live file is the one in `sites-enabled` that serves jeremyzay.com (`projects/attack_target_network/docs` edits `/etc/nginx/sites-enabled/personal_website`); `readlink` follows it to `sites-available` if it is a link. It is replaced only if it is exactly the repository's current copy; otherwise the change is printed, to be made by hand.
+
+```bash
+grep -l 'server_name jeremyzay.com' /etc/nginx/sites-enabled/*         # must list exactly one file
+CONF=$(readlink -f "$(grep -l 'server_name jeremyzay.com' /etc/nginx/sites-enabled/* | head -1)"); echo "$CONF"
+[ -e ~/nginx-personal_website.conf.bak ] || sudo cp "$CONF" ~/nginx-personal_website.conf.bak   # outside sites-enabled (nginx loads every file there)
+if git show HEAD:deploy/nginx/personal_website.conf | sudo diff -q - "$CONF" >/dev/null; then
+  git show "$REF":deploy/nginx/personal_website.conf | sudo tee "$CONF" >/dev/null
+  sudo nginx -t && sudo systemctl reload nginx || { sudo cp ~/nginx-personal_website.conf.bak "$CONF"; echo 'nginx -t failed: old config restored'; }
+else
+  echo "$CONF differs from the repository (Certbot or a hand edit): make this change to it by hand, then: sudo nginx -t && sudo systemctl reload nginx"
+  git diff HEAD "$REF" -- deploy/nginx/personal_website.conf
+fi
+```
+
+3. The app, in one go (the update removes the old homepage templates, so the restart follows at once):
+
+```bash
+git checkout "${REF#origin/}" && git merge --ff-only "$REF" && sudo supervisorctl restart personal_website
+sudo supervisorctl status personal_website
+```
+
+Verify:
+
+```bash
+curl -s https://jeremyzay.com/ | grep -c 'data-index='                       # one per published work (9 while EAR is unpublished)
+curl -s https://jeremyzay.com/ | grep -c 'id="site-data"'                     # 1
+curl -s -o /dev/null -w '%{http_code}\n' https://jeremyzay.com/contact        # 200
+curl -s -o /dev/null -w '%{http_version}\n' https://jeremyzay.com/            # 2
+# every file the homepage loads is served by nginx (prints only the summary line)
+for f in app/static/home/src/*.js app/static/home/*.css app/static/home/vendor/three-r186/three.module.min.js app/static/img/brand/tribar-preview.jpg; do
+  printf '%s %s\n' "$(curl -s -o /dev/null -w '%{http_code}' "https://jeremyzay.com/${f#app/}")" "$f"; done | grep -v '^200 ' || echo 'all 200'
+curl -s -o /dev/null -D - -H 'Accept-Encoding: gzip' https://jeremyzay.com/static/home/vendor/three-r186/three.module.min.js | grep -iE 'content-encoding|cache-control|vary'
+#   content-encoding: gzip / cache-control: public, max-age=31536000, immutable / vary: Accept-Encoding
+curl -s -o /dev/null -D - -H 'Accept-Encoding: gzip' https://jeremyzay.com/static/home/src/main.js | grep -iE 'content-encoding|cache-control'
+#   content-encoding: gzip / cache-control: public, max-age=300
+curl -s -o /dev/null -D - https://jeremyzay.com/ | grep -ci cache-control      # 0: pages are not cached
+curl -s -o /dev/null -D - https://jeremyzay.com/wtt | grep -i cache-control    # exactly one line: no-store
+```
+
+Then in a browser: `/` (the monument settles, the rail on the right), `/?nogl=1` (the plain list, the links beside the name), `/#contact` (the contact page), `/contact` (send yourself a message).
+
+Rollback (the nginx change serves the old code too; restore it only if nginx itself is the problem):
+
+```bash
+cd /home/jzay/personal_website
+cp app/data/portfolio.json ~/portfolio.post-homepage.json   # edits made since the deploy, in the new format
+git checkout -- app/data/portfolio.json
+git checkout "$(cat ~/pre-homepage.rev)" && cp ~/portfolio.pre-homepage.json app/data/portfolio.json && sudo supervisorctl restart personal_website
+# detached HEAD; `git checkout main` returns later. Only for nginx itself:
+sudo cp ~/nginx-personal_website.conf.bak "$(readlink -f "$(grep -l 'server_name jeremyzay.com' /etc/nginx/sites-enabled/* | head -1)")" && sudo nginx -t && sudo systemctl reload nginx
+```
+
+### Editing works on the server
+
+`app/data/portfolio.json` is tracked, so every save in `/admin/portfolio` on the server changes it, and the next deploy's check stops on it. To keep the server's works out of git, once the homepage is live:
+
+```bash
+cd /home/jzay/personal_website
+cp app/data/portfolio.json instance/portfolio.json
+echo 'PORTFOLIO_DATA_PATH=/home/jzay/personal_website/instance/portfolio.json' >> .env
+sudo supervisorctl restart personal_website
+```
+
+From then on the admin writes `instance/portfolio.json` and the tracked file only seeds new checkouts: works changed in the repository no longer reach the live site (change them in the admin). To undo, and before any rollback to the old code, delete that line from `.env` and restart.
+
 ## WTT Email Signup
 
 - Public form: `https://jeremyzay.com/wtt` (also accepts `/wtt/`). Collects emails only; no email is sent.
@@ -136,16 +244,17 @@ Run `.venv/bin/python -m unittest discover -s tests -v` for signup, validation, 
 - The preview button validates required fields before showing a live card preview.
 - Delete actions require confirmation.
 - Each item includes:
-  - `title`, `short_desc` (card text), `long_desc` (lightbox text)
-  - `image_full`, `image_thumb` (paths relative to `/static`)
-  - `image_alt`, `sort_order`, `is_published`
+  - `title` (at most 24 characters: one line on a phone), `kind` (research, engineering, product or play), `line` (one short plain-text sentence) and `href` (a site path like `/blog/zaybot` or an `https://` URL): what the homepage shows; all required
+  - `sort_order` (its place on the homepage loop), `is_published`
+  - `short_desc` (card text), `long_desc` (lightbox text), `image_full`, `image_thumb` (paths relative to `/static`), `image_alt`: optional, kept for the record (no page shows them now); alt text is required only with an image
+- New items get a readable id from the title (it appears in the homepage URL, e.g. `/#curve-explorer`).
 - HTML is allowed in `short_desc` and `long_desc` (e.g., links). Keep markup minimal.
 
 ## Site Settings Admin
 - Settings live in `app/data/site_settings.json` (configurable via `SITE_SETTINGS_PATH`) and are created on first read.
 - Manage settings at `/admin/settings` (requires admin login).
-- Home description supports minimal HTML (rendered with `| safe`).
-- Home background can be uploaded or set as a path relative to `/static`.
+- Home description supports minimal HTML. The homepage no longer shows it; with the HTML stripped it is the site's `<meta name="description">` (search results and link previews).
+- Home background can be uploaded or set as a path relative to `/static` (unused by the TRIBAR homepage).
 - Resume uploads are stored in `app/static/files/` (override with `SITE_FILES_DIR`); `/resume` serves the current filename with a fallback to `resume.pdf`.
 - Theme colors are validated hex values and written to `app/static/css/theme.css` (override with `SITE_THEME_CSS_PATH`), which loads after `base.css`.
 
@@ -201,7 +310,8 @@ Run `.venv/bin/python -m unittest discover -s tests -v` for signup, validation, 
 - `app/blueprints/admin` – Admin auth + portfolio CRUD + site settings
 - `app/portfolio/` – Portfolio store and helpers
 - `app/site_settings/` – Site settings store and helpers
-- `app/templates/` – Jinja templates for pages/layout
+- `app/templates/` – Jinja templates for pages/layout (`home.html` and `contact.html` stand alone; the other pages extend `base.html`)
+- `app/static/home/` – the homepage scene: `src/` (ES modules), `styles.css`, `contact.css`, `vendor/three-r186/`
 - `app/static/` – Static assets (ensure `files/resume.pdf` exists as a fallback)
 - `app/static/css/theme.css` – Theme override variables (generated by admin)
 - `app/data/portfolio.json` – Portfolio content store
