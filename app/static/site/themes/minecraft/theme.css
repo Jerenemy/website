@@ -1,7 +1,7 @@
 /* THEME: minecraft. The site as the game's interface: its pixel typeface, its dark dirt
    backdrop with white text, square corners, chunky device frames. Loaded after
    static/site/tokens.css, it overrides only what it changes; see that file for the contract.
-   The homepage's world (grass blocks, a pixel sky, a torch, square particles) is scene.js.
+   The homepage's world (the game's stone, its day sky, an experience orb, square particles) is scene.js.
 
    Type: Minecraft (IdreesInc/Minecraft-Font, SIL OFL 1.1, LICENSE-minecraft-font.txt), the game's
    proportional face, for everything; Monocraft (IdreesInc/Monocraft, SIL OFL 1.1,
@@ -39,17 +39,17 @@
   --hair: rgba(255, 255, 255, 0.38);
   --rule: rgba(255, 255, 255, 0.15);
 
-  /* The torch. */
-  --accent: #ff9a1f;
+  /* The experience orb. */
+  --accent: #80ff20;
 
-  /* The homepage's interface over a night sky: white ink, as the HUD. */
-  --world-bg: #1f2545;
-  --world-ink: #ffffff;
-  --world-ink-2: #c9cfe0;
-  --world-ink-3: #9aa3bd;
-  --world-tick: #6b7490;
-  --world-hair: rgba(230, 236, 255, 0.4);
-  --world-rule: rgba(230, 236, 255, 0.16);
+  /* The homepage's interface over the day sky: the game's dark slate text. */
+  --world-bg: #8ab2ff;
+  --world-ink: #1a2234;
+  --world-ink-2: #2a3650;
+  --world-ink-3: #3c4c6c;
+  --world-tick: #56688c;
+  --world-hair: rgba(22, 30, 50, 0.45);
+  --world-rule: rgba(22, 30, 50, 0.2);
 
   --font: "Minecraft", "Monocraft", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Monocraft", "Minecraft", ui-monospace, monospace;
