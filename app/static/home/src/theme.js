@@ -16,7 +16,8 @@
 //
 //   surface  Surface surfaceAt(SurfaceIn s)   the blocks' material (src/monument.js)
 //   air      vec3 airAt(AirIn a)              the air behind everything (src/backdrop.js)
-//   light    vec3 lightAt(LightIn l)          the light itself as drawn (src/lantern.js)
+//   light    vec3 lightAt(LightIn l)          the light itself as drawn (src/lantern.js); with
+//            LANTERN.blend 'over' also float lightCover(LightIn l), its coverage
 //   mote     vec4 moteAt(MoteIn m)            one mote of dust (src/dust.js)
 //
 // The structs are declared below (THEME_GLSL) and prepended to every chunk, with the helpers of
@@ -27,8 +28,9 @@
 // PALETTE.stoneAlbedo and SHADING.mottling/speckle/blockVariance beside a `surface`; PLACE.airDeep/
 // airLift/rampDrift/pocket*/mist/vignette beside an `air`; LANTERN.haloGain/haloGrain/bloom/bloomGain
 // and PALETTE.coreDisplay beside a `light` (LANTERN.haloSize still sizes the quad, trailGain the
-// comet). Known limit: the light is screened over the frame (it can only brighten), so over a bright
-// air a halo thins toward white; a bright theme draws its lamp mostly as the core and the face it holds.
+// comet). Screened (the default LANTERN.blend), the light can only brighten the frame, so over a
+// bright air a halo thins toward white; a theme with a bright air sets LANTERN.blend to 'over' and
+// draws its light with coverage (lightCover) instead, opaque where it wants to be.
 // Derivatives (fwidth, dFdx) are available in every hook: a thin procedural line (a crack, a grain
 // line) is antialiased by the fwidth of the smooth coordinate it is drawn on, never of the line
 // itself. A chunk is a JS template literal: a backtick inside a GLSL comment ends it early, and the
@@ -125,7 +127,12 @@ export const THEME_GLSL = /* glsl */ `
   };
 
   // A point of the light's quad. The light is drawn in two passes: part 0 (the halo) under the
-  // stone, part 1 (the core and bloom) over everything. Both screened: never past white.
+  // stone, part 1 (the core and bloom) over everything. With LANTERN.blend 'screen' (the default)
+  // both are screened onto the frame, so they can only brighten: a glow. With 'over' the theme also
+  // defines float lightCover(LightIn l), the coverage (0..1) of what lightAt returns, and the two
+  // parts are laid over the frame as premultiplied colour (lightAt's colour already times the
+  // coverage): a thing that can be opaque, and darker than the air behind it (an orb, a lantern's
+  // body), with a soft glow where the coverage falls off.
   struct LightIn {
     float r;        // beams from the light's centre
     vec2 uv;        // -1..1 across the quad

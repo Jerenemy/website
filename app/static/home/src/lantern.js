@@ -29,6 +29,10 @@ const BLOOM = LANTERN.bloom;          // beams squared: the bloom's spread (exp(
 const TRAIL_POINTS = LANTERN.trailPoints; // afterimages laid back along the path while the light is moving
 const TRAIL_SIZE = LANTERN.trailSize; // beams, diameter of the newest afterimage
 const SCREEN = { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneMinusDstColorFactor, blendDst: THREE.OneFactor };
+// A theme may draw its light OVER the frame instead (LANTERN.blend 'over'): premultiplied colour and
+// coverage, so it can be opaque and darker than the air behind it (an orb, a lantern's body).
+const OVER = { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor };
+const over = LANTERN.blend === 'over';
 
 const spriteVertex = /* glsl */ `
   varying vec2 vUv;
@@ -64,7 +68,7 @@ const spriteFragment = /* glsl */ `
     }
     float r = length(vUv) * ${(HALO_SIZE / 2).toFixed(3)};   // beams from the centre
     vec3 c = lightAt(LightIn(r, vUv, gl_FragCoord.xy, uPower, uPart, uTime));
-    gl_FragColor = vec4(max(c, 0.0) * uWeight * seen, 1.0);
+    gl_FragColor = vec4(max(c, 0.0) * uWeight * seen, ${over ? 'clamp(lightCover(LightIn(r, vUv, gl_FragCoord.xy, uPower, uPart, uTime)), 0.0, 1.0) * uWeight * seen' : '1.0'});
   }
 `;
 
@@ -82,7 +86,7 @@ export function createLantern() {
   /** One part of one end of the light: the halo (under the stone) or the core and bloom (over all). */
   const sprite = (u, part) => {
     const material = new THREE.ShaderMaterial({
-      uniforms: { ...u, uPart: { value: part } }, depthTest: false, depthWrite: false, transparent: part === 1, ...SCREEN,
+      uniforms: { ...u, uPart: { value: part } }, depthTest: false, depthWrite: false, transparent: over || part === 1, ...(over ? OVER : SCREEN),
       vertexShader: spriteVertex, fragmentShader: spriteFragment,
     });
     materials.push(material);

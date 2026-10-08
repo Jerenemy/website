@@ -300,6 +300,9 @@ export const IMPACT = {
 export const LANTERN = {
   // The light as drawn (src/lantern.js): a halo in the air under the stone, a core and bloom over
   // everything, and the comet it leaves while it moves. Its influence on the stone is SHADING.
+  blend: 'screen',        // how the light's two parts are laid on the frame: 'screen' (they can only
+                          // brighten: a glow) or 'over' (premultiplied colour and coverage: a thing
+                          // that can be opaque and darker than the air behind it; src/theme.js)
   haloSize: 3.4,          // beams: full width of the halo's quad
   haloGain: 0.42,         // the halo's brightness, per unit of the light's power
   haloGrain: 0.012,       // display units: the grain within the halo
