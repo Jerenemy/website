@@ -22,8 +22,8 @@
   --hair: rgba(43, 31, 20, 0.34);
   --rule: rgba(43, 31, 20, 0.13);
 
-  /* The one hue: candlelight. The homepage's light is a small candle, and this is its flame. */
-  --accent: #ff9a38;
+  /* The one hue: lantern light. The homepage's light is a small paper lantern, and this is its glow. */
+  --accent: #ffac55;
 
   /* The homepage's world: the air is the playroom's cream and honey, so the interface is ink. */
   --world-bg: #c8b69c;

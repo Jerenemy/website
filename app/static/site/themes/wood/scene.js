@@ -1,7 +1,7 @@
 // THEME: wood. The monument is a child's set of wooden blocks, decades old: cherry, hand-cut from
 // different boards, the edges rounded unevenly by hand and by years, dented, chipped at a corner
 // here and there, the grain grimed and the high spots polished by fingers. The air is a playroom in the afternoon: cream above, honey below, slow light on the wall.
-// The light is a small candle; the dust is sunlit. The contract is static/home/src/theme.js.
+// The light is a small paper lantern; the dust is sunlit. The contract is static/home/src/theme.js.
 //
 // Kept: the paradox rule (every surface is a function of the block's own rest coordinates, its
 // face, its index and the time; the air of screen position and time), the three face tones
@@ -30,12 +30,14 @@ export default {
       // The far side of the monument sits in the same bright room, only a little quieter.
       mistFloor: 0.62,
       dimSelected: 0.3,
-      // What the candle adds to a face it does not hold: a warm white, per unit of its red.
-      lanternWhite: [0.2, 0.15, 0.09],
+      // What the lantern adds to a face it does not hold: a warm white, per unit of its red.
+      lanternWhite: [0.2, 0.16, 0.1],
       lanternEdge: 0.15,
     },
     LANTERN: {
-      // The candle is drawn by the light hook below; these size its quad and its comet.
+      // The lantern is drawn by the light hook below, laid over the frame (a thing, not a glow);
+      // these size its quad and its comet.
+      blend: 'over',
       haloSize: 3.0,
       trailGain: 0.25,
     },
@@ -171,63 +173,58 @@ export default {
       }
     `,
 
-    // ------------------------------------------------------------ the light: a candle
-    // Drawn on the light's quad (LANTERN.haloSize beams wide, l.uv -1..1 across it): the flame
-    // sits at the light's point, the point the scene lights the stone from; a stub of wax hangs
-    // below it. Screened over the world, so it only brightens: the flame is what reads, the wax
-    // is a pale stroke over the wood, and the wick is where nothing is drawn.
+    // ------------------------------------------------------------ the light: a paper lantern
+    // Drawn on the light's quad (LANTERN.haloSize beams wide, l.uv -1..1 across it) and laid OVER
+    // the frame (LANTERN.blend 'over': premultiplied colour and coverage), so it is a thing, not a
+    // glow: a small round paper globe lit from within, warm amber, its paper deeper toward the rim
+    // than the ivory behind it, centred on the light's point (the point the scene lights the stone
+    // from), on a short string; a soft haze of its light round it, fading out through coverage.
     light: /* glsl */ `
-      float roundBox(vec2 p, vec2 c, vec2 b, float r) {
-        vec2 d = abs(p - c) - b + r;
-        return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - r;
-      }
-      vec3 lightAt(LightIn l) {
-        vec2 q = l.uv * 1.5;                       // beams from the flame's point (haloSize 3.0 / 2)
+      void lantern(LightIn l, out vec3 colour, out float cover) {
+        vec2 q = l.uv * 1.5;                       // beams from the globe's centre (haloSize 3.0 / 2)
         float aa = max(fwidth(q.y), 0.0015);       // about a device pixel
         vec3 amber = uAccent;
-        if (l.part < 0.5) {
-          // Under the stone: the air lit round the flame, warm, a little deeper than the accent.
-          float halo = 0.03 / (l.r * l.r + 0.03) * smoothstep(1.5, 0.6, l.r);
-          vec3 deep = amber * vec3(1.0, 0.8, 0.5);
-          return deep * halo * 0.65 * l.power + grain(l.frag, l.time, 0.008) * step(0.004, halo);
-        }
-        // The flicker: a few slow sines, so it breathes and leans without ever guttering.
-        float t = l.time;
-        float breath = 0.5 * sin(t * 7.3) + 0.3 * sin(t * 11.7 + 1.0) + 0.2 * sin(t * 3.1 + 2.0);
-        float sway = 0.5 * sin(t * 5.1 + 0.7) + 0.3 * sin(t * 9.4 + 2.3) + 0.2 * sin(t * 2.3);
-        float h = 0.13 * (1.0 + 0.1 * breath);     // the flame's height, beams
-        float lean = 0.02 * sway;
-
-        // The flame: a teardrop from the wick's tip, widest a third of the way up, leaning at the tip.
-        float base = -0.03;
-        float ft = (q.y - base) / h;               // 0 at the wick's tip, 1 at the flame's
-        float up = clamp(ft, 0.0, 1.0);
-        float xc = lean * up * up;
-        float rad = 0.04 * 2.6 * sqrt(up) * (1.0 - up);
-        float dx = abs(q.x - xc);
-        float inFlame = smoothstep(rad + aa, rad - aa, dx) * step(0.0, ft) * (1.0 - smoothstep(1.0, 1.0 + aa / h, ft));
-        float core = smoothstep(0.6, 0.15, dx / max(rad, 1.0e-4)) * smoothstep(0.05, 0.3, ft) * smoothstep(0.85, 0.45, ft);
-        vec3 flame = mix(amber * vec3(1.0, 0.72, 0.4), vec3(1.0, 0.97, 0.8), core) * inFlame;
-        // Its glow in the eye, a little above its base.
-        vec2 g = q - vec2(xc * 0.5, h * 0.3);
-        flame += amber * vec3(1.0, 0.8, 0.5) * exp(-dot(g, g) / 0.008) * 0.35;
-        // The wick: a thin dark thread the flame is drawn round (the only dark thing: nothing drawn).
-        float wick = smoothstep(0.006 + aa, 0.006 - aa, abs(q.x)) * smoothstep(-0.06, -0.052, q.y) * smoothstep(0.014, 0.0, q.y);
-        flame *= 1.0 - wick;
-
-        // The wax: a short stub below the wick, rounded, a pale highlight down one side, its rim
-        // lit by the flame, and one drip run down its right.
-        float body = roundBox(q, vec2(0.0, -0.13), vec2(0.034, 0.08), 0.009);
-        float drip = min(length(q - vec2(0.031, -0.083)) - 0.012, roundBox(q, vec2(0.0335, -0.108), vec2(0.006, 0.032), 0.0055));
-        float inWax = smoothstep(aa, -aa, min(body, drip));
-        vec3 wax = vec3(0.9, 0.84, 0.7);
-        wax *= 1.0 + 0.25 * exp(-(q.x + 0.015) * (q.x + 0.015) / 0.00015);         // the highlight
-        wax *= 1.0 + 0.4 * exp(-(q.y + 0.052) * (q.y + 0.052) / 0.0015) * (0.8 + 0.2 * breath); // the lit rim
-        wax = mix(wax, amber * 0.9 + 0.1, 0.35 * exp(-(q.y + 0.056) * (q.y + 0.056) / 0.0025));      // warmed by the flame
-
+        vec3 deep = amber * vec3(0.9, 0.64, 0.4);  // the paper where the light inside does not reach it
+        float breath = 1.0 + 0.06 * sin(l.time * 1.396);   // four and a half seconds in and out
         float lit = min(l.power, 1.0);
-        return wax * inWax * 0.95 * lit + flame * min(l.power, 1.3);
+        if (l.part < 0.5) {
+          // Under the stone: a wide, warm haze of its light in the air.
+          float halo = 0.1 / (l.r * l.r + 0.1) * smoothstep(1.5, 0.4, l.r);
+          cover = 0.4 * halo * lit * breath;
+          colour = amber * vec3(1.0, 0.95, 0.85) + grain(l.frag, l.time, 0.01);
+          return;
+        }
+        // The globe: paper lit from within, luminous at its centre, amber, deeper at its rim.
+        float R = 0.125;
+        float d = l.r / R;
+        float inside = smoothstep(1.0 + aa / R, 1.0 - aa / R, d);
+        vec3 centre = vec3(1.0, 0.94, 0.78);
+        vec3 paper = mix(deep, amber, smoothstep(1.0, 0.5, d));
+        paper = mix(paper, centre, pow(max(1.0 - d, 0.0), 2.0) * (0.85 + 0.15 * breath));
+        // The hoops of its frame, seen through the paper as faint bands round the globe.
+        float lat = asin(clamp(q.y / R, -1.0, 1.0));
+        paper *= 1.0 - 0.07 * (0.5 + 0.5 * cos(lat * 11.0)) * smoothstep(1.0, 0.45, d);
+        // The paper's edge, a shade deeper, and a small warm highlight near the top.
+        paper *= 1.0 - 0.14 * exp(-(d - 0.95) * (d - 0.95) / 0.003);
+        vec2 hq = (q - vec2(-0.03, 0.075)) / R;
+        paper += vec3(0.22, 0.18, 0.12) * exp(-dot(hq, hq) / 0.05);
+        paper *= 0.95 + 0.05 * breath + 0.3 * max(l.power - 1.0, 0.0);   // a flare brightens it
+        // Its light in the air round it: a soft haze whose coverage falls away.
+        float out_ = max(l.r - R, 0.0);
+        float haze = exp(-out_ * out_ / 0.03) * 0.42 * breath;
+        // A short string above it, a hint that it hangs.
+        float string = smoothstep(0.0045 + aa, 0.0045 - aa, abs(q.x)) * smoothstep(R - 0.01, R + 0.01, q.y) * (1.0 - smoothstep(R + 0.12, R + 0.24, q.y));
+        vec3 thread = vec3(0.5, 0.4, 0.28);
+        // Laid together: the globe, then its haze and the string where the globe is not.
+        float cGlobe = inside;
+        float cHaze = haze * (1.0 - inside);
+        float cString = string * 0.75 * (1.0 - inside);
+        float sum = cGlobe + cHaze + cString;
+        cover = clamp(sum, 0.0, 1.0) * lit;
+        colour = (paper * cGlobe + amber * vec3(1.0, 0.92, 0.78) * cHaze + thread * cString) / max(sum, 1.0e-4);
       }
+      vec3 lightAt(LightIn l) { vec3 c; float a; lantern(l, c, a); return c * a; }
+      float lightCover(LightIn l) { vec3 c; float a; lantern(l, c, a); return a; }
     `,
 
     // ------------------------------------------------------------ the dust: sunlit
