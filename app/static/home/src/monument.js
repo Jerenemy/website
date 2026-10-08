@@ -19,10 +19,17 @@
 // but those near-end fragments; the behind pass draws only them, its vertices moved back along
 // the view (in an orthographic camera, a constant in depth and nothing on screen), so depth
 // stays interpolated per sample and no fragment has to write its own.
+//
+// The material is the theme's (src/theme.js `surface`): a function of the block itself (its
+// rest position, face, index) giving the albedo, a bump to the normal, a gloss and an emission;
+// the void's is neutral stone. Everything else in the lighting (the three tones, the contact
+// shadows, the lines, the light's hold of a face) is the scene's, and the material only
+// modulates it, so a theme cannot break the paradox by accident.
 import * as THREE from 'three';
 import { PALETTE, SHADING, MOTION } from './config.js';
 import { GRADE } from './glsl.js';
 import { DOOR_GLSL, LIGHT_RADIUS } from './door.js';
+import { hook, VOID_SURFACE } from './theme.js';
 
 // The slab test divides by each component of the view; one exactly zero (never near, in
 // practice) would make it 0/0 on a face, so it is nudged off zero.
@@ -145,24 +152,16 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
   uniform vec3 uDoorView;   // toward the eye, door frame
   uniform vec3 uDoorShift;  // the block in front, across the seam: where it stands beside the door's (the carry)
   uniform float uDoorBounce; // one bounce: albedo x the cavity's mean direct irradiance (per unit of power)
+  uniform mat3 uSideRot[3];  // (as the vertex shader's) a bumped normal into monument space...
+  uniform mat3 uStageRot;    // ...the roll...
+  uniform mat3 uRigRot;      // ...and the tilt: into world space
   ${varyingsChunk}
 
   ${GRADE}
+  ${hook('surface', VOID_SURFACE)}
   ${DOOR_GLSL}
 
-  float hash13(vec3 p) {
-    p = fract(p * 0.1031);
-    p += dot(p, p.zyx + 31.32);
-    return fract((p.x + p.y) * p.z);
-  }
-  float valueNoise(vec3 p) {
-    vec3 i = floor(p), f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    return mix(
-      mix(mix(hash13(i), hash13(i + vec3(1, 0, 0)), f.x), mix(hash13(i + vec3(0, 1, 0)), hash13(i + vec3(1, 1, 0)), f.x), f.y),
-      mix(mix(hash13(i + vec3(0, 0, 1)), hash13(i + vec3(1, 0, 1)), f.x), mix(hash13(i + vec3(0, 1, 1)), hash13(i + vec3(1, 1, 1)), f.x), f.y),
-      f.z);
-  }
+  vec3 axisVec(float i) { return vec3(1.0) - min(abs(vec3(i) - vec3(0.0, 1.0, 2.0)), 1.0); }
 
   // THE SEAM. The first blocks of side 0 must appear IN FRONT of the last blocks of side 2,
   // although they are really a whole gap behind them. A phantom (side 0 restated nearer along
@@ -182,13 +181,6 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
     float f = -1.0e3;
     for (int i = 0; i < ${phantoms}; i++) f = max(f, shadowOf(o, uSeamDir, i));
     return f;
-  }
-  // The stone's albedo at a point of block 'block' (rest position: the texture sticks to the block).
-  float stoneAt(vec3 rest, float block) {
-    float mottle = valueNoise(rest * 1.7) * 0.6 + valueNoise(rest * 6.3 + 11.0) * 0.3 + valueNoise(rest * 23.0) * 0.1;
-    float speckle = hash13(floor(rest * 90.0)) - 0.5;
-    float quarry = hash13(vec3(block, 7.0, 3.0)) - 0.5;
-    return ${PALETTE.stoneAlbedo.toFixed(3)} * (1.0 + (mottle - 0.5) * ${(SHADING.mottling * 2).toFixed(3)} + speckle * ${(SHADING.speckle * 2).toFixed(3)} + quarry * ${(SHADING.blockVariance * 2).toFixed(3)});
   }
   // A soft shoulder that keeps the hue: above the knee the brightest channel rolls off toward 1 and
   // the others follow it in proportion, so an over-lit vermilion stays vermilion instead of
@@ -227,8 +219,19 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
       ${pass === 'stone' ? 'if (hidden) discard;' : 'if (!hidden) discard;'}
     }
 
-    vec3 nM = normalize(vNormalMon);
-    vec3 N = normalize(vNormalWorld);
+    vec3 nS = normalize(vNormalStruct);
+    vec3 axisN = abs(nS);
+    vec3 travel = axisVec(vMeta.x);   // the side's own direction, which is the loop's here
+    vec3 tread = axisVec(vMeta.z);    // the block's up: the tread's axis
+    vec3 toEdge = vHalf - abs(vBox) + axisN * 1.0e3;
+
+    // --- the material (src/theme.js) ---------------------------------------------------------
+    Surface sf = surfaceAt(SurfaceIn(vRest, vBox, vHalf, nS, toEdge, travel, tread, step(0.5, dot(nS, tread)), dot(vHalf - vBox, tread), blockIndex, isStep ? 1.0 : 0.0, uTime));
+    int side = int(vMeta.x + 0.5);
+    vec3 bumpM = uSideRot[side] * sf.bump;
+    vec3 nM = normalize(normalize(vNormalMon) + bumpM);                           // monument space: the key's
+    vec3 N = normalize(normalize(vNormalWorld) + uRigRot * (uStageRot * bumpM));  // world space: the screen's
+    vec3 nSb = normalize(nS + sf.bump);                                          // structure space: the light's
 
     // --- light: three deliberate tones, one per face family ---------------------------
     float key = pow(0.5 + 0.5 * dot(nM, uKeyDir), ${SHADING.keyWrapPower.toFixed(2)});
@@ -238,24 +241,18 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
     float top = pow(0.5 + 0.5 * N.y, 2.0);
     float light = ${SHADING.ambient.toFixed(3)} + ${SHADING.key.toFixed(3)} * key + ${SHADING.fill.toFixed(3)} * fill + ${SHADING.topLight.toFixed(3)} * top;
 
-    vec3 nS = normalize(vNormalStruct);
-    vec3 axisN = abs(nS);
-
     // --- contact shadows -----------------------------------------------------------------
     float sA = wallShadow(vStruct, nS, vOccAC, vOccAH) * mix(1.0, uAssembled, vExtra.x);
     float sB = wallShadow(vStruct, nS, vOccBC, vOccBH) * mix(1.0, uAssembled, vExtra.y);
     float ao = 1.0 - ${SHADING.aoStrength.toFixed(2)} * min(sA + sB, 0.62);
 
     // --- edges: joints between blocks read dark, free edges catch the light -------------
-    vec3 toEdge = vHalf - abs(vBox) + axisN * 1.0e3;
     vec3 px = toEdge / max(fwidth(toEdge), 1.0e-6);
     vec3 line = 1.0 - smoothstep(${(SHADING.lineWidthPx - 0.5).toFixed(2)}, ${(SHADING.lineWidthPx + 0.5).toFixed(2)}, px);
     vec3 joint = mix(vJointNeg, vJointPos, step(0.0, vBox));
     joint = vec3(shut(joint.x), shut(joint.y), shut(joint.z));
     if (isStep) {
       // The leading edge of a tread is a nosing, not a joint: the next step is lower.
-      vec3 travel = vec3(1.0) - min(abs(vec3(vMeta.x) - vec3(0.0, 1.0, 2.0)), 1.0);
-      vec3 tread = vec3(1.0) - min(abs(vec3(vMeta.z) - vec3(0.0, 1.0, 2.0)), 1.0);
       float onTread = step(0.5, dot(nS, tread));
       joint *= 1.0 - onTread * travel * step(0.0, vBox);
     }
@@ -265,24 +262,29 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
     float wear = max(max(worn.x, worn.y), worn.z);
 
     // --- stone -------------------------------------------------------------------------------
-    float albedo = stoneAt(vRest, blockIndex);
+    vec3 albedo = sf.albedo;
 
     float mist = mix(1.0, uMist.z, smoothstep(uMist.x, uMist.y, length(vScreen - uFocus)));
     float selected = 1.0 - min(abs(blockIndex - uSelected), 1.0);
     float dim = 1.0 - ${SHADING.dimSelected.toFixed(2)} * uDim * (1.0 - selected);
 
-    float tone = albedo * light * ao;
+    vec3 tone = albedo * light * ao;
     tone *= 1.0 - ${SHADING.jointDarken.toFixed(2)} * jointLine;
     tone += (${SHADING.bevelGain.toFixed(2)} * bevelLine + ${SHADING.wearGain.toFixed(2)} * wear) * (0.2 + key) * albedo;
     tone *= 1.0 + 0.16 * vExtra.z;
     // The lap swell: a crest of light running round the loop, caught mostly by the arrises.
     // Loop units: block index plus the fraction along the block's travel, which is the
     // direction the light goes; the loop wraps, so the crest closes on itself at the seam.
-    vec3 travel = vec3(1.0) - min(abs(vec3(vMeta.x) - vec3(0.0, 1.0, 2.0)), 1.0);
     float along = 0.5 + 0.5 * dot(vBox, travel) / max(dot(vHalf, travel), 1.0e-4);
     float behind = mod(blockIndex + along - uSwell.x + ${(count / 2).toFixed(1)}, ${count.toFixed(1)}) - ${(count / 2).toFixed(1)};
     float crest = uSwell.y * exp(-behind * behind / ${(MOTION.swellWidth * MOTION.swellWidth).toFixed(3)});
     tone *= 1.0 + ${MOTION.swellGain.toFixed(2)} * crest * (${MOTION.swellFace.toFixed(2)} + 2.0 * bevelLine + 1.5 * wear);
+    // A glossy material (the theme's) catches the key in a highlight, seen from straight ahead.
+    vec3 V = vec3(0.0, 0.0, 1.0);
+    if (sf.gloss > 0.0) {
+      vec3 Lk = normalize(uRigRot * (uStageRot * uKeyDir));
+      tone += vec3(sf.gloss * ${SHADING.key.toFixed(3)} * pow(max(dot(N, normalize(Lk + V)), 0.0), sf.shine) * ao);
+    }
     tone *= mist * dim * uExposure;
 
     // --- the light ------------------------------------------------------------------------------
@@ -295,10 +297,15 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
     float d2 = dot(toL, toL);
     float ahead = dot(nS, toL);
     float fall = lanternFall(d2);
-    float facing = max(ahead, 0.0) * inversesqrt(max(d2, 1.0e-8)) * smoothstep(-${RADIUS}, ${RADIUS}, ahead);
+    float facing = max(dot(nSb, toL), 0.0) * inversesqrt(max(d2, 1.0e-8)) * smoothstep(-${RADIUS}, ${RADIUS}, ahead);
     // The stone's own form under it: joints read dark, free arrises and worn edges catch it.
     float form = (1.0 - ${SHADING.jointDarken.toFixed(2)} * jointLine) * (1.0 + ${SHADING.lanternEdge.toFixed(2)} * max(bevelLine, wear));
-    float lantern = uLantern * ${SHADING.glowPower.toFixed(2)} * fall * facing * albedo * ao * form * uExposure;
+    vec3 lantern = uLantern * ${SHADING.glowPower.toFixed(2)} * fall * facing * albedo * ao * form * uExposure;
+    if (sf.gloss > 0.0) {
+      // Its highlight on a glossy material, by the same law (and held by the same face).
+      vec3 Ll = normalize(uRigRot * (uStageRot * (uSideRot[side] * toL)));
+      lantern += vec3(sf.gloss * uLantern * ${SHADING.glowPower.toFixed(2)} * fall * smoothstep(-${RADIUS}, ${RADIUS}, ahead) * pow(max(dot(N, normalize(Ll + V)), 0.0), sf.shine) * ao * uExposure);
+    }
     // Who lights a face is decided per face, never per pixel (vOwn, src/hold.js): a face the light
     // holds is lit by it alone, vermilion falling to deep red, never the pink of red over lit grey;
     // every other face keeps the key's grey and the light only adds to it, a warm white well below
@@ -323,11 +330,11 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
       float through = doorCover(sight.x, sight.y);
       float inCavity = 1.0 - smoothstep(-${RADIUS}, ${RADIUS}, cavityDistance(uDoorLight.xyz, uDoor.w, ${HALF_H}, ${HALF_W}));
       float spill = step(1.0e-4, q.x) * (through * inCavity * sight.z + uDoorBounce * openingFactor(q, vec3(0.0, 1.0, 0.0), doorHo, ${HALF_W}));
-      float spilled = uDoorLight.w * ${SHADING.glowPower.toFixed(2)} * spill * albedo * ao * uExposure;
+      vec3 spilled = uDoorLight.w * ${SHADING.glowPower.toFixed(2)} * spill * albedo * ao * uExposure;
       glow += uAccent * (redOn * spilled) + vec3(${LIFT}) * (keyOn * spilled);
     }
 
-    vec3 lin = vec3(tone) + glow;
+    vec3 lin = tone + glow + sf.emit * dim * uExposure;
     // --- the door ---------------------------------------------------------------------------
     // The door's riser has a real recess: inside the opening the line of sight is cast into the
     // box behind it (interior mapping), so the jamb, the sill and the back wall shift with the
@@ -358,14 +365,15 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
       float form = openingFactor(p, n, doorHo, ${HALF_W});
       float lit = max(through, inCavity) * sight.z + uDoorBounce * (1.0 - form);
       // The inner face's own stone: the hit point, back in the block's rest coordinates.
-      vec3 tread = vec3(1.0) - min(abs(vec3(vMeta.z) - vec3(0.0, 1.0, 2.0)), 1.0);
       vec3 wallAxis = vec3(1.0) - travel - tread;
       vec3 rest = vRest - vBox + travel * (p.x + dot(vHalf, travel)) + tread * (p.y + dot(vHalf, tread) - ${SHADING.doorDrop.toFixed(3)}) + wallAxis * p.z;
       vec3 keyD = uDoorAxes * uKeyDir;
       float keyIn = smoothstep(-${KEY_SOFT}, ${KEY_SOFT}, apertureAngle(p, keyD, doorHo, ${HALF_W})) * pow(0.5 + 0.5 * dot(n, keyD), ${SHADING.keyWrapPower.toFixed(2)}) * ${SHADING.key.toFixed(3)};
       float own = smoothstep(0.0, ${SHADING.doorOwn.toFixed(4)}, lit * uDoorHold);
       float neutral = (${SHADING.doorAmbient.toFixed(4)} * form + keyIn) * (1.0 - own) * mist * dim;
-      vec3 inner = stoneAt(rest, blockIndex) * (vec3(neutral) + uAccent * (uDoorLight.w * ${SHADING.glowPower.toFixed(2)} * lit)) * uExposure;
+      vec3 nIn = n * uDoorAxes;   // the inner face's normal, structure space
+      vec3 inner = surfaceAt(SurfaceIn(rest, vBox, vHalf, nIn, vec3(1.0e3), travel, tread, step(0.5, dot(nIn, tread)), dot(vHalf - vBox, tread), blockIndex, 1.0, uTime)).albedo
+        * (vec3(neutral) + uAccent * (uDoorLight.w * ${SHADING.glowPower.toFixed(2)} * lit)) * uExposure;
       lin = mix(lin, shoulder(inner), door);
     }
     vec3 color = toSRGB(lin);
@@ -436,6 +444,7 @@ export function createMonument(tribar) {
     uSeamDepth: { value: 0 },
     uKeyDir: { value: new THREE.Vector3(...SHADING.keyDir).normalize() },
     uFillDir: { value: new THREE.Vector3(...SHADING.fillDir).normalize() },
+    uRigRot: { value: new THREE.Matrix3() },
     uLantern: { value: 0 },
     uAccent: { value: new THREE.Vector3(...PALETTE.accentLinear) },
     uFocus: { value: new THREE.Vector2() },

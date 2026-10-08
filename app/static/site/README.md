@@ -9,23 +9,36 @@ boxes, numbers for order, and **one point of colour per page that means "you are
 | File | What it holds | Change it to… |
 | --- | --- | --- |
 | `static/site/tokens.css` | **Every value**: colour, type, space, radii, motion. | change the feel of the whole site, homepage included. |
-| `static/site/themes/<name>.css` | A theme: only the tokens it overrides. | add a look (`paper.css` is the example). |
+| `static/site/themes/<name>/` | A theme: `theme.css` (only the tokens it overrides) and, when it changes the homepage's world, `scene.js` (its material, air, light and dust: `static/home/src/theme.js` is the contract), with any fonts or textures it ships. | add a look (`paper/` is the tokens-only example). |
 | `static/site/site.css` | Every piece (head, sections, lists, actions, devices, forms, tables, pager, motion). No values of its own. | change how a piece is built. |
 | `static/site/site.js` | Arrival (reveal) and leaving (page fade where View Transitions are missing). | change the motion's logic (timings are tokens). |
 | `static/site/works/<work>.css` | A work's *rendering of itself* (an app screen), scoped to `.app-<work>`. | draw a product. |
 | `templates/layout.html` | The page: head, frame, main, pager, foot. | change every page's skeleton. |
 | `templates/_ui.html` | The pieces as Jinja macros. | add a piece. |
 | `templates/_theme.html` | The icon, the tokens and the active theme, for any `<head>`. | — |
-| `app/design.py` | The active theme, the frame's links, the page's place in the works loop. | — |
+| `templates/_themes.html` | The theme switcher: every theme on disk, the current one marked; in every page's foot and the homepage's corner. | — |
+| `app/design.py` | The active theme, the switcher's rows, the frame's links, the page's place in the works loop. | — |
 
 ### Themes
 
-* Default: `SITE_THEME` in the environment (`void` = `tokens.css` alone).
-* Preview: add `?theme=paper` to any URL; a cookie keeps it for the visit, `?theme=void` clears it.
-* New theme: create `themes/<name>.css` with a `:root { … }` that overrides only what changes.
-  Keep the `--world-*` values dark: the homepage scene's air is rendered, not styled.
-* The homepage reads the tokens too: its interface greys are `--world-*`, its type and curve are
-  the site's, and the light in the scene is `--accent` (`static/home/src/config.js`).
+* Default: `SITE_THEME` in the environment (`void` = `tokens.css` alone, and the scene's own world).
+* Switching: the switcher in every page's frame, or `?theme=<name>` on any URL; a cookie keeps it for
+  the visit, `?theme=void` clears it. The standalone demo (`design/homepage-demo`) takes the same
+  `?theme=<name>`.
+* New theme: a folder `themes/<name>/` with a `theme.css` whose `:root { … }` overrides only what
+  changes; it appears in the switcher at once. The homepage's interface is drawn in `--world-*`
+  over the scene's air, so a theme whose air is bright sets them dark (`--world-bg` is also what
+  the canvas fades from and to, so it should sit near the air's tone), and the light in the scene
+  is `--accent`.
+* A theme that changes the **world** (the blocks, the air, the light, the dust) adds a `scene.js`
+  beside its `theme.css`: a plain ES module with no imports, exporting `{ config, glsl }`.
+  `config` lays values over `static/home/src/config.js` by name (the key light, the mist, the halo,
+  the motes…); `glsl` holds up to four shader chunks, `surface` (the blocks' material),
+  `air`, `light` and `mote`, each a function of a documented struct. The contract, the structs and
+  the void's own implementations (the reference for each hook) are in `static/home/src/theme.js`.
+  Fonts and textures a theme needs live in its folder and ship with it (the repository's
+  `.gitignore` allowlists `themes/**`). What a theme must keep: the paradox rule (no surface may
+  depend on distance along the view), the three face tones, one light.
 
 ## Rules
 

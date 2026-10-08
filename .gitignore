@@ -79,8 +79,9 @@
 # static site: the design system (tokens, themes, pieces, motion, works' renderings, its guide)
 !app/static/site/
 !app/static/site/*
+# a theme is a folder (theme.css, scene.js, its fonts and textures): it ships whole
 !app/static/site/themes/
-!app/static/site/themes/*.css
+!app/static/site/themes/**
 !app/static/site/works/
 !app/static/site/works/*.css
 # static images

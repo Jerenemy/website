@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="{{ site_theme }}"{% if site_theme_scene %} data-scene="{{ site_theme_scene }}"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -32,6 +32,9 @@
   {%- for module in home_modules %}
   <link rel="modulepreload" href="{{ url_for('static', filename='home/src/' ~ module) }}">
   {%- endfor %}
+  {%- if site_theme_scene %}
+  <link rel="modulepreload" href="{{ site_theme_scene }}">
+  {%- endif %}
 </head>
 <body>
   {#- Everything below is server-rendered from the portfolio store; static/home/src/interface.js
@@ -68,6 +71,8 @@
     <li><a href="{{ l.href }}" rel="noopener" aria-label="{{ l.label }}">{{ l.label }}</a></li>
     {%- endfor %}
   </ul></nav>
+
+  {%- include "_themes.html" %}
 
   <div class="leader" id="leader" aria-hidden="true"></div>
   <div class="dock" id="dock" aria-hidden="true"></div>

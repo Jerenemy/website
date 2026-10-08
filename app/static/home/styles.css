@@ -74,6 +74,11 @@ html:not(.gl) body { display: grid; grid-template-columns: auto 1fr; align-conte
 html:not(.gl) .masthead { grid-area: 1 / 1; }
 html:not(.gl) .links { grid-area: 1 / 2; justify-self: end; }
 html:not(.gl) main { grid-area: 2 / 1 / auto / -1; min-width: 0; }
+/* The theme switcher (templates/_themes.html): the themes by name, the current one in full ink. */
+.themes ul { display: flex; gap: 20px; flex-wrap: wrap; }
+.themes a { color: var(--stone-low); transition: color 0.25s var(--ease); }
+.themes a:hover, .themes a:focus-visible, .themes a[aria-current="true"] { color: var(--stone); }
+html:not(.gl) .themes { grid-area: 3 / 1 / auto / -1; margin-top: 48px; }
 
 /* ---------------------------------------------------------------- the scene */
 html.gl, html.gl body { overflow: hidden; overscroll-behavior: none; }
@@ -86,10 +91,13 @@ html.gl.is-drawn #stage { opacity: 1; }
 /* The light has gone through the door: the scene fades to the void before the link is
    followed, and the page goes with it as one: nothing is left pointing at a dark canvas. */
 html.gl.is-drawn.is-leaving #stage { opacity: 0; transition-duration: var(--door-fade); }
-html.gl.is-live.is-leaving .masthead, html.gl.is-live.is-leaving .links, html.gl.is-live.is-leaving .rail, html.gl.is-live.is-leaving .caption,
+html.gl.is-live.is-leaving .masthead, html.gl.is-live.is-leaving .links, html.gl.is-live.is-leaving .themes, html.gl.is-live.is-leaving .rail, html.gl.is-live.is-leaving .caption,
 html.gl.is-live.is-leaving .leader, html.gl.is-live.is-leaving .dock, html.gl.is-leaving .tag { opacity: 0; transition: opacity var(--door-fade) linear; }
 html.gl .masthead { position: fixed; top: var(--margin); left: var(--margin); z-index: 2; }
 html.gl .links { position: fixed; top: var(--margin); right: var(--margin); z-index: 2; margin: 0; }
+/* The switcher takes the free room: the bottom left corner in landscape, the row under the name in
+   portrait (where the links have gone to the bottom row). */
+html.gl .themes { position: fixed; bottom: var(--margin); left: var(--margin); z-index: 2; margin: 0; }
 
 /* The index: one tick per work, the unrolled loop, on the right edge. The current tick is
    long and numbered; a pointed-at tick numbers and names itself; the rest are bare. Tick
@@ -178,8 +186,8 @@ html.gl .tag {
 html.gl .tag.is-on { opacity: 1; }
 
 /* Arrival: the interface is withheld until the monument has locked. */
-html.gl .masthead, html.gl .links, html.gl .rail, html.gl .caption, html.gl .leader, html.gl .dock { opacity: 0; transition: opacity 1.1s var(--ease); }
-html.gl.is-live .masthead, html.gl.is-live .links, html.gl.is-live .rail, html.gl.is-live .caption, html.gl.is-live .leader, html.gl.is-live .dock { opacity: 1; }
+html.gl .masthead, html.gl .links, html.gl .themes, html.gl .rail, html.gl .caption, html.gl .leader, html.gl .dock { opacity: 0; transition: opacity 1.1s var(--ease); }
+html.gl.is-live .masthead, html.gl.is-live .links, html.gl.is-live .themes, html.gl.is-live .rail, html.gl.is-live .caption, html.gl.is-live .leader, html.gl.is-live .dock { opacity: 1; }
 html.gl.is-live .rail { transition-delay: 0.15s; }
 html.gl.is-live .caption, html.gl.is-live .leader, html.gl.is-live .dock { transition-delay: 0.3s, 0s, 0s; }
 html.gl .leader { transition: opacity 1.1s var(--ease) 0.3s, left 0.45s var(--ease), width 0.45s var(--ease); }
@@ -192,6 +200,8 @@ html.gl .leader { transition: opacity 1.1s var(--ease) 0.3s, left 0.45s var(--ea
 html.gl.is-tall { --margin: 20px; }
 html.gl.is-tall .masthead { top: 22px; }
 html.gl.is-tall .links { top: auto; left: var(--margin); right: var(--margin); bottom: calc(18px + env(safe-area-inset-bottom)); }
+html.gl.is-tall .themes { bottom: auto; top: 50px; left: var(--margin); right: var(--margin); }   /* the row under the name */
+html.gl.is-tall .themes ul { gap: 12px 14px; }
 html.gl.is-tall .links ul { justify-content: space-between; gap: 0; flex-wrap: nowrap; }   /* one row: a second would lie on the strip */
 html.gl.is-tall .links a { display: block; padding: 8px 0; }
 html.gl.is-tall .rail { top: auto; left: var(--margin); right: var(--margin); bottom: calc(58px + env(safe-area-inset-bottom)); transform: none; }
@@ -224,6 +234,7 @@ html.gl.is-tall .dock { width: 19px; height: 19px; margin: -9.5px 0 0 -9.5px; }
   .links ul { gap: 20px; }
   html:not(.gl) .links { grid-area: 2 / 1 / auto / -1; justify-self: stretch; margin-top: 24px; }
   html:not(.gl) main { grid-area: 3 / 1 / auto / -1; }
+  html:not(.gl) .themes { grid-area: 4 / 1 / auto / -1; }
 }
 /* A phone: the five links keep one row across the page, as on the scene's strip. */
 @media (max-width: 480px) {

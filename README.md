@@ -27,6 +27,18 @@ poetry install --no-root
 - Password-protected admin area to add/edit/delete portfolio items (JSON-backed) with image uploads, preview, and delete confirmation
 - Admin site settings to update the home description/background, resume PDF, and theme colors
 
+## Themes
+
+The whole site, homepage world included, can wear a different look. A theme is a folder,
+`app/static/site/themes/<name>/`: `theme.css` overrides the design tokens (`app/static/site/tokens.css`)
+and an optional `scene.js` themes the homepage scene (its blocks' material, its air, its light and its
+dust) through the contract in `app/static/home/src/theme.js`. Every theme on disk appears in the
+switcher at the bottom of the homepage and in every page's foot; `?theme=<name>` on any URL switches
+too, and a cookie keeps the choice for the visit (`?theme=void` clears it). `SITE_THEME=<name>` in the
+environment makes one the default. Shipped: `void` (the default, no folder), `paper`, `wood`, `nature`,
+`ice`, `minecraft`. The guide, with the contract and the rules a theme must keep, is
+`app/static/site/README.md`, "Themes".
+
 ## Homepage (TRIBAR)
 
 `/` renders `app/templates/home.html`: the published items of `app/data/portfolio.json` as a server-rendered list (the whole page without JavaScript or WebGL 2, or if the scene's files fail to load) plus the same data as JSON in `#site-data`, which the WebGL scene in `app/static/home/` reads. Each published item is one step of the monument, in `sort_order`; adding or reordering works in `/admin/portfolio` needs no code change. `/contact` is the contact form in the same style (it also works without JavaScript); old `/#contact` links land there. The scene is plain ES modules (`app/static/home/src/`, no build step, all preloaded by `home.html`); three.js is one minified file, `app/static/home/vendor/three-r186/three.module.min.js`, versioned by its folder. Link previews use `app/static/img/brand/tribar-preview.jpg` (1200 x 630, a frame of the homepage). The design notes and the proofs (`tools/check-geometry.mjs`, `tools/regress.sh`) live in `design/homepage-demo/`, whose `src`, `styles.css` and `vendor` are symlinks to the production files.

@@ -6,9 +6,14 @@
 // Paradox rule: everything here is a function of screen x, y and time only, never of
 // distance along the view axis. And all of it is neutral grey: the monument is the only
 // object with full contrast, the light the only colour. Grain doubles as dither.
+//
+// The air itself is the theme's (src/theme.js `air`, with the PLACE values of src/config.js):
+// this pass computes what every air needs (the frame, the monument's place in it, the drifting
+// mist noise) and grades what the hook returns.
 import * as THREE from 'three';
 import { PLACE } from './config.js';
 import { GRADE } from './glsl.js';
+import { hook, VOID_AIR } from './theme.js';
 
 const f = (v) => v.toFixed(5);
 
@@ -33,11 +38,7 @@ export function createBackdrop() {
       uniform float uTime;
       uniform float uExposure;
       ${GRADE}
-      float vnoise(vec2 p) {
-        vec2 i = floor(p), f = fract(p);
-        f = f * f * (3.0 - 2.0 * f);
-        return mix(mix(hash12(i), hash12(i + vec2(1, 0)), f.x), mix(hash12(i + vec2(0, 1)), hash12(i + vec2(1, 1)), f.x), f.y);
-      }
+      ${hook('air', VOID_AIR)}
       void main() {
         vec2 frag = gl_FragCoord.xy;
         vec2 uv = frag / uViewport;
@@ -46,23 +47,14 @@ export function createBackdrop() {
         vec2 run = vec2(${f(PLACE.drift[0])}, -${f(PLACE.drift[1])}) * uTime;
         float n = vnoise(q + run) * 0.65 + vnoise(q * 2.7 - run * 1.6 + 7.3) * 0.35;
 
-        // The air: a vertical ramp the mist wanders across.
-        float h = smoothstep(-0.05, 1.05, uv.y + (n - 0.5) * ${f(PLACE.rampDrift)});
-        float tone = mix(${f(PLACE.airLift)}, ${f(PLACE.airDeep)}, h);
-
-        // A pocket of lifted air behind the monument, and the mist that pools under it.
+        // Where the monument stands: the pocket of air behind it, the mist that pools under it.
         vec2 toCentre = (frag - uCenter) / uRadius;
-        tone += ${f(PLACE.pocket)} * exp(-dot(toCentre, toCentre) / ${f(PLACE.pocketReach * PLACE.pocketReach)});
         float foot = uCenter.y - uRadius * ${f(PLACE.footDepth)};
         float below = smoothstep(foot + 0.4 * uRadius, foot - 0.7 * uRadius, frag.y);
         float across = exp(-toCentre.x * toCentre.x / ${f(PLACE.mistReach * PLACE.mistReach)});
-        tone += ${f(PLACE.mist)} * below * across * (0.45 + 1.1 * n);
 
-        // The corners fall away.
-        float v = length((uv - 0.5) * vec2(1.0, 1.15));
-        tone *= 1.0 - ${f(PLACE.vignette)} * smoothstep(0.35, 0.95, v);
-
-        vec3 c = toSRGB(vec3(tone * uExposure)) + grain(frag, uTime, ${f(PLACE.grain)});
+        vec3 tone = airAt(AirIn(uv, frag, aspect, toCentre, uRadius, below, across, n, uTime));
+        vec3 c = toSRGB(tone * uExposure) + grain(frag, uTime, ${f(PLACE.grain)});
         gl_FragColor = vec4(c, 1.0);
       }
     `,

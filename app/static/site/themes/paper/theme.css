@@ -1,10 +1,10 @@
 /* THEME: paper. The same design language in daylight: warm off-white, ink greys, the same
    vermilion. Loaded after static/site/tokens.css, it overrides only what it changes; see that
-   file for the contract. Preview on any page with ?theme=paper; make it the default with
-   SITE_THEME=paper.
+   file for the contract. Switch to it on any page with ?theme=paper (the switcher in the frame);
+   make it the default with SITE_THEME=paper.
 
-   The homepage scene is a dark world in every theme (its air is rendered, not styled), so the
-   --world-* values keep its interface dark; only the light takes this theme's accent. */
+   This theme has no scene.js: the homepage keeps its own dark world (static/home/src/theme.js),
+   so the --world-* values keep its interface dark; only the light takes this theme's accent. */
 :root {
   color-scheme: light;
 

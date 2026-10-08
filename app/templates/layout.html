@@ -4,7 +4,7 @@
     (import them `with context`); a work's page gets its place in the loop and its neighbours
     (the pager) from app/design.py without asking. Look: static/site/. Guide: static/site/README.md. -#}
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="{{ site_theme }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -57,6 +57,7 @@
     <footer class="foot">
       <span>© {{ year }} {{ frame.name }}</span>
       {%- block foot %}{% endblock %}
+      {%- include "_themes.html" %}
     </footer>
   </div>
   {%- block scripts %}{% endblock %}

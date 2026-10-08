@@ -1,5 +1,10 @@
 // Every tuning value in the prototype lives here, named. Units: one "beam" = the
 // square cross-section of the tribar; seconds; radians unless stated.
+//
+// A theme (src/theme.js) may override any value below before the scene is built: its scene.js
+// exports a `config` object laid over these (deep-merged, arrays replaced whole). The objects
+// are mutated in place, so a module reading SHADING.key at evaluation time or per frame sees
+// the themed value either way. What a theme should and should not touch is noted per object.
 
 export const DIM = {
   beam: 1,            // cross-section of every block
@@ -21,6 +26,7 @@ export const PALETTE = {
   // Vermilion #ff4a1c: the one hue, and it means exactly one thing, "you are here".
   accentDisplay: [1.0, 0.29, 0.11],   // sRGB-encoded, for additive glows composited in display space
   accentLinear: [1.0, 0.0685, 0.0116], // the same colour in linear light, for lighting the stone
+  coreDisplay: [1.0, 0.9, 0.82],       // sRGB-encoded: the light's burning core (src/lantern.js), white-hot
 };
 
 // The light is the theme's --accent (static/site/tokens.css), when there is a page to read it
@@ -289,6 +295,37 @@ export const IMPACT = {
   tearDust: 0.06,         // ...and the seam raises dust only for a tear at least this wide
   shakeX: 0.6,            // the shake is mostly vertical: this much of it sideways
   life: 2.5,              // s after a strike by which its shake and flash have died away (settled test)
+};
+
+export const LANTERN = {
+  // The light as drawn (src/lantern.js): a halo in the air under the stone, a core and bloom over
+  // everything, and the comet it leaves while it moves. Its influence on the stone is SHADING.
+  blend: 'screen',        // how the light's two parts are laid on the frame: 'screen' (they can only
+                          // brighten: a glow) or 'over' (premultiplied colour and coverage: a thing
+                          // that can be opaque and darker than the air behind it; src/theme.js)
+  haloSize: 3.4,          // beams: full width of the halo's quad
+  haloGain: 0.42,         // the halo's brightness, per unit of the light's power
+  haloGrain: 0.012,       // display units: the grain within the halo
+  bloom: 0.012,           // beams squared: the bloom's spread (exp(-r^2 / bloom)); under 3% beyond 0.2 beams
+  bloomGain: 0.9,         // the bloom's brightness, per unit of power
+  trailPoints: 36,        // afterimages laid back along the path while the light is moving
+  trailSize: 0.36,        // beams: diameter of the newest afterimage
+  trailGain: 0.2,         // the comet's brightness
+};
+
+export const DUST = {
+  // Motes (src/dust.js): the only thing that gives the void a volume. Positions are computed in
+  // the vertex shader from a seed and the time; a theme may change the counts and the motion,
+  // and draws each mote with its `mote` hook (src/theme.js).
+  ambientCount: 150,
+  burstCount: 90,         // thrown from a point whenever something heavy locks into place
+  burstLife: 2.2,         // s
+  fall: [0.012, 0.02],    // view heights per second an ambient mote sinks: the least, plus up to this much more (negative: rises)
+  wander: 0.03,           // view widths of sideways drift
+  size: [1.0, 1.6],       // device px: the least, plus up to this much more (squared weight toward small)
+  alpha: [0.015, 0.075],  // an ambient mote's weight: the least, plus up to this much more
+  twinkle: 0.4,           // how deep an ambient mote's slow twinkle goes (0: steady)
+  depth: 16,              // beams: how deep the ambient motes are spread along the view
 };
 
 export const UI = {
