@@ -1,264 +1,121 @@
-#admin {
-  max-width: 900px;
-  margin: 3rem auto;
-  padding: 0 1.5rem 3rem;
-}
+/* THE PRIVATE PAGES (templates/admin/). They are the site's own pages, built from layout.html and
+   the pieces in static/site/site.css; this file only adds what the public pages never need (the
+   admin's tabs, wide tables, the fields a form for the site needs) and, like site.css, holds no
+   values of its own: everything comes from static/site/tokens.css. jobs.css adds the application
+   pages. Macros: templates/admin/_admin.html. */
 
-.admin__panel {
-  padding: 2rem;
-  border-radius: var(--radius);
+/* ---------------------------------------------------------------- the admin's tabs
+   The site's tabs, with logging out set apart at the end of the row. */
+.admin-tabs { flex-wrap: wrap; align-items: baseline; column-gap: var(--s4); }
+.admin-tabs__out { margin-left: auto; }
+.admin-tabs__out button {
+  padding: var(--s2) 0; background: none; border: 0; cursor: pointer; color: var(--ink-3);
+  font: inherit; letter-spacing: inherit; text-transform: inherit;
+  transition: color var(--t-mid) var(--ease);
 }
+.admin-tabs__out button:hover, .admin-tabs__out button:focus-visible { color: var(--ink); }
+.admin-tabs + .sect, .admin-tabs + form > .sect:first-child { margin-top: var(--s8); }
 
-.admin__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.admin__title {
-  margin: 0;
-  font-size: 1.8rem;
-}
-
-.admin__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.admin-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.admin-form__label {
-  font-weight: 600;
-}
-
-.admin-form__section {
-  margin-top: 0.5rem;
-}
-
-.admin-form__subtitle {
-  margin: 1.5rem 0 0.5rem;
-  font-size: 1.2rem;
-}
-
-.admin-form__input {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--fg);
-}
-
-.admin-form__input[readonly] {
-  opacity: 0.7;
-}
-
-.admin-form__textarea {
-  resize: vertical;
-}
-
-.admin-form__hint {
-  font-size: 0.85rem;
-  opacity: 0.75;
-}
-
-.admin-form__checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-}
-
-.admin-form__row {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.admin-button {
-  align-self: flex-start;
-  padding: 0.65rem 1.4rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--fg);
-  cursor: pointer;
-  text-decoration: none;
-  transition: var(--transition);
-}
-
-.admin-button:hover {
-  background: rgba(255, 255, 255, 0.35);
-}
-
-.admin-button--ghost {
-  background: transparent;
-}
-
-.admin-link {
-  color: var(--fg);
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.admin-link--danger {
-  color: #d44949;
-}
-
-.admin-table__wrap {
-  overflow-x: auto;
-}
-
-.admin-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.admin-table th,
-.admin-table td {
-  text-align: left;
-  padding: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  word-break: break-word;
-}
-
-.admin-table__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.admin-flash {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 1rem;
-  display: grid;
-  gap: 0.5rem;
-}
-
+/* ---------------------------------------------------------------- outcomes
+   What the last action did, on a hairline like a quote: grey, never a colour. */
+.admin-flash { margin: 0; padding: 0; list-style: none; }
 .admin-flash__item {
-  padding: 0.65rem 0.85rem;
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.15);
+  display: flex; gap: var(--s2); align-items: baseline;
+  padding-left: var(--s3); border-left: 1px solid var(--hair); color: var(--ink);
+  font-size: var(--small-size); line-height: var(--small-lead);
+}
+.admin-flash__item + .admin-flash__item { margin-top: var(--s1); }
+.admin-flash__item--error { border-left-color: var(--ink); }
+
+/* ---------------------------------------------------------------- forms
+   The contact page's fields, wider (an admin form holds paragraphs), with the controls the
+   public pages never use: a select, a file, a colour, a checkbox. */
+.admin-form .field, .admin-form .check { max-width: 560px; }
+.admin-form .sect__body > .field + .field { margin-top: var(--s4); }
+.field .note { margin-top: var(--s1); }
+.field input[readonly] { color: var(--ink-3); border-bottom-style: dashed; }
+.field input:disabled { color: var(--ink-3); cursor: not-allowed; }
+
+.field select {
+  cursor: pointer; padding-right: var(--s3);
+  background:
+    linear-gradient(45deg, transparent 50%, var(--ink-3) 50%) right 6px center / 5px 5px no-repeat,
+    linear-gradient(-45deg, transparent 50%, var(--ink-3) 50%) right 1px center / 5px 5px no-repeat;
+}
+.field select option { background: var(--surface); color: var(--ink); }
+
+.field input[type="file"] { padding: var(--s1) 0; color: var(--ink-2); cursor: pointer; }
+.field input[type="file"]::file-selector-button {
+  margin-right: var(--s2); padding: 4px 0; background: none; border: 0; border-bottom: 1px solid var(--hair);
+  color: var(--ink); cursor: pointer; font: inherit; font-size: var(--label-size);
+  letter-spacing: var(--track); text-transform: uppercase;
+  transition: border-color var(--t-mid) var(--ease);
+}
+.field input[type="file"]:hover::file-selector-button { border-bottom-color: var(--ink); }
+
+/* Colours: a swatch on a hairline, in a row. */
+.admin-swatches { display: flex; flex-wrap: wrap; gap: var(--s3) var(--s5); }
+.admin-swatches .field + .field { margin-top: 0; }
+.field input[type="color"] {
+  width: var(--s8); height: var(--s4); padding: 4px 0; cursor: pointer;
+}
+.field input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.field input[type="color"]::-webkit-color-swatch { border: 1px solid var(--rule); border-radius: 0; }
+.field input[type="color"]::-moz-color-swatch { border: 1px solid var(--rule); border-radius: 0; }
+
+/* A checkbox: a square drawn on a hairline, filled with ink when on. */
+.check {
+  display: flex; align-items: center; gap: var(--s2); cursor: pointer; color: var(--ink-2);
+  font-size: var(--small-size); line-height: var(--small-lead);
+}
+.check input {
+  -webkit-appearance: none; appearance: none; flex: none; width: 12px; height: 12px; margin: 0;
+  border: 1px solid var(--hair); background: transparent; cursor: pointer;
+  transition: background-color var(--t-mid) var(--ease), border-color var(--t-mid) var(--ease);
+}
+.check input:checked { background: var(--ink); border-color: var(--ink); }
+.check:hover input { border-color: var(--ink-2); }
+.sect__body > .check { margin-top: var(--s4); }
+.sect__body > .check + .note { margin-top: var(--s1); }
+
+.admin-form .send, .sect__body > .send { margin-top: var(--s5); }
+
+/* ---------------------------------------------------------------- tables
+   The site's tables, for records: rows wrap, the thing each row is about is in ink, and the
+   actions sit at the row's end. On a phone each row stacks, its column names in the label voice. */
+.admin-table table { min-width: 100%; }
+.admin-table th, .admin-table td { white-space: normal; vertical-align: baseline; overflow-wrap: anywhere; }
+.admin-table td { color: var(--ink-2); }
+.admin-table td.admin-table__lead { color: var(--ink); }
+.admin-table tbody tr:last-child td { border-bottom: 1px solid var(--rule); }
+.admin-table td[colspan] { color: var(--ink-3); }
+.admin-table__actions { text-align: right; white-space: nowrap !important; }
+.admin-table__actions > * { display: inline-flex; vertical-align: baseline; }
+.admin-table__actions > * + * { margin-left: var(--s3); }
+.admin-table__actions form { margin: 0; }
+
+@media (max-width: 640px) {
+  .admin-table thead { display: none; }
+  .admin-table table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; }
+  .admin-table tr { padding: var(--s2) 0; border-top: 1px solid var(--rule); }
+  .admin-table tbody tr:last-child { border-bottom: 1px solid var(--rule); }
+  .admin-table td, .admin-table tbody tr:last-child td { padding: 4px 0; border: 0; }
+  .admin-table td[data-label]::before {
+    content: attr(data-label); display: block; color: var(--ink-3);
+    font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
+  }
+  .admin-table__actions { text-align: left; }
+  .admin-tabs__out { margin-left: 0; }
 }
 
-.admin-flash__item--success {
-  border: 1px solid rgba(79, 195, 247, 0.6);
-}
-
-.admin-flash__item--error {
-  border: 1px solid rgba(212, 73, 73, 0.6);
-}
-
-.admin-preview {
-  margin-top: 2rem;
-  display: grid;
-  gap: 1rem;
-}
-
-.admin-preview__errors ul {
-  margin: 0;
-  padding-left: 1.2rem;
-}
-
-.admin-preview__lightbox {
-  padding: 0.75rem;
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-@media (max-width: 720px) {
-  #admin {
-    margin: 2rem auto;
-    padding: 0 1rem 2rem;
-  }
-
-  .admin__panel {
-    padding: 1.25rem;
-  }
-
-  .admin__header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .admin__actions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .admin__actions .admin-button,
-  .admin__actions form {
-    width: 100%;
-  }
-
-  .admin__actions form button {
-    width: 100%;
-    text-align: center;
-  }
-
-  .admin-table__wrap {
-    overflow: visible;
-  }
-
-  .admin-table,
-  .admin-table thead,
-  .admin-table tbody,
-  .admin-table th,
-  .admin-table td,
-  .admin-table tr {
-    display: block;
-  }
-
-  .admin-table thead {
-    display: none;
-  }
-
-  .admin-table tr {
-    margin-bottom: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius);
-    padding: 0.5rem;
-  }
-
-  .admin-table td {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.5rem 0.75rem;
-    border-bottom: none;
-  }
-
-  .admin-table td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    opacity: 0.75;
-  }
-
-  .admin-table td[colspan] {
-    display: block;
-    text-align: center;
-  }
-
-  .admin-table__actions {
-    justify-content: flex-start;
-  }
-
-  .admin-form__row .admin-button {
-    width: 100%;
-    text-align: center;
-  }
-}
+/* ---------------------------------------------------------------- the work's preview */
+.admin-preview[hidden] { display: none; }
+.admin-preview__errors ul { margin: 0; padding: 0 0 0 var(--s3); border-left: 1px solid var(--ink); list-style: none; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); }
+.admin-preview__errors:empty { display: none; }
+.admin-preview__card { max-width: 360px; }
+.admin-preview__card img { width: 100%; border: 1px solid var(--rule); }
+.admin-preview__card img:not([src]), .admin-preview__card img[src=""] { display: none; }
+.admin-preview__card figcaption { margin-top: var(--s2); }
+.admin-preview__card h3 { color: var(--ink); font-size: var(--text-size); line-height: var(--text-lead); font-weight: var(--strong-weight); }
+.admin-preview__card p { margin-top: var(--s1); color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); }
+.admin-preview__lightbox .prose { margin-top: var(--s1); font-size: var(--small-size); line-height: var(--small-lead); }

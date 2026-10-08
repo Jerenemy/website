@@ -1,123 +1,127 @@
-{% extends "base.html" %}
-{% block title %}{{ form_title }}{% endblock %}
-{% block extra_head %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% extends "layout.html" %}
+{% import "_ui.html" as ui with context %}
+{% import "admin/_admin.html" as admin with context %}
+{% block title %}{{ form_title }} · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
 {% endblock %}
 {% block content %}
-<section id="admin" class="admin">
-  <div class="admin__panel glassy">
-    <div class="admin__header">
-      <h1 class="admin__title">{{ form_title }}</h1>
-      <div class="admin__actions">
-        <a class="admin-link" href="{{ url_for('admin.portfolio_list') }}">Back to list</a>
-        <a class="admin-link" href="{{ url_for('admin.site_settings') }}">Site Settings</a>
+  {% call ui.head(form_title, where="Admin") %}
+    {{ ui.open(url_for('admin.portfolio_list'), "All works", back=True, quiet=True) }}
+  {% endcall %}
+  {{ admin.nav("works") }}
+
+  <form method="post" action="{{ form_action }}" class="admin-form" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    {% call ui.sect("01", "On the homepage") %}
+      {% include "admin/_flash.html" %}
+      <div class="field">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" value="{{ item.title | e }}" maxlength="{{ title_max }}" required>
+        <p class="note">Shown on the homepage, in capitals, on one line. A word or two, at most {{ title_max }} characters.</p>
       </div>
-    </div>
-
-    {% include "admin/_flash.html" %}
-
-    <form method="post" action="{{ form_action }}" class="admin-form" enctype="multipart/form-data">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-      <label class="admin-form__label" for="title">Title</label>
-      <input class="admin-form__input" type="text" id="title" name="title" value="{{ item.title | e }}" maxlength="{{ title_max }}" required>
-      <div class="admin-form__hint">Shown on the homepage, in capitals, on one line. A word or two, at most {{ title_max }} characters.</div>
-
-      <label class="admin-form__label" for="kind">Kind</label>
-      <select class="admin-form__input" id="kind" name="kind" required>
-        <option value="" disabled{% if item.kind not in kinds %} selected{% endif %}>Choose a kind</option>
-        {%- for kind in kinds %}
-        <option value="{{ kind }}"{% if item.kind == kind %} selected{% endif %}>{{ kind | capitalize }}</option>
-        {%- endfor %}
-      </select>
-
-      <label class="admin-form__label" for="line">Line</label>
-      <input class="admin-form__input" type="text" id="line" name="line" value="{{ item.line | e }}" maxlength="{{ line_max }}" required>
-      <div class="admin-form__hint">One short plain-text sentence, under {{ line_max }} characters (e.g. "An AlphaZero-style chess engine").</div>
-
-      <label class="admin-form__label" for="href">Link</label>
-      <input class="admin-form__input" type="text" id="href" name="href" value="{{ item.href | e }}" placeholder="/blog/my-post or https://example.com" required pattern="/(?!/).*|https?://\S+" spellcheck="false" autocapitalize="off">
-      <div class="admin-form__hint">Where the work opens: a path on this site starting with / or a full https:// URL. Sort order below sets its place on the homepage loop.</div>
-
-      <div class="admin-form__section">
-        <h2 class="admin-form__subtitle">Record</h2>
-        <div class="admin-form__hint">Optional. The homepage shows only the title, kind, line and link; these are kept for the record.</div>
+      <div class="field">
+        <label for="kind">Kind</label>
+        <select id="kind" name="kind" required>
+          <option value="" disabled{% if item.kind not in kinds %} selected{% endif %}>Choose a kind</option>
+          {%- for kind in kinds %}
+          <option value="{{ kind }}"{% if item.kind == kind %} selected{% endif %}>{{ kind | capitalize }}</option>
+          {%- endfor %}
+        </select>
       </div>
-
-      <label class="admin-form__label" for="short_desc">Card Description</label>
-      <textarea class="admin-form__input admin-form__textarea" id="short_desc" name="short_desc" rows="4">{{ item.short_desc | safe }}</textarea>
-      <div class="admin-form__hint">HTML is allowed for links in the card description.</div>
-
-      <label class="admin-form__label" for="long_desc">Lightbox Description</label>
-      <textarea class="admin-form__input admin-form__textarea" id="long_desc" name="long_desc" rows="6">{{ item.long_desc | safe }}</textarea>
-      <div class="admin-form__hint">HTML is allowed. Keep markup simple for best results.</div>
-
-      <div class="admin-form__section">
-        <h2 class="admin-form__subtitle">Images</h2>
-        <div class="admin-form__hint">
-          Optional. Allowed types: {{ allowed_extensions | join(", ") }}. Max {{ max_upload_mb }} MB per file.
-        </div>
+      <div class="field">
+        <label for="line">Line</label>
+        <input type="text" id="line" name="line" value="{{ item.line | e }}" maxlength="{{ line_max }}" required>
+        <p class="note">One short plain-text sentence, under {{ line_max }} characters (e.g. "An AlphaZero-style chess engine").</p>
       </div>
-
-      <label class="admin-form__label" for="image_full_file">Upload Full Image</label>
-      <input class="admin-form__input" type="file" id="image_full_file" name="image_full_file" accept=".jpg,.jpeg,.png,.webp,image/*">
-      <div class="admin-form__hint">Optional. If provided, the path field below will be replaced.</div>
-
-      <label class="admin-form__label" for="image_full">Full Image Path</label>
-      <input class="admin-form__input" type="text" id="image_full" name="image_full" value="{{ item.image_full | e }}">
-      <div class="admin-form__hint">Relative to /static, e.g. img/projects/poster-full.png</div>
-
-      <label class="admin-form__checkbox" for="auto_thumbnail">
-        <input type="checkbox" id="auto_thumbnail" name="auto_thumbnail" {% if auto_thumbnail_default %}checked{% endif %}>
-        Auto-generate thumbnail from full image
-      </label>
-      <div class="admin-form__hint">When on, thumbnail uploads are ignored; existing thumbnail paths are kept unless you upload a new full image.</div>
-
-      <label class="admin-form__label" for="image_thumb_file">Upload Thumbnail</label>
-      <input class="admin-form__input" type="file" id="image_thumb_file" name="image_thumb_file" accept=".jpg,.jpeg,.png,.webp,image/*">
-
-      <label class="admin-form__label" for="image_thumb">Thumbnail Image Path</label>
-      <input class="admin-form__input" type="text" id="image_thumb" name="image_thumb" value="{{ item.image_thumb | e }}">
-
-      <label class="admin-form__label" for="image_alt">Image Alt Text</label>
-      <input class="admin-form__input" type="text" id="image_alt" name="image_alt" value="{{ item.image_alt | e }}">
-      <div class="admin-form__hint">Required when the item has an image.</div>
-
-      <label class="admin-form__label" for="sort_order">Sort Order</label>
-      <input class="admin-form__input" type="number" id="sort_order" name="sort_order" value="{{ item.sort_order | e }}">
-      <div class="admin-form__hint">Lower numbers appear first, on the homepage loop as in this list.</div>
-
-      <label class="admin-form__checkbox">
+      <div class="field">
+        <label for="href">Link</label>
+        <input type="text" id="href" name="href" value="{{ item.href | e }}" placeholder="/blog/my-post or https://example.com" required pattern="/(?!/).*|https?://\S+" spellcheck="false" autocapitalize="off">
+        <p class="note">Where the work opens: a path on this site starting with / or a full https:// URL.</p>
+      </div>
+      <div class="field">
+        <label for="sort_order">Sort order</label>
+        <input type="number" id="sort_order" name="sort_order" value="{{ item.sort_order | e }}">
+        <p class="note">Lower numbers come first, on the homepage loop as in the list.</p>
+      </div>
+      <label class="check">
         <input type="checkbox" name="is_published" {% if item.is_published %}checked{% endif %}>
-        Published
+        <span>Published</span>
       </label>
+    {% endcall %}
 
-      <div class="admin-form__row">
-        <button class="admin-button" type="button" id="preview-button">Show Preview</button>
-        <button class="admin-button" type="submit">{{ submit_label }}</button>
+    {% call ui.sect("02", "Record") %}
+      <p class="note">Optional. The homepage shows only the title, kind, line and link; these are kept for the record.</p>
+      <div class="field">
+        <label for="short_desc">Card description</label>
+        <textarea id="short_desc" name="short_desc" rows="4">{{ item.short_desc | safe }}</textarea>
+        <p class="note">HTML is allowed for links.</p>
       </div>
-    </form>
+      <div class="field">
+        <label for="long_desc">Lightbox description</label>
+        <textarea id="long_desc" name="long_desc" rows="6">{{ item.long_desc | safe }}</textarea>
+        <p class="note">HTML is allowed. Keep the markup simple.</p>
+      </div>
+    {% endcall %}
 
-    <div class="admin-preview" id="admin-preview" hidden>
-      <h2 class="admin-form__subtitle">Preview</h2>
+    {% call ui.sect("03", "Images") %}
+      <p class="note">Optional. Allowed types: {{ allowed_extensions | join(", ") }}. At most {{ max_upload_mb }} MB per file.</p>
+      <div class="field">
+        <label for="image_full_file">Upload a full image</label>
+        <input type="file" id="image_full_file" name="image_full_file" accept=".jpg,.jpeg,.png,.webp,image/*">
+        <p class="note">Replaces the path below.</p>
+      </div>
+      <div class="field">
+        <label for="image_full">Full image path</label>
+        <input type="text" id="image_full" name="image_full" value="{{ item.image_full | e }}">
+        <p class="note">Relative to /static, e.g. img/projects/poster-full.png</p>
+      </div>
+      <label class="check" for="auto_thumbnail">
+        <input type="checkbox" id="auto_thumbnail" name="auto_thumbnail" {% if auto_thumbnail_default %}checked{% endif %}>
+        <span>Make the thumbnail from the full image</span>
+      </label>
+      <p class="note">When on, thumbnail uploads are ignored; an existing thumbnail path is kept unless a new full image is uploaded.</p>
+      <div class="field">
+        <label for="image_thumb_file">Upload a thumbnail</label>
+        <input type="file" id="image_thumb_file" name="image_thumb_file" accept=".jpg,.jpeg,.png,.webp,image/*">
+      </div>
+      <div class="field">
+        <label for="image_thumb">Thumbnail path</label>
+        <input type="text" id="image_thumb" name="image_thumb" value="{{ item.image_thumb | e }}">
+      </div>
+      <div class="field">
+        <label for="image_alt">Image alt text</label>
+        <input type="text" id="image_alt" name="image_alt" value="{{ item.image_alt | e }}">
+        <p class="note">Required when the work has an image.</p>
+      </div>
+      <div class="actions">
+        {{ admin.button("Show preview", quiet=True, type="button", id="preview-button") }}
+        {{ admin.button(submit_label) }}
+      </div>
+    {% endcall %}
+  </form>
+
+  <section class="sect admin-preview" id="admin-preview" aria-label="Preview" hidden>
+    <p class="sect__name label" aria-hidden="true"><span class="no">04</span><span class="t">Preview</span></p>
+    <div class="sect__body">
       <div id="admin-preview-errors" class="admin-preview__errors"></div>
-      <article class="project-card glassy">
-        <a href="#" id="admin-preview-link">
-          <img id="admin-preview-image" src="" alt="" class="project-card__img" />
+      <figure class="admin-preview__card">
+        <a href="#" id="admin-preview-link" target="_blank" rel="noopener" data-no-transition>
+          <img id="admin-preview-image" src="" alt="">
         </a>
-        <div class="project-card__body">
-          <h3 class="project-card__title" id="admin-preview-title"></h3>
-          <p class="project-card__desc" id="admin-preview-desc"></p>
-        </div>
-      </article>
+        <figcaption>
+          <h3 id="admin-preview-title"></h3>
+          <p id="admin-preview-desc"></p>
+        </figcaption>
+      </figure>
       <div class="admin-preview__lightbox" id="admin-preview-lightbox"></div>
     </div>
-  </div>
-</section>
+  </section>
 {% endblock %}
 
 {% block scripts %}
-  {{ super() }}
   <script>
     const previewButton = document.getElementById('preview-button');
     const previewContainer = document.getElementById('admin-preview');
@@ -215,7 +219,7 @@
       previewImage.alt = altText;
       previewImage.src = gatherPreviewImage();
       previewLink.href = fullFile ? getFileUrl(fullFileInput) : toStaticUrl(fullPath);
-      previewLightbox.innerHTML = `<strong>Lightbox description:</strong> ${longDesc}`;
+      previewLightbox.innerHTML = `<p class="label">Lightbox description</p><div class="prose">${longDesc}</div>`;
 
       previewContainer.hidden = false;
     });

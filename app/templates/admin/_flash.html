@@ -1,9 +1,10 @@
+{#- The outcome of the last thing done, told in grey like every other outcome on the site. -#}
 {% with messages = get_flashed_messages(with_categories=True) %}
-  {% if messages %}
-    <ul class="admin-flash">
-      {% for category, message in messages %}
-        <li class="admin-flash__item admin-flash__item--{{ category }}">{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+  {%- if messages %}
+  <ul class="admin-flash" role="status">
+    {%- for category, message in messages %}
+    <li class="admin-flash__item admin-flash__item--{{ category }}"><span class="label">{{ "Error" if category == "error" else "Done" }}</span><span>{{ message }}</span></li>
+    {%- endfor %}
+  </ul>
+  {%- endif %}
 {% endwith %}

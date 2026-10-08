@@ -1,239 +1,100 @@
-/* Job application review pages (admin). Builds on admin.css. */
-#admin.jobs {
-  max-width: 1200px;
-}
+/* The job application pages (templates/admin/jobs.html, job_detail.html). Builds on admin.css and,
+   like it, holds no values of its own. States are told in the label voice and in grey: what needs
+   you is in ink and marked filled, what is under way is marked hollow, what is done is quiet. */
 
-.jobs__subtitle {
-  margin: 0.35rem 0 0;
-  opacity: 0.8;
-}
-
-.jobs__tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0.5rem 0 0.5rem;
-}
-
-.jobs__tab {
-  padding: 0.4rem 0.9rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: var(--fg);
-  text-decoration: none;
-  font-size: 0.9rem;
-}
-
-.jobs__tab span {
-  opacity: 0.65;
-  margin-left: 0.25rem;
-}
-
-.jobs__tab--active {
-  background: rgba(255, 255, 255, 0.25);
-}
-
+/* ---------------------------------------------------------------- states */
 .jobs__badge {
-  display: inline-block;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  background: rgba(255, 255, 255, 0.15);
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: var(--s1); white-space: nowrap; color: var(--ink-2);
+  font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
 }
+.jobs__badge::before { content: ""; flex: none; width: 5px; height: 5px; border: 1px solid var(--ink-3); }
+.jobs__badge + .jobs__badge { margin-left: var(--s2); }
+/* Needs you. */
+.jobs__badge--review, .jobs__badge--needs_code, .jobs__badge--attention,
+.jobs__badge--unconfirmed, .jobs__badge--failed { color: var(--ink); }
+.jobs__badge--review::before, .jobs__badge--needs_code::before, .jobs__badge--attention::before,
+.jobs__badge--unconfirmed::before, .jobs__badge--failed::before { background: var(--ink); border-color: var(--ink); }
+/* Under way. */
+.jobs__badge--active::before, .jobs__badge--queued::before, .jobs__badge--running::before { border-color: var(--ink-2); }
+/* Done. */
+.jobs__badge--applied, .jobs__badge--other, .jobs__badge--skipped, .jobs__badge--cancelled { color: var(--ink-3); }
 
-.jobs__badge--review { background: rgba(79, 195, 247, 0.3); }
-.jobs__badge--active,
-.jobs__badge--queued,
-.jobs__badge--running { background: rgba(255, 193, 7, 0.35); }
-.jobs__badge--needs_code,
-.jobs__badge--attention,
-.jobs__badge--unconfirmed,
-.jobs__badge--failed { background: rgba(212, 73, 73, 0.45); }
-.jobs__badge--applied { background: rgba(76, 175, 80, 0.45); }
-
+/* ---------------------------------------------------------------- notices
+   A line to act on or to know: on a hairline, like the site's quotes. */
 .jobs__notice {
-  display: block;
-  margin: 0 0 1rem;
-  padding: 0.8rem 1rem;
-  border-radius: var(--radius);
-  color: var(--fg);
-  text-decoration: none;
-  background: rgba(255, 255, 255, 0.1);
+  display: flex; gap: var(--s2); align-items: baseline;
+  padding-left: var(--s3); border-left: 1px solid var(--hair); color: var(--ink-2);
+  font-size: var(--small-size); line-height: var(--small-lead);
 }
+.jobs__notice--error, .jobs__notice--urgent { border-left-color: var(--ink); color: var(--ink); }
+a.jobs__notice { transition: padding var(--t-mid) var(--ease); }
+a.jobs__notice:hover, a.jobs__notice:focus-visible { padding-left: var(--s4); }
+a.jobs__notice svg { flex: none; width: 8px; height: 8px; align-self: center; }
+.sect__body > .jobs__notice + .jobs__notice { margin-top: var(--s1); }
 
-.jobs__notice--error,
-.jobs__notice--urgent {
-  background: rgba(212, 73, 73, 0.3);
-}
+/* ---------------------------------------------------------------- the list's filters
+   Inside the section: the label voice, the current one in ink, each with its count. */
+.jobs__filters { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jobs__filters a { color: var(--ink-3); transition: color var(--t-mid) var(--ease); }
+.jobs__filters a:hover, .jobs__filters a:focus-visible { color: var(--ink-2); }
+.jobs__filters a[aria-current="page"] { color: var(--ink); }
+.jobs__count { margin-left: 4px; color: var(--ink-3); }
 
-.jobs__status {
-  padding: 1rem 1.25rem;
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.06);
-}
+/* ---------------------------------------------------------------- the status */
+#job-status, #chat { scroll-margin-top: var(--s5); }
+.jobs__note { color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; max-width: var(--measure); }
+.jobs__status .facts + .jobs__note { margin-top: var(--s3); }
+.jobs__status .jobs__note + .jobs__note { margin-top: var(--s1); }
+.jobs__code .field { max-width: 240px; }
+.jobs__code-input { font-family: var(--font-mono) !important; letter-spacing: var(--track) !important; }
+.jobs__buttons:empty { display: none; }
+.jobs__buttons form { margin: 0; }
 
-.jobs__status p {
-  margin: 0 0 0.6rem;
-}
-
-.jobs__note {
-  opacity: 0.85;
-  word-break: break-word;
-}
-
-.jobs__code {
-  margin: 0.75rem 0;
-}
-
-.jobs__code-input {
-  max-width: 14rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.15em;
-}
-
-.jobs__buttons {
-  flex-wrap: wrap;
-  margin-top: 0.75rem;
-}
-
-.jobs .admin-button.jobs__submit {
-  background: rgba(76, 175, 80, 0.55);
-}
-
-.jobs .admin-button.jobs__danger {
-  background: rgba(212, 73, 73, 0.55);
-}
-
-.jobs__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: 1.5rem;
-  margin-top: 1rem;
-}
-
-.jobs__shot img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: #fff;
-}
-
-.jobs__answer {
-  white-space: pre-wrap;
-}
-
-.jobs__required {
-  color: #ff8a80;
-}
-
-.jobs__error {
-  color: #ff8a80;
-  font-size: 0.9rem;
-}
-
-.jobs__row--error td {
-  background: rgba(212, 73, 73, 0.12);
-}
-
-.jobs button {
-  font: inherit;
-}
-
-.jobs .admin-table td.jobs__from,
-.jobs .admin-table th.jobs__from {
-  width: 1%;
-  white-space: nowrap;
-  word-break: normal;
-}
-
-.jobs__source {
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
-
-.jobs__source--llm {
-  color: #ffd54f;
-  opacity: 1;
-}
-
-.jobs__source--fallback,
-.jobs__source--error {
-  color: #ff8a80;
-  opacity: 1;
-}
-
-.jobs__row--edited td {
-  background: rgba(79, 195, 247, 0.16);
-}
-
-.jobs__source--edit {
-  color: #4fc3f7;
-  opacity: 1;
-}
-
-.jobs__chat {
-  margin-top: 1rem;
-  padding: 1rem 1.25rem;
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.jobs__chat .admin-form__subtitle {
-  margin-top: 0;
-}
-
-.jobs__messages {
-  list-style: none;
-  margin: 0 0 1rem;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
+/* ---------------------------------------------------------------- the conversation
+   A transcript, not bubbles: who spoke in the margin, what they said beside it. */
+.jobs__messages { margin: 0; padding: 0; list-style: none; max-width: var(--measure); }
 .jobs__message {
-  max-width: 85%;
-  padding: 0.6rem 0.9rem;
-  border-radius: var(--radius);
-  white-space: pre-wrap;
-  word-break: break-word;
+  display: grid; grid-template-columns: 6ch 1fr; column-gap: var(--s2); align-items: baseline;
+  padding: var(--s2) 0; border-top: 1px solid var(--rule);
+  font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere;
 }
+.jobs__message:last-child { border-bottom: 1px solid var(--rule); }
+.jobs__message--you { color: var(--ink); }
+.jobs__message--you > div { white-space: pre-wrap; }
+.jobs__message--bot { color: var(--ink-2); }
+.jobs__message--bot .jobs__badge { margin-right: var(--s1); }
+.jobs__changes { margin: var(--s1) 0 0; padding: 0; list-style: none; }
+.jobs__changes li { position: relative; padding-left: var(--s3); }
+.jobs__changes li::before { content: ""; position: absolute; left: 0; top: calc(var(--small-lead) / 2); width: 10px; height: 1px; background: var(--tick); }
+.jobs__changes strong { color: var(--ink); font-weight: var(--strong-weight); }
+.jobs__chat-form textarea { min-height: 96px; }
 
-.jobs__message--you {
-  align-self: flex-end;
-  background: rgba(79, 195, 247, 0.25);
-}
-
-.jobs__message--bot {
-  align-self: flex-start;
-  background: rgba(255, 255, 255, 0.1);
-  white-space: normal;
-}
-
-#job-status,
-#chat {
-  scroll-margin-top: 6.5rem; /* clear the fixed site header when jumping back here */
-}
-
-.jobs__changes {
-  margin: 0.4rem 0 0;
-  padding-left: 1.1rem;
-  white-space: normal;
-}
-
-.jobs__chat-form textarea {
-  min-height: 4.5rem;
-}
+/* ---------------------------------------------------------------- the answers
+   The form as the bot left it beside what it wrote. A changed answer is marked by a line in ink
+   at its edge; a wrong one says what went wrong under it. */
+.jobs__layout { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s6); align-items: start; }
+.jobs__shots > * + * { margin-top: var(--s5); }
+.jobs__shot img { width: 100%; }
+.jobs__answers > * + * { margin-top: var(--s3); }
+.jobs__answer { white-space: pre-wrap !important; }
+.jobs__required { color: var(--ink-3); }
+.jobs__error { display: block; margin-top: 4px; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); white-space: normal; }
+.jobs__error::before { content: "Error · "; color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
+li.jobs__error { display: list-item; }
+li.jobs__error::before { content: ""; }
+.jobs__row--edited td:first-child, .jobs__row--error td:first-child { box-shadow: inset 1px 0 0 var(--ink); padding-left: var(--s2); }
+.jobs__row--edited td.jobs__answer { color: var(--ink); }
+.admin-table td.jobs__from, .admin-table th.jobs__from { width: 1%; white-space: nowrap; text-align: right; padding-right: 0; }
+.jobs__source { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jobs__source--edit, .jobs__source--fallback, .jobs__source--error { color: var(--ink); }
+.jobs__source--llm { color: var(--ink-2); }
 
 @media (max-width: 900px) {
-  .jobs__layout {
-    grid-template-columns: 1fr;
-  }
-
-  .admin__header {
-    flex-wrap: wrap;
-  }
+  .jobs__layout { grid-template-columns: 1fr; }
+  .jobs__shots { max-width: 480px; }
+}
+@media (max-width: 640px) {
+  .admin-table td.jobs__from { width: auto; text-align: left; }
+  .jobs__row--edited td:first-child, .jobs__row--error td:first-child { box-shadow: none; padding-left: 0; }
+  .jobs__row--edited, .jobs__row--error { box-shadow: inset 1px 0 0 var(--ink); padding-left: var(--s2) !important; }
 }

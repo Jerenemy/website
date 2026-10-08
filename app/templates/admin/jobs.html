@@ -1,54 +1,49 @@
-{% extends "base.html" %}
-{% block title %}Job Applications{% endblock %}
-{% block extra_head %}
+{% extends "layout.html" %}
+{% import "_ui.html" as ui with context %}
+{% import "admin/_admin.html" as admin with context %}
+{% block title %}Applications · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/jobs.css') }}">
 {% endblock %}
 {% block content %}
-<section id="admin" class="admin jobs">
-  <div class="admin__panel glassy">
-    <div class="admin__header">
-      <h1 class="admin__title">Job Applications</h1>
-      <div class="admin__actions">
-        <a class="admin-button admin-button--ghost" href="{{ url_for('admin.portfolio_list') }}">Back to admin</a>
-      </div>
-    </div>
+  {{ ui.head("Applications", where="Admin", line=("Last bot pass " ~ (last_pass | jobbot_time) ~ ".") if last_pass and not error else None) }}
+  {{ admin.nav("jobs") }}
 
+  {% call ui.sect("01", filters.get(show, "Applications"), wide=True) %}
     {% include "admin/_flash.html" %}
-
     {% if error %}
       <p class="jobs__notice jobs__notice--error">{{ error }}</p>
     {% else %}
       {% for job in waiting %}
         <a class="jobs__notice jobs__notice--urgent" href="{{ url_for('jobbot.job_detail', job_id=job.id) }}">
-          {{ job.company }} is waiting for an emailed verification code. Enter it now &rarr;
+          <span class="label">Code</span>
+          <span>{{ job.company }} is waiting for an emailed verification code. Enter it now</span>{{ ui.arrow() }}
         </a>
       {% endfor %}
 
-      <nav class="jobs__tabs" aria-label="Filter applications">
+      <nav class="jobs__filters" aria-label="Filter applications">
         {% for key, label in filters.items() %}
-          <a class="jobs__tab{% if key == show %} jobs__tab--active{% endif %}"
-             href="{{ url_for('jobbot.job_list', show=key) }}">{{ label }} <span>{{ counts.get(key, 0) }}</span></a>
+          <a href="{{ url_for('jobbot.job_list', show=key) }}"{% if key == show %} aria-current="page"{% endif %}>{{ label }} <span class="jobs__count">{{ counts.get(key, 0) }}</span></a>
         {% endfor %}
       </nav>
 
-      <div class="admin-table__wrap">
-        <table class="admin-table">
-          <thead><tr><th>Company</th><th>Role</th><th>Status</th><th>Last attempt</th><th></th></tr></thead>
+      <div class="table admin-table">
+        <table>
+          <thead><tr><th>Company</th><th>Role</th><th>Status</th><th>Last attempt</th><th><span class="sr">Review</span></th></tr></thead>
           <tbody>
             {% for job in jobs %}
               {% set sub = job.submission or {} %}
               <tr>
-                <td data-label="Company">{{ job.company or "?" }}</td>
+                <td data-label="Company" class="admin-table__lead">{{ job.company or "?" }}</td>
                 <td data-label="Role">{{ job.title or "?" }}</td>
                 <td data-label="Status">
-                  <span class="jobs__badge jobs__badge--{{ job.category }}">
-                    {% if sub.status %}{{ sub.status | jobbot_status }}{% else %}{{ job.status | jobbot_status }}{% endif %}
-                  </span>
+                  <span class="jobs__badge jobs__badge--{{ job.category }}">{% if sub.status %}{{ sub.status | jobbot_status }}{% else %}{{ job.status | jobbot_status }}{% endif %}</span>
                   {% if job.missing_required %}<span class="jobs__badge jobs__badge--attention">{{ job.missing_required | length }} unanswered</span>{% endif %}
                 </td>
                 <td data-label="Last attempt">{{ job.last_attempt | jobbot_time }}</td>
-                <td><a class="admin-link" href="{{ url_for('jobbot.job_detail', job_id=job.id) }}">Review</a></td>
+                <td class="admin-table__actions"><a class="open open--quiet" href="{{ url_for('jobbot.job_detail', job_id=job.id) }}"><span>Review</span>{{ ui.arrow() }}</a></td>
               </tr>
             {% else %}
               <tr><td colspan="5">Nothing here yet.</td></tr>
@@ -56,8 +51,6 @@
           </tbody>
         </table>
       </div>
-      {% if last_pass %}<p class="admin-form__hint">Last bot pass: {{ last_pass | jobbot_time }}</p>{% endif %}
     {% endif %}
-  </div>
-</section>
+  {% endcall %}
 {% endblock %}
