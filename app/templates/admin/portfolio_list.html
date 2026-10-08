@@ -1,65 +1,48 @@
-{% extends "base.html" %}
-{% block title %}Portfolio Admin{% endblock %}
-{% block extra_head %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% extends "layout.html" %}
+{% import "_ui.html" as ui with context %}
+{% import "admin/_admin.html" as admin with context %}
+{% block title %}Works · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
 {% endblock %}
 {% block content %}
-<section id="admin" class="admin">
-  <div class="admin__panel glassy">
-    <div class="admin__header">
-      <h1 class="admin__title">Portfolio Admin</h1>
-      <div class="admin__actions">
-        <a class="admin-button" href="{{ url_for('admin.portfolio_new') }}">New Item</a>
-        <a class="admin-button admin-button--ghost" href="{{ url_for('admin.site_settings') }}">Site Settings</a>
-        <a class="admin-button admin-button--ghost" href="{{ url_for('wtt.signups') }}">WTT Signups</a>
-        <a class="admin-button admin-button--ghost" href="{{ url_for('jobbot.job_list') }}">Job Applications</a>
-        <form method="post" action="{{ url_for('admin.logout') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="admin-button admin-button--ghost" type="submit">Log out</button>
-        </form>
-      </div>
-    </div>
+  {% call ui.head("Works", where="Admin", line="The homepage loop, in the order it is shown.") %}
+    {{ ui.open(url_for('admin.portfolio_new'), "New work") }}
+  {% endcall %}
+  {{ admin.nav("works") }}
 
+  {% call ui.sect("01", "Loop", wide=True) %}
     {% include "admin/_flash.html" %}
-
-    <div class="admin-table__wrap">
-      <table class="admin-table">
+    <div class="table admin-table">
+      <table>
         <thead>
-          <tr>
-            <th>Title</th>
-            <th>Order</th>
-            <th>Published</th>
-            <th class="admin-table__actions">Actions</th>
-          </tr>
+          <tr><th>Order</th><th>Title</th><th>Published</th><th><span class="sr">Actions</span></th></tr>
         </thead>
         <tbody>
           {% for item in items %}
             <tr>
-              <td data-label="Title">{{ item.title }}</td>
               <td data-label="Order">{{ item.sort_order }}</td>
+              <td data-label="Title" class="admin-table__lead">{{ item.title }}</td>
               <td data-label="Published">{{ "Yes" if item.is_published else "No" }}</td>
-              <td class="admin-table__actions" data-label="Actions">
-                <a class="admin-link" href="{{ url_for('admin.portfolio_edit', item_id=item.id) }}">Edit</a>
+              <td class="admin-table__actions">
+                <a class="open open--quiet" href="{{ url_for('admin.portfolio_edit', item_id=item.id) }}"><span>Edit</span>{{ ui.arrow() }}</a>
                 <form method="post" action="{{ url_for('admin.portfolio_delete', item_id=item.id) }}" class="js-delete-form" data-title="{{ item.title | e }}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                  <button class="admin-link admin-link--danger" type="submit">Delete</button>
+                  {{ admin.button("Delete", quiet=True) }}
                 </form>
               </td>
             </tr>
           {% else %}
-            <tr>
-              <td colspan="4">No portfolio items yet.</td>
-            </tr>
+            <tr><td colspan="4">No works yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-  </div>
-</section>
+  {% endcall %}
 {% endblock %}
 
 {% block scripts %}
-  {{ super() }}
   <script>
     document.querySelectorAll('.js-delete-form').forEach((form) => {
       form.addEventListener('submit', (event) => {
