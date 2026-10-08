@@ -8,10 +8,9 @@
   </button>
 
   <nav id="site-nav" class="nav" aria-label="Main navigation" data-collapsed="true">
-    <!-- in-page sections on Home -->
-    <a href="{{ url_for('public.index') }}#home">Home</a>
-    <a href="{{ url_for('public.index') }}#portfolio">Portfolio</a>
-    <a href="{{ url_for('public.index') }}#contact">Contact</a>
+    {#- The homepage is the portfolio; contact is a page of its own. #}
+    <a href="{{ url_for('public.index') }}">Home</a>
+    <a href="{{ url_for('public.contact') }}">Contact</a>
     <!-- separate pages -->
     <a href="{{ url_for('public.blog') }}">Blog</a>
     <!-- <a href="{{ url_for('public.game') }}">Asteroids</a> -->

@@ -1,0 +1,98 @@
+/* TOKENS: every design decision on the site, in one place. This is the default look ("void":
+   near-black, neutral greys, one hue that means "you are here").
+
+   Every page (static/site/site.css), the homepage's interface (static/home/styles.css) and the
+   homepage's light (static/home/src/config.js reads --accent) take their values from the custom
+   properties below; no other stylesheet holds a colour, a typeface, a size or a timing of its
+   own. Change a value here and the whole site changes with it.
+
+   A THEME is a second file, static/site/themes/<name>.css, loaded after this one, that
+   overrides only the properties it changes (themes/paper.css is the example). Choose it with
+   SITE_THEME=<name>, or preview it on any page with ?theme=<name> (?theme=void returns here).
+   Rename nothing: the names are the contract. */
+:root {
+  color-scheme: dark;
+
+  /* ---------------------------------------------------------------- colour
+     Surfaces, darkest first. The page is --bg; --surface is anything raised off it (a device,
+     a code block, a figure's mat). */
+  --bg: #050505;
+  --surface: #0d0d0d;
+  --surface-2: #151515;
+
+  /* Ink, loudest first: titles and the thing in hand / reading text / labels and the quiet. */
+  --ink: #dcdcdc;
+  --ink-2: #a3a3a3;
+  --ink-3: #707070;       /* 4:1 on --bg: the quietest text that must still be read */
+  --tick: #5e5e5e;        /* marks that need not be read */
+
+  /* Lines: a hairline that is seen (underlines, frames), a rule that only divides. */
+  --hair: rgba(220, 220, 220, 0.28);
+  --rule: rgba(220, 220, 220, 0.12);
+
+  /* The one hue. It appears once per page, as the light: the dot that says where you are. */
+  --accent: #ff4a1c;
+
+  /* Selection inverts, like a light passing over the stone. */
+  --select-bg: var(--ink);
+  --select-ink: var(--bg);
+
+  /* ---------------------------------------------------------------- the homepage's world
+     The homepage scene is a dark world in every theme (its air is rendered, not styled). Its
+     interface reads these; in this theme they are the page's own values. */
+  --world-bg: #050505;
+  --world-ink: #dcdcdc;
+  --world-ink-2: #9a9a9a;
+  --world-ink-3: #707070;
+  --world-tick: #5e5e5e;
+  --world-hair: rgba(220, 220, 220, 0.28);
+  --world-rule: rgba(220, 220, 220, 0.12);
+
+  /* ---------------------------------------------------------------- type
+     One family for everything; a monospace only for code. Two voices: the LABEL (small,
+     uppercase, widely tracked: numbers, names of things, navigation) and the TEXT (sentence
+     case, to be read). Titles are the text voice, large and light. */
+  --font: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --track: 0.16em;               /* the label's tracking */
+
+  --label-size: 11px;   --label-lead: 16px;
+  --small-size: 13px;   --small-lead: 20px;    /* the homepage's one line; captions, notes */
+  --text-size: 16px;    --text-lead: 26px;     /* reading text */
+  --lede-size: 20px;    --lede-lead: 30px;     /* a page's first paragraph */
+  --h2-size: 24px;      --h2-lead: 32px;
+  --title-size: clamp(40px, 6.4vw, 84px);
+  --title-lead: 1.02;
+  --title-weight: 300;
+  --title-track: -0.025em;
+  --heading-weight: 400;
+  --strong-weight: 500;
+  --measure: 64ch;               /* the longest comfortable line of reading text */
+
+  /* ---------------------------------------------------------------- space
+     An 8 px grid. --margin is the page's edge, the same as the homepage's. */
+  --s1: 8px;  --s2: 16px; --s3: 24px; --s4: 32px; --s5: 40px;
+  --s6: 48px; --s8: 64px; --s12: 96px; --s16: 128px; --s20: 160px;
+  --margin: 40px;
+  --margin-phone: 20px;
+  --page-max: 1240px;
+  --label-col: minmax(160px, 3fr);   /* the margin column that names each section */
+  --body-col: 7fr;
+
+  /* ---------------------------------------------------------------- form
+     Architecture is square; only renderings of real devices are rounded, by their own shape. */
+  --radius: 0px;
+  --radius-phone: 44px;
+  --radius-window: 12px;
+  --shadow-device: 0 40px 120px -40px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--rule);
+
+  /* ---------------------------------------------------------------- motion
+     One curve for everything that settles; durations from a short scale. Nothing bounces. */
+  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --ease-out: cubic-bezier(0.4, 0, 1, 1);    /* for what leaves */
+  --t-fast: 0.16s;      /* a page leaving; a colour answering the pointer */
+  --t-mid: 0.35s;       /* a hover settling */
+  --t-slow: 0.8s;       /* something arriving */
+  --rise: 14px;         /* how far arriving content travels */
+  --stagger: 70ms;      /* between the arriving pieces of one screen */
+}

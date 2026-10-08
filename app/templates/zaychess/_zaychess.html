@@ -1,0 +1,17 @@
+{% import "_ui.html" as ui with context %}
+{#- What Zaychess's three pages share: the head (its icon, its place in the loop, its one line)
+    and the tabs between them. `current` is the page's endpoint. -#}
+{% macro zaychess_head(current, title=None) -%}
+{% call ui.head(title or "Zaychess", line=work_nav.work.line if work_nav else "A chess app built to feel good to play",
+                mark=url_for('static', filename='zaychess/img/app-icon.png'), mark_alt="Zaychess app icon") %}
+  {%- if current == 'public.zaychess' %}
+  {{ ui.open("https://apps.apple.com/us/app/zaychess/id6751706040?mt=12", "Mac App Store", external=True) }}
+  {{ ui.open(url_for('public.zaychess_support'), "Support", quiet=True) }}
+  {%- endif %}
+{% endcall %}
+{{ ui.tabs([
+  (url_for('public.zaychess'), "Overview", current == 'public.zaychess'),
+  (url_for('public.zaychess_support'), "Support", current == 'public.zaychess_support'),
+  (url_for('public.zaychess_privacy'), "Privacy", current == 'public.zaychess_privacy'),
+], label="Zaychess") }}
+{%- endmacro %}

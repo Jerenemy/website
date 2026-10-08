@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <title>Jeremy Zay</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23050505'/%3E%3Cpath d='M16 6 27 25H5z' fill='none' stroke='%23d8d8d8' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ccircle cx='5' cy='25' r='3.2' fill='%23ff4a1c'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="site/tokens.css">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Before first paint (as in app/templates/home.html): the scene's layout is adopted as soon as
+    // the scene can run (WebGL 2, import maps), so the index never flashes; main.js withdraws it
+    // if the context cannot be made, and so does any error before the scene's modules have started.
+    (function () {
+      var root = document.documentElement, S = window.HTMLScriptElement;
+      if (/[?&]nogl=1(&|$)/.test(location.search) || !('WebGL2RenderingContext' in window) || !(S && S.supports && S.supports('importmap'))) return;
+      root.classList.add('gl');
+      addEventListener('error', function () { if (!window.__demo) root.classList.remove('gl'); }, true);
+    })();
+  </script>
+  <script type="importmap">{ "imports": { "three": "./vendor/three-r186/three.module.min.js" } }</script>
+</head>
+<body>
+  <!-- Everything below is server-rendered (INTEGRATION.md); src/interface.js adopts it. Without
+       JavaScript or WebGL this markup, styled as a list, is the whole page. -->
+  <canvas id="stage" aria-hidden="true"></canvas>
+
+  <header class="masthead" id="masthead">
+    <h1 class="name"><a href="/" id="home" aria-label="Jeremy Zay, home">Jeremy Zay</a></h1>
+  </header>
+
+  <main>
+    <nav class="rail" aria-label="Works"><ol id="rail">
+      <li><a href="https://jeremyzay.com/poster-diffusion-2025" data-index="0" data-id="diffusion" aria-current="true"><span class="label" aria-hidden="true"><span class="no">01</span><span class="t">Diffusion</span></span><span class="sr">Diffusion, Research, </span><span class="line">Diffusion models that design molecules for mutant p53</span></a></li>
+      <li><a href="https://jeremyzay.com/poster-rl-2024" data-index="1" data-id="reinforcement-learning"><span class="label" aria-hidden="true"><span class="no">02</span><span class="t">Reinforcement Learning</span></span><span class="sr">Reinforcement Learning, Research, </span><span class="line">RL-guided molecule generation for p53 Y220C</span></a></li>
+      <li><a href="https://jeremyzay.com/blog/chatham-financial-internship" data-index="2" data-id="curve-explorer"><span class="label" aria-hidden="true"><span class="no">03</span><span class="t">Curve Explorer</span></span><span class="sr">Curve Explorer, Engineering, </span><span class="line">Curve workflow in ONYX Pro at Chatham Financial</span></a></li>
+      <li><a href="https://karchive.dad" data-index="3" data-id="karchive"><span class="label" aria-hidden="true"><span class="no">04</span><span class="t">KArchive</span></span><span class="sr">KArchive, Product, </span><span class="line">Searchable video archive with cited answers</span></a></li>
+      <li><a href="https://jeremyzay.com/zaychess" data-index="4" data-id="zaychess"><span class="label" aria-hidden="true"><span class="no">05</span><span class="t">Zaychess</span></span><span class="sr">Zaychess, Product, </span><span class="line">A chess app built to feel good to play</span></a></li>
+      <li><a href="https://jeremyzay.com/blog/zaybot" data-index="5" data-id="zaybot"><span class="label" aria-hidden="true"><span class="no">06</span><span class="t">ZayBot</span></span><span class="sr">ZayBot, Engineering, </span><span class="line">An AlphaZero-style chess engine</span></a></li>
+      <li><a href="https://jeremyzay.com/blog/polydiff" data-index="6" data-id="polydiff"><span class="label" aria-hidden="true"><span class="no">07</span><span class="t">Polydiff</span></span><span class="sr">Polydiff, Research, </span><span class="line">A diffusion model that draws polygons</span></a></li>
+      <li><a href="https://jeremyzay.com/sonar" data-index="7" data-id="sonar"><span class="label" aria-hidden="true"><span class="no">08</span><span class="t">Sonar</span></span><span class="sr">Sonar, Product, </span><span class="line">Podcast ratings and reviews for iOS</span></a></li>
+      <li><a href="https://jeremyzay.com/ear/" data-index="8" data-id="ear"><span class="label" aria-hidden="true"><span class="no">09</span><span class="t">EAR</span></span><span class="sr">EAR, Research, </span><span class="line">Audio-visual retrieval</span></a></li>
+      <li><a href="https://jeremyzay.com/game" data-index="9" data-id="asteroids"><span class="label" aria-hidden="true"><span class="no">10</span><span class="t">Asteroids</span></span><span class="sr">Asteroids, Play, </span><span class="line">The arcade classic, rebuilt in PyGame</span></a></li>
+    </ol></nav>
+    <section class="caption" id="caption" aria-label="Current work">
+      <p class="head" id="head" aria-hidden="true">
+        <span class="cap is-on" id="cap-a"><span class="no">01 / 10</span><span class="title">Diffusion</span></span>
+        <span class="cap" id="cap-b"><span class="no"></span><span class="title"></span></span>
+      </p>
+      <div class="detail" id="detail">
+        <p class="kind" id="cap-kind" aria-hidden="true"></p>
+        <p class="line" id="cap-line"></p>
+        <a class="open" id="cap-open" href="#" tabindex="-1" aria-label="Open" aria-describedby="cap-hint"><span aria-hidden="true">Open</span><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 8 8 2M3.5 2H8v4.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg></a>
+      </div>
+      <p class="sr" id="announce" aria-live="polite" aria-atomic="true"></p>
+      <p class="sr" id="cap-hint">Selected. Press Enter to open.</p>
+    </section>
+  </main>
+
+  <nav class="links" id="links-nav" aria-label="Elsewhere"><ul id="links">
+    <li><a href="https://jeremyzay.com/resume" rel="noopener" aria-label="Résumé">Résumé</a></li>
+    <li><a href="https://jeremyzay.com/blog" rel="noopener" aria-label="Writing">Writing</a></li>
+    <li><a href="https://github.com/Jerenemy" rel="noopener" aria-label="GitHub">GitHub</a></li>
+    <li><a href="https://www.linkedin.com/in/jeremy-zay/" rel="noopener" aria-label="LinkedIn">LinkedIn</a></li>
+    <li><a href="https://jeremyzay.com/contact" rel="noopener" aria-label="Contact">Contact</a></li>
+  </ul></nav>
+
+  <div class="leader" id="leader" aria-hidden="true"></div>
+  <div class="dock" id="dock" aria-hidden="true"></div>
+  <div class="tag" id="tag" aria-hidden="true"><span class="no" id="tag-no"></span><span id="tag-title"></span></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

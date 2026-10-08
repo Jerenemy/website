@@ -1,32 +1,28 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WTT</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/wtt.css') }}">
-</head>
-<body>
-  <main>
-    <h1>WTT</h1>
-    {% if success %}
-      <p role="status">Thanks—you’re on the list!</p>
-    {% else %}
-      <p>Leave your email to stay updated</p>
-      <form method="post" action="{{ url_for('wtt.signup') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <div class="honeypot" aria-hidden="true">
-          <label for="website">Website</label>
-          <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
-        </div>
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" autocomplete="email" inputmode="email"
-               maxlength="254" required value="{{ email }}" placeholder="you@example.com"
-               {% if error %}aria-invalid="true" aria-describedby="error"{% endif %}>
-        {% if error %}<p id="error" class="error" role="alert">{{ error }}</p>{% endif %}
-        <button type="submit">Sign up</button>
-      </form>
-    {% endif %}
-  </main>
-</body>
-</html>
+{% extends "layout.html" %}
+{% import "_ui.html" as ui with context %}
+{% block title %}WTT{% endblock %}
+{% block description %}Leave your email to stay updated about WTT.{% endblock %}
+{% block head %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block content %}
+  {%- if success %}
+  {{ ui.head("WTT", where="Signup") }}
+  <p class="status" role="status" data-reveal>Thanks—you’re on the list!</p>
+  {%- else %}
+  {{ ui.head("WTT", line="Leave your email to stay updated", where="Signup") }}
+  <form class="form" method="post" action="{{ url_for('wtt.signup') }}" data-reveal>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="honeypot" aria-hidden="true">
+      <label for="website">Website</label>
+      <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+    </div>
+    <p class="field">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" inputmode="email"
+             maxlength="254" required value="{{ email }}" placeholder="you@example.com"
+             {% if error %}aria-invalid="true" aria-describedby="error"{% endif %}>
+    </p>
+    {%- if error %}<p id="error" class="status error" role="alert">{{ error }}</p>{% endif %}
+    <button class="open send" type="submit"><span>Sign up</span>{{ ui.arrow() }}</button>
+  </form>
+  {%- endif %}
+{% endblock %}

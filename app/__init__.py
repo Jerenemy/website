@@ -43,6 +43,10 @@ def create_app():
     for command in (init_command, sync_command, verify_command):
         app.cli.add_command(command)
 
+    # the site's look: theme, frame and place in the loop for every template (app/design.py)
+    from . import design
+    design.init_app(app)
+
     # initialize extensions
     mail.init_app(app)
     return app

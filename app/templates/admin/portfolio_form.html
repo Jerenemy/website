@@ -20,20 +20,42 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
       <label class="admin-form__label" for="title">Title</label>
-      <input class="admin-form__input" type="text" id="title" name="title" value="{{ item.title | e }}" required>
+      <input class="admin-form__input" type="text" id="title" name="title" value="{{ item.title | e }}" maxlength="{{ title_max }}" required>
+      <div class="admin-form__hint">Shown on the homepage, in capitals, on one line. A word or two, at most {{ title_max }} characters.</div>
+
+      <label class="admin-form__label" for="kind">Kind</label>
+      <select class="admin-form__input" id="kind" name="kind" required>
+        <option value="" disabled{% if item.kind not in kinds %} selected{% endif %}>Choose a kind</option>
+        {%- for kind in kinds %}
+        <option value="{{ kind }}"{% if item.kind == kind %} selected{% endif %}>{{ kind | capitalize }}</option>
+        {%- endfor %}
+      </select>
+
+      <label class="admin-form__label" for="line">Line</label>
+      <input class="admin-form__input" type="text" id="line" name="line" value="{{ item.line | e }}" maxlength="{{ line_max }}" required>
+      <div class="admin-form__hint">One short plain-text sentence, under {{ line_max }} characters (e.g. "An AlphaZero-style chess engine").</div>
+
+      <label class="admin-form__label" for="href">Link</label>
+      <input class="admin-form__input" type="text" id="href" name="href" value="{{ item.href | e }}" placeholder="/blog/my-post or https://example.com" required pattern="/(?!/).*|https?://\S+" spellcheck="false" autocapitalize="off">
+      <div class="admin-form__hint">Where the work opens: a path on this site starting with / or a full https:// URL. Sort order below sets its place on the homepage loop.</div>
+
+      <div class="admin-form__section">
+        <h2 class="admin-form__subtitle">Record</h2>
+        <div class="admin-form__hint">Optional. The homepage shows only the title, kind, line and link; these are kept for the record.</div>
+      </div>
 
       <label class="admin-form__label" for="short_desc">Card Description</label>
-      <textarea class="admin-form__input admin-form__textarea" id="short_desc" name="short_desc" rows="4" required>{{ item.short_desc | safe }}</textarea>
+      <textarea class="admin-form__input admin-form__textarea" id="short_desc" name="short_desc" rows="4">{{ item.short_desc | safe }}</textarea>
       <div class="admin-form__hint">HTML is allowed for links in the card description.</div>
 
       <label class="admin-form__label" for="long_desc">Lightbox Description</label>
-      <textarea class="admin-form__input admin-form__textarea" id="long_desc" name="long_desc" rows="6" required>{{ item.long_desc | safe }}</textarea>
+      <textarea class="admin-form__input admin-form__textarea" id="long_desc" name="long_desc" rows="6">{{ item.long_desc | safe }}</textarea>
       <div class="admin-form__hint">HTML is allowed. Keep markup simple for best results.</div>
 
       <div class="admin-form__section">
         <h2 class="admin-form__subtitle">Images</h2>
         <div class="admin-form__hint">
-          Allowed types: {{ allowed_extensions | join(", ") }}. Max {{ max_upload_mb }} MB per file.
+          Optional. Allowed types: {{ allowed_extensions | join(", ") }}. Max {{ max_upload_mb }} MB per file.
         </div>
       </div>
 
@@ -58,11 +80,12 @@
       <input class="admin-form__input" type="text" id="image_thumb" name="image_thumb" value="{{ item.image_thumb | e }}">
 
       <label class="admin-form__label" for="image_alt">Image Alt Text</label>
-      <input class="admin-form__input" type="text" id="image_alt" name="image_alt" value="{{ item.image_alt | e }}" required>
+      <input class="admin-form__input" type="text" id="image_alt" name="image_alt" value="{{ item.image_alt | e }}">
+      <div class="admin-form__hint">Required when the item has an image.</div>
 
       <label class="admin-form__label" for="sort_order">Sort Order</label>
       <input class="admin-form__input" type="number" id="sort_order" name="sort_order" value="{{ item.sort_order | e }}">
-      <div class="admin-form__hint">Lower numbers appear first.</div>
+      <div class="admin-form__hint">Lower numbers appear first, on the homepage loop as in this list.</div>
 
       <label class="admin-form__checkbox">
         <input type="checkbox" name="is_published" {% if item.is_published %}checked{% endif %}>
@@ -113,6 +136,9 @@
     const thumbFileInput = document.getElementById('image_thumb_file');
 
     const titleInput = document.getElementById('title');
+    const kindInput = document.getElementById('kind');
+    const lineInput = document.getElementById('line');
+    const hrefInput = document.getElementById('href');
     const shortDescInput = document.getElementById('short_desc');
     const longDescInput = document.getElementById('long_desc');
     const altInput = document.getElementById('image_alt');
@@ -165,16 +191,15 @@
       const fullFile = fullFileInput.files && fullFileInput.files[0];
       const thumbFile = thumbFileInput.files && thumbFileInput.files[0];
 
+      const hasImage = !!(fullFile || fullPath);
       if (!title) errors.push('Title is required.');
-      if (!shortDesc) errors.push('Card description is required.');
-      if (!longDesc) errors.push('Lightbox description is required.');
-      if (!altText) errors.push('Image alt text is required.');
+      if (!kindInput.value) errors.push('Kind is required.');
+      if (!lineInput.value.trim()) errors.push('Line is required.');
+      if (!hrefInput.value.trim()) errors.push('Link is required.');
+      else if (!hrefInput.checkValidity()) errors.push('Link must be a site path starting with / or a full https:// URL.');
+      if (hasImage && !altText) errors.push('Image alt text is required with an image.');
 
-      if (!fullFile && !fullPath) {
-        errors.push('Full image (upload or path) is required.');
-      }
-
-      if (!autoThumbnail.checked && !thumbFile && !thumbPath) {
+      if (hasImage && !autoThumbnail.checked && !thumbFile && !thumbPath) {
         errors.push('Thumbnail image is required when auto thumbnail is off.');
       }
 

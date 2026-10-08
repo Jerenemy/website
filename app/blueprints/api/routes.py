@@ -1,4 +1,4 @@
-from flask import request, jsonify, current_app, abort
+from flask import request, jsonify, current_app, abort, redirect, url_for
 from flask_mail import Message
 from ...extensions import mail
 from . import bp
@@ -20,11 +20,31 @@ def debug_mail():
 
 @bp.post("/contact")
 def api_contact():
-    data = request.get_json() or {}
+    # JSON from static/js/contact.js (and the zaychess support and eqoscan pages); the contact
+    # page's own form, posted by a browser without JavaScript, arrives form-encoded and is
+    # answered with the contact page again, its outcome in the status line (303: a reload does
+    # not post twice).
+    as_page = not request.is_json
+    data = request.form if as_page else (request.get_json(silent=True) or {})
+
+    def reply(payload, status=200):
+        if as_page:
+            outcome = "sent" if status == 200 else "missing" if status == 400 else "failed"
+            return redirect(url_for("public.contact", status=outcome), code=303)
+        return jsonify(payload), status
+
+    if not isinstance(data, dict) and not as_page:
+        return reply({"error": "Missing fields"}, 400)
     name, email, message = data.get("name"), data.get("email"), data.get("message")
 
     if not all([name, email, message]):
-        return jsonify({"error": "Missing fields"}), 400
+        return reply({"error": "Missing fields"}, 400)
+
+    # The contact page's hidden field: no person fills it in; a form-filling bot does. It is told
+    # the message went, and nothing is sent.
+    if data.get("website"):
+        current_app.logger.info("Contact form honeypot filled; message dropped")
+        return reply({"ok": True})
 
     cfg = current_app.config
     default_sender = cfg.get("MAIL_DEFAULT_SENDER") or cfg.get("MAIL_USERNAME")
@@ -41,7 +61,7 @@ def api_contact():
                 "MAIL_DEFAULT_SENDER_present": bool(cfg.get("MAIL_DEFAULT_SENDER")),
             },
         )
-        return jsonify({"error": "Email service not configured"}), 500
+        return reply({"error": "Email service not configured"}, 500)
 
     msg = Message(
         subject=f"New message from {name}",
@@ -61,10 +81,10 @@ def api_contact():
             },
         )
         mail.send(msg)
-        return jsonify({"ok": True})
+        return reply({"ok": True})
     except Exception as e:
         current_app.logger.exception("MAIL ERROR")
-        return jsonify({"error": "Failed to send email"}), 500
+        return reply({"error": "Failed to send email"}, 500)
     
 @bp.get("/leaderboard")
 def api_leaderboard():

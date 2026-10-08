@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% import "_ui.html" as ui with context %}
+{#- The contact form; static/js/contact.js posts it to /api/contact as JSON. method/action matter
+    only without JavaScript: the browser then posts the form itself (never into a URL) and
+    /api/contact answers with this page again, its outcome in the status line. #}
+{% block title %}Contact · {{ frame.name }}{% endblock %}
+{% block description %}{{ site_settings.home_description | striptags }}{% endblock %}
+{% block preview %}
+  {%- set preview_title = "Contact · Jeremy Zay" %}
+  {%- include "_preview_meta.html" %}
+{%- endblock %}
+{% block content %}
+  {{ ui.head("Contact", where="Contact") }}
+  <form id="contact-form" class="form" method="post" action="{{ url_for('api.api_contact') }}" data-reveal>
+    <p class="field">
+      <label for="contact-name">Name</label>
+      <input id="contact-name" name="name" autocomplete="name" required>
+    </p>
+    <p class="field">
+      <label for="contact-email">Email</label>
+      <input id="contact-email" name="email" type="email" autocomplete="email" required>
+    </p>
+    <p class="field">
+      <label for="contact-message">Message</label>
+      <textarea id="contact-message" name="message" rows="6" required></textarea>
+    </p>
+    {#- Not rendered, so no person (or autofill) fills it; a form-filling bot does, and is not mailed. #}
+    <p hidden><label>Leave empty <input name="website" tabindex="-1" autocomplete="off"></label></p>
+    <button type="submit" class="open send"><span>Send</span>{{ ui.arrow() }}</button>
+    <p id="contact-status" class="status" role="status" aria-live="polite">{{ status }}</p>
+  </form>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/contact.js') }}" defer></script>
+{% endblock %}

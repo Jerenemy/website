@@ -1,0 +1,64 @@
+{#- THE PAGE. Every page of the site but the homepage scene extends this: the same head, the
+    same frame (the name top left, the links top right, where the homepage has them), the same
+    foot, the same motion between pages. A page fills `content` with the pieces in _ui.html
+    (import them `with context`); a work's page gets its place in the loop and its neighbours
+    (the pager) from app/design.py without asking. Look: static/site/. Guide: static/site/README.md. -#}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <title>{% block title %}Jeremy Zay{% endblock %}</title>
+  <meta name="description" content="{% block description %}Personal website and portfolio of Jeremy Zay.{% endblock %}">
+  {%- block preview %}{% endblock %}
+  {%- include "_theme.html" %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='site/site.css') }}">
+  {%- block head %}{% endblock %}
+  <script>
+    // Before first paint: arriving pieces may be hidden (static/site/site.js reveals them), and a
+    // page reached through the homepage's door rises out of its void instead of cutting from it.
+    (function () {
+      var root = document.documentElement;
+      root.classList.add('js');
+      try {
+        var from = document.referrer ? new URL(document.referrer) : null;
+        if (from && from.origin === location.origin && from.pathname === '/' && !matchMedia('(prefers-reduced-motion: reduce)').matches) root.classList.add('from-void');
+      } catch (e) { /* no referrer, no veil */ }
+    })();
+  </script>
+  <script src="{{ url_for('static', filename='site/site.js') }}" defer></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <div class="page">
+    <div class="frame">
+      <p class="masthead"><a href="{{ url_for('public.index') }}" aria-label="{{ frame.name }}, home">{{ frame.name }}</a></p>
+      <nav class="links" aria-label="Elsewhere"><ul>
+        {%- for l in frame.links %}
+        <li><a href="{{ l.href }}" rel="noopener" aria-label="{{ l.label }}"{% if l.href == (request.path.rstrip('/') or '/') or (l.id == 'writing' and request.path.startswith('/blog')) %} aria-current="page"{% endif %}>{{ l.label }}</a></li>
+        {%- endfor %}
+      </ul></nav>
+    </div>
+
+    <main id="main">
+      {%- block content %}{% endblock %}
+    </main>
+
+    {%- block pager %}
+    {%- if work_nav and work_nav.prev %}
+    <nav class="pager" aria-label="Works">
+      <a class="pager__prev" href="{{ work_nav.prev.href }}"><span>{{ '%02d' % ((work_nav.no - 2) % work_nav.total + 1) }} · Previous</span><span class="t">{{ work_nav.prev.title }}</span></a>
+      <a class="pager__index" href="{{ work_nav.index_href }}">All works</a>
+      <a class="pager__next" href="{{ work_nav.next.href }}"><span>Next · {{ '%02d' % (work_nav.no % work_nav.total + 1) }}</span><span class="t">{{ work_nav.next.title }}</span></a>
+    </nav>
+    {%- endif %}
+    {%- endblock %}
+
+    <footer class="foot">
+      <span>© {{ year }} {{ frame.name }}</span>
+      {%- block foot %}{% endblock %}
+    </footer>
+  </div>
+  {%- block scripts %}{% endblock %}
+</body>
+</html>

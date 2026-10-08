@@ -1,0 +1,238 @@
+/* One typeface family, one scale, an 8px grid. Colour: neutral greys only. The accent
+   never appears in the DOM: it exists once, in the world, as the light. The values are the
+   site's (static/site/tokens.css, which home.html loads first). */
+:root {
+  /* Every value here comes from static/site/tokens.css (the theme): the homepage's world is
+     --world-*, the type and the curve are the whole site's. Only the scene's own layout and
+     the timings it publishes (src/config.js) are set below. */
+  --void: var(--world-bg);
+  --stone: var(--world-ink);
+  --stone-mid: var(--world-ink-2);
+  --stone-low: var(--world-ink-3);   /* the quietest text: 4:1 on the void, readable on a dim laptop */
+  --tick: var(--world-tick);         /* the bare rail ticks, which need not be read */
+  --hair: var(--world-hair);
+  --rule: var(--world-rule);
+  --margin: 40px;
+  --rest-x: 33vw;
+  --rest-y: 50vh;
+  --cap-x: var(--margin);     /* the caption's left edge: the margin, or closer to the light on a wide monitor */
+  --rail-right: var(--margin);
+  --cap-no: 7ch;        /* width of the caption's "NN / NN"; measured by src/interface.js */
+  /* Timings shared with src/config.js, published from there (src/interface.js). */
+  --door-fade: 0.16s;
+  --detail-dip: 110ms;
+  --cap-fade: 180ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--stone);
+  font: 400 11px/16px var(--font);
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+}
+::selection { background: var(--stone); color: var(--void); }
+a { color: inherit; text-decoration: none; }
+a:focus { outline: none; }
+a:focus-visible { outline: 1px solid var(--stone); outline-offset: 5px; }
+ul, ol { list-style: none; margin: 0; padding: 0; }
+h1, p { margin: 0; font: inherit; }
+/* Spoken, not seen: the accessible names stay in normal case while the visible text is
+   uppercased by CSS on aria-hidden spans (Chrome exposes text-transform to assistive tech). */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; text-transform: none; letter-spacing: 0; }
+
+/* ---------------------------------------------------------------- the index
+   Without JavaScript or WebGL (or before the scene exists) the DOM is the whole site: the
+   name, every work as number, title and one line, five links. Deliberate, and complete. */
+#stage, .leader, .dock, .tag, .caption { display: none; }
+body { padding: var(--margin); max-width: 760px; }
+.name a { color: var(--stone); }
+.rail { margin-top: 96px; }
+.rail a {
+  display: grid; grid-template-columns: 2ch 1fr; column-gap: 24px; row-gap: 3px; align-items: baseline;
+  padding: 14px 0; border-top: 1px solid var(--rule); color: var(--stone-mid);
+}
+.rail li:last-child a { border-bottom: 1px solid var(--rule); }
+.rail .label { display: contents; }
+.rail .no { grid-column: 1; grid-row: 1; color: var(--stone-low); }
+.rail .t { grid-column: 2; grid-row: 1; color: var(--stone); transition: color 0.25s var(--ease); }
+.rail .line { grid-column: 2; grid-row: 2; text-transform: none; letter-spacing: 0.01em; font-size: 13px; line-height: 20px; color: var(--stone-mid); max-width: 44ch; }
+.rail a:hover .line, .rail a:focus-visible .line { color: var(--stone); }
+.links ul { display: flex; gap: 28px; flex-wrap: wrap; }
+.links a { color: var(--stone-mid); transition: color 0.25s var(--ease); }
+.links a:hover, .links a:focus-visible { color: var(--stone); }
+/* The name and the five links share the top row, as they share the top corners in the scene, so
+   Résumé and Contact are in view however long the list grows; the reading order stays the DOM's
+   (name, works, links), as in the scene. On a phone the links take the row under the name. */
+html:not(.gl) body { display: grid; grid-template-columns: auto 1fr; align-content: start; align-items: baseline; column-gap: 32px; }
+html:not(.gl) .masthead { grid-area: 1 / 1; }
+html:not(.gl) .links { grid-area: 1 / 2; justify-self: end; }
+html:not(.gl) main { grid-area: 2 / 1 / auto / -1; min-width: 0; }
+
+/* ---------------------------------------------------------------- the scene */
+html.gl, html.gl body { overflow: hidden; overscroll-behavior: none; }
+html.gl body { padding: 0; max-width: none; }
+html.gl #stage { display: block; position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; outline: none; }
+/* The canvas is kept out of sight until its first real frame exists, then fades up from
+   the void: never an empty canvas, never a half-built frame. */
+html.gl #stage { opacity: 0; transition: opacity 0.24s linear; }
+html.gl.is-drawn #stage { opacity: 1; }
+/* The light has gone through the door: the scene fades to the void before the link is
+   followed, and the page goes with it as one: nothing is left pointing at a dark canvas. */
+html.gl.is-drawn.is-leaving #stage { opacity: 0; transition-duration: var(--door-fade); }
+html.gl.is-live.is-leaving .masthead, html.gl.is-live.is-leaving .links, html.gl.is-live.is-leaving .rail, html.gl.is-live.is-leaving .caption,
+html.gl.is-live.is-leaving .leader, html.gl.is-live.is-leaving .dock, html.gl.is-leaving .tag { opacity: 0; transition: opacity var(--door-fade) linear; }
+html.gl .masthead { position: fixed; top: var(--margin); left: var(--margin); z-index: 2; }
+html.gl .links { position: fixed; top: var(--margin); right: var(--margin); z-index: 2; margin: 0; }
+
+/* The index: one tick per work, the unrolled loop, on the right edge. The current tick is
+   long and numbered; a pointed-at tick numbers and names itself; the rest are bare. Tick
+   spacing (--row) follows the height and the count; the anchor, the hit row, never falls
+   below 24 px: when the spacing does, the anchors overlap and src/interface.js gives the
+   pointer to the nearest tick. */
+html.gl .rail {
+  position: fixed; z-index: 2; margin: 0;
+  right: var(--rail-right); top: var(--rest-y); transform: translateY(-50%);
+  touch-action: none;
+}
+html.gl .rail li { position: relative; height: var(--row, 24px); }
+html.gl .rail a {
+  position: absolute; right: 0; top: 50%; display: block; width: 44px; height: var(--hit, 24px); margin-top: calc(var(--hit, 24px) / -2);
+  padding: 0; border: 0;
+}
+/* While the rail itself is pointed at, the pointed-at anchor grows to hold its own title (its
+   label's measured width, --reach), so the title can be reached and clicked. A step hovered in
+   the scene never widens it: no invisible box may lie over the stone. */
+html.gl:not(.is-tall) #rail.is-hot a.is-focus { width: calc(56px + var(--reach, 0px) + 8px); }
+html.gl .rail a::before {
+  content: ""; position: absolute; right: 0; top: 50%; height: 1px; width: 12px; margin-top: -0.5px;
+  background: var(--tick);
+  transition: width 0.35s var(--ease), background-color 0.35s var(--ease);
+}
+html.gl .rail a:focus-visible::before, html.gl .rail a.is-focus::before { width: 22px; background: var(--stone-mid); }
+html.gl .rail a[aria-current="true"]::before { width: 32px; background: var(--stone); }
+html.gl .rail .label {
+  position: absolute; right: 56px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: row-reverse; gap: 16px; white-space: nowrap; pointer-events: none;
+}
+html.gl .rail .no { color: var(--stone-mid); opacity: 0; transition: opacity 0.25s var(--ease), color 0.35s var(--ease); }
+html.gl .rail .t { color: var(--stone); opacity: 0; transform: translateX(6px); transition: opacity 0.25s var(--ease), transform 0.35s var(--ease); }
+html.gl .rail a[aria-current="true"] .no { opacity: 1; color: var(--stone); }
+html.gl .rail a.is-focus .no, html.gl .rail a:focus-visible .no { opacity: 1; }
+html.gl .rail .is-hot a.is-focus .t, html.gl .rail a:focus-visible .t { opacity: 1; transform: none; }
+html.gl .rail .line { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Keyboard focus: the ring goes round the label, which the tick then points at. */
+html.gl .rail a:focus-visible { outline: none; }
+html.gl .rail a:focus-visible .label { outline: 1px solid var(--stone); outline-offset: 6px; }
+
+/* The caption sits on the same horizontal as the resting light; the leader joins them. It is
+   a thing, not a hole: its head presents the work it names, its descriptor is inert, and only
+   the void beyond it dismisses. */
+html.gl .caption { display: block; position: fixed; z-index: 2; left: var(--cap-x); top: var(--rest-y); width: 280px; }
+/* Two stacked copies of number and title: the incoming one fades up over the outgoing, so
+   the caption is never blank between stations. The front copy sizes the head. */
+.head { position: relative; display: inline-block; height: 16px; transform: translateY(-50%); white-space: nowrap; cursor: default; }
+html.gl .head { cursor: pointer; }
+.head .cap { display: inline-flex; gap: 16px; align-items: baseline; position: absolute; left: 0; top: 0; opacity: 0; transition: opacity var(--cap-fade) linear; }
+.head .cap.is-on { position: relative; opacity: 1; }
+.head.is-still .cap { transition: none; }
+.head .no { color: var(--stone-low); }
+.head .title { color: var(--stone); }
+.detail {
+  position: absolute; left: 0; top: 24px; padding-left: calc(var(--cap-no) + 16px);
+  opacity: 0; transform: translateY(6px); visibility: hidden;
+  transition: opacity 0.35s var(--ease), transform 0.5s var(--ease), visibility 0s linear 0.35s;
+}
+.caption.is-selected .detail { opacity: 1; transform: none; visibility: visible; transition-delay: 0.12s, 0.12s, 0s; }
+.caption.is-selected .detail.is-dipped { opacity: 0.3; transition: opacity var(--detail-dip) linear; }
+.kind { color: var(--stone-low); margin-bottom: 8px; }
+.line { text-transform: none; letter-spacing: 0.01em; font-size: 13px; line-height: 20px; color: var(--stone-mid); max-width: 26ch; text-wrap: balance; }
+/* OPEN: a 24 px row to click on a desktop, 44 px under a finger; the underline stays where it was. */
+.open { position: relative; display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; padding: 4px 0; }
+.open::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--hair); transition: background-color 0.25s var(--ease); }
+.open:hover::after, .open:focus-visible::after { background: var(--stone); }
+.open svg { width: 8px; height: 8px; }
+
+html.gl .leader { display: block; position: fixed; z-index: 1; top: var(--rest-y); left: 0; height: 1px; margin-top: -0.5px; background: var(--hair); transform-origin: right center; pointer-events: none; transition: left 0.45s var(--ease), width 0.45s var(--ease); }
+html.gl .caption.is-selected .detail { cursor: default; }
+html.gl .dock {
+  display: block; position: fixed; z-index: 1; left: var(--rest-x); top: var(--rest-y); width: 23px; height: 23px; margin: -11.5px 0 0 -11.5px;
+  border: 1px solid var(--hair); border-radius: 50%; pointer-events: none;
+}
+.dock.is-arrived { animation: seat 0.7s var(--ease); }
+@keyframes seat { 0% { transform: scale(1.9); border-color: rgba(220, 220, 220, 0.75); } 100% { transform: scale(1); } }
+
+/* Title of whatever the pointer is on, pinned to the block itself. */
+html.gl .tag {
+  display: block; position: fixed; z-index: 3; left: 0; top: 0; white-space: nowrap; pointer-events: none;
+  color: var(--stone); opacity: 0; transition: opacity 0.2s linear; will-change: transform;
+  text-shadow: 0 0 12px var(--void);
+}
+.tag .no { color: var(--stone-mid); margin-right: 12px; }
+html.gl .tag.is-on { opacity: 1; }
+
+/* Arrival: the interface is withheld until the monument has locked. */
+html.gl .masthead, html.gl .links, html.gl .rail, html.gl .caption, html.gl .leader, html.gl .dock { opacity: 0; transition: opacity 1.1s var(--ease); }
+html.gl.is-live .masthead, html.gl.is-live .links, html.gl.is-live .rail, html.gl.is-live .caption, html.gl.is-live .leader, html.gl.is-live .dock { opacity: 1; }
+html.gl.is-live .rail { transition-delay: 0.15s; }
+html.gl.is-live .caption, html.gl.is-live .leader, html.gl.is-live .dock { transition-delay: 0.3s, 0s, 0s; }
+html.gl .leader { transition: opacity 1.1s var(--ease) 0.3s, left 0.45s var(--ease), width 0.45s var(--ease); }
+#stage.is-cut { animation: cut 0.32s linear; }
+@keyframes cut { 0% { opacity: 0.25; } 100% { opacity: 1; } }
+
+/* ---------------------------------------------------------------- portrait
+   Same logic turned a quarter: the light rests under the monument, a plumb line drops to
+   the caption, the index lies along the bottom edge as a 44 px strip a finger can scrub. */
+html.gl.is-tall { --margin: 20px; }
+html.gl.is-tall .masthead { top: 22px; }
+html.gl.is-tall .links { top: auto; left: var(--margin); right: var(--margin); bottom: calc(18px + env(safe-area-inset-bottom)); }
+html.gl.is-tall .links ul { justify-content: space-between; gap: 0; flex-wrap: nowrap; }   /* one row: a second would lie on the strip */
+html.gl.is-tall .links a { display: block; padding: 8px 0; }
+html.gl.is-tall .rail { top: auto; left: var(--margin); right: var(--margin); bottom: calc(58px + env(safe-area-inset-bottom)); transform: none; }
+html.gl.is-tall .rail ol { display: flex; }
+html.gl.is-tall .rail li { flex: 1 1 0; height: 44px; }
+html.gl.is-tall .rail a { inset: 0; top: -24px; width: auto; height: auto; margin: 0; }   /* the numeral above the tick is part of it */
+html.gl.is-tall .rail a::before { right: auto; left: 50%; top: auto; bottom: 8px; width: 1px; height: 8px; margin: 0 0 0 -0.5px; transition: height 0.35s var(--ease), background-color 0.35s var(--ease); }
+html.gl.is-tall .rail a:focus-visible::before, html.gl.is-tall .rail a.is-focus::before { width: 1px; height: 13px; }
+html.gl.is-tall .rail a[aria-current="true"]::before { width: 1px; height: 20px; }
+html.gl.is-tall .rail .label { right: auto; left: 50%; top: auto; bottom: 30px; transform: translateX(-50%); }
+html.gl.is-tall .rail .t { display: none; }
+/* On the strip two numerals would collide: while another tick is pointed at, only it is numbered. */
+html.gl.is-tall .rail ol:has(a.is-focus, a:focus-visible) a[aria-current="true"]:not(.is-focus):not(:focus-visible) .no { opacity: 0; }
+html.gl.is-tall .caption { left: 0; right: 0; width: auto; top: calc(var(--rest-y) + 72px); text-align: center; }
+html.gl.is-tall .head { transform: none; }
+html.gl.is-tall .head .cap { left: 50%; transform: translateX(-50%); }
+html.gl.is-tall .head .cap.is-on { left: 0; transform: none; }
+html.gl.is-tall .detail { position: relative; top: 0; padding: 12px 40px 0; }
+html.gl.is-tall .line { max-width: none; }
+html.gl.is-tall .open { margin: 2px -16px -10px; padding: 14px 16px; }
+html.gl.is-tall .open::after { left: 16px; right: 16px; bottom: 10px; }
+html.gl.is-tall .leader { left: var(--rest-x) !important; width: 1px !important; height: 36px; top: calc(var(--rest-y) + 20px); margin: 0 0 0 -0.5px; }
+html.gl.is-tall .dock { width: 19px; height: 19px; margin: -9.5px 0 0 -9.5px; }
+/* The narrowest phones: the five links keep one row by tightening their tracking. */
+@media (max-width: 359px) { html.gl.is-tall .links a { letter-spacing: 0.07em; } }
+
+@media (max-width: 640px) {
+  :root { --margin: 20px; }
+  .rail { margin-top: 64px; }
+  .links ul { gap: 20px; }
+  html:not(.gl) .links { grid-area: 2 / 1 / auto / -1; justify-self: stretch; margin-top: 24px; }
+  html:not(.gl) main { grid-area: 3 / 1 / auto / -1; }
+}
+/* A phone: the five links keep one row across the page, as on the scene's strip. */
+@media (max-width: 480px) {
+  html:not(.gl) .links ul { justify-content: space-between; gap: 0; flex-wrap: nowrap; }
+  html:not(.gl) .links a { display: block; padding: 8px 0; }
+}
+@media (max-width: 359px) { html:not(.gl) .links a { letter-spacing: 0.07em; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01s !important; transition-delay: 0s !important; }
+  .dock.is-arrived { animation: none; }
+}
+@media (forced-colors: active) { html.gl .rail a::before { background: CanvasText; } }

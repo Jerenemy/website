@@ -43,6 +43,20 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/glightbox/glightbox.min.css') }}">
+    {#- Arriving from the homepage, whose door ends on its black void: the page rises out of that
+        black instead of cutting from it to these colours. Never under reduced motion. #}
+    <style>
+      html.from-void body::after { content: ""; position: fixed; inset: 0; z-index: 2147483647; background: #050505; pointer-events: none; animation: from-void 0.7s cubic-bezier(0.2, 0.7, 0.1, 1) forwards; }
+      @keyframes from-void { to { opacity: 0; visibility: hidden; } }
+    </style>
+    <script>
+      (function () {
+        try {
+          var from = document.referrer ? new URL(document.referrer) : null;
+          if (from && from.origin === location.origin && from.pathname === '/' && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('from-void');
+        } catch (e) { /* no referrer, no veil */ }
+      })();
+    </script>
     {% block extra_head %}{% endblock %}
 </head>
 

@@ -3,6 +3,7 @@ import secrets
 import re
 from functools import wraps
 from pathlib import Path
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 from flask import current_app, flash, redirect, render_template, request, session, url_for
@@ -13,9 +14,12 @@ from werkzeug.utils import secure_filename
 
 from . import bp
 from ...portfolio import get_portfolio_store
+from ...portfolio.store import KINDS
 from ...site_settings import get_site_settings_store
 
 _HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
+LINE_MAX = 72   # characters: the homepage caption wraps it over two or three short lines
+TITLE_MAX = 24  # characters: the homepage caption's head is one line, between the edge and the light, on a 320 px phone too
 
 
 def _admin_configured() -> bool:
@@ -238,7 +242,7 @@ def portfolio_new():
                 form_action=url_for("admin.portfolio_new"),
                 form_title="Add Portfolio Item",
                 submit_label="Create",
-                **_upload_context(),
+                **_item_form_context(),
             )
 
         store = get_portfolio_store()
@@ -254,7 +258,7 @@ def portfolio_new():
         form_action=url_for("admin.portfolio_new"),
         form_title="Add Portfolio Item",
         submit_label="Create",
-        **_upload_context(),
+        **_item_form_context(),
     )
 
 
@@ -283,7 +287,7 @@ def portfolio_edit(item_id: str):
                 form_action=url_for("admin.portfolio_edit", item_id=item_id),
                 form_title="Edit Portfolio Item",
                 submit_label="Save",
-                **_upload_context(),
+                **_item_form_context(),
             )
 
         store.update_item(item_id, payload)
@@ -297,7 +301,7 @@ def portfolio_edit(item_id: str):
         form_action=url_for("admin.portfolio_edit", item_id=item_id),
         form_title="Edit Portfolio Item",
         submit_label="Save",
-        **_upload_context(),
+        **_item_form_context(),
     )
 
 
@@ -327,6 +331,9 @@ def _empty_item_defaults() -> dict:
         "image_alt": "",
         "sort_order": "",
         "is_published": True,
+        "kind": "",
+        "line": "",
+        "href": "",
     }
 
 
@@ -342,20 +349,30 @@ def _item_payload_from_form(req) -> tuple[dict, str | None]:
         "image_thumb": form.get("image_thumb", "").strip(),
         "image_alt": form.get("image_alt", "").strip(),
         "is_published": form.get("is_published") == "on",
+        "kind": form.get("kind", "").strip().lower(),
+        "line": " ".join(form.get("line", "").split()),
+        "href": form.get("href", "").strip(),
     }
     errors: list[str] = []
 
     full_upload = files.get("image_full_file")
     thumb_upload = files.get("image_thumb_file")
+    # The homepage shows title, kind, line and href; the descriptions and images are kept for
+    # the record but no page shows them now, so they are optional (alt text goes with an image).
+    has_image = bool((full_upload and full_upload.filename) or payload["image_full"])
 
     if payload["title"] == "":
         errors.append("Title is required.")
-    if payload["short_desc"] == "":
-        errors.append("Card description is required.")
-    if payload["long_desc"] == "":
-        errors.append("Lightbox description is required.")
-    if payload["image_alt"] == "":
-        errors.append("Image alt text is required.")
+    elif len(payload["title"]) > TITLE_MAX:
+        errors.append(f"Title must be at most {TITLE_MAX} characters.")
+    if payload["kind"] not in KINDS:
+        errors.append(f"Kind must be one of {', '.join(KINDS)}.")
+    errors.extend(_validate_line(payload["line"]))
+    href_error = _validate_href(payload["href"])
+    if href_error:
+        errors.append(href_error)
+    if has_image and payload["image_alt"] == "":
+        errors.append("Image alt text is required with an image.")
 
     sort_order_raw = form.get("sort_order", "").strip()
     if sort_order_raw:
@@ -369,9 +386,7 @@ def _item_payload_from_form(req) -> tuple[dict, str | None]:
             payload["image_full"] = _save_image_upload(full_upload, Path(current_app.config["UPLOADS_DIR"]))
         except ValueError as exc:
             errors.append(str(exc))
-    elif not payload["image_full"]:
-        errors.append("Full image is required.")
-    else:
+    elif payload["image_full"]:
         path_error = _validate_relative_path(payload["image_full"], "Full image path")
         if path_error:
             errors.append(path_error)
@@ -380,7 +395,10 @@ def _item_payload_from_form(req) -> tuple[dict, str | None]:
             if ext_error:
                 errors.append(ext_error)
 
-    if auto_thumbnail:
+    if not has_image:
+        if payload["image_thumb"]:
+            errors.append("A thumbnail needs a full image.")
+    elif auto_thumbnail:
         if full_upload and payload.get("image_full"):
             thumb_path, thumb_error = _generate_thumbnail(payload["image_full"])
             if thumb_error:
@@ -422,6 +440,35 @@ def _item_payload_from_form(req) -> tuple[dict, str | None]:
         return payload, " ".join(errors)
 
     return payload, None
+
+
+def _validate_line(value: str) -> list[str]:
+    if not value:
+        return ["Line is required."]
+    errors = []
+    if len(value) > LINE_MAX:
+        errors.append(f"Line must be at most {LINE_MAX} characters.")
+    if "<" in value or ">" in value:
+        errors.append("Line must be plain text (no HTML).")
+    return errors
+
+
+def _validate_href(value: str) -> str | None:
+    """A path on this site (/zaychess, /blog/zaybot) or an absolute http(s) URL."""
+    if not value:
+        return "Link is required."
+    if any(ch.isspace() or ord(ch) < 32 for ch in value):
+        return "Link must not contain spaces."
+    if value.startswith("/") and not value.startswith("//") and "\\" not in value:
+        return None
+    parts = urlsplit(value)
+    if parts.scheme in ("http", "https") and parts.netloc:
+        return None
+    return "Link must be a site path starting with / (like /blog/my-post) or a full https:// URL."
+
+
+def _item_form_context() -> dict:
+    return {**_upload_context(), "kinds": KINDS, "line_max": LINE_MAX, "title_max": TITLE_MAX}
 
 
 def _upload_context() -> dict:
@@ -576,8 +623,11 @@ def _validate_relative_path(value: str, label: str) -> str | None:
 
 
 def _validate_extension(value: str, label: str) -> str | None:
+    """For image paths typed into the form, which name files already in /static. Besides the
+    upload formats these may be SVG (KArchive's is): no upload can create one, since uploads stay
+    raster-only (an uploaded SVG could carry script)."""
     ext = Path(value).suffix.lower().lstrip(".")
-    allowed = current_app.config.get("ALLOWED_IMAGE_EXTENSIONS", set())
+    allowed = set(current_app.config.get("ALLOWED_IMAGE_EXTENSIONS", set())) | {"svg"}
     if ext not in allowed:
         return f"{label} must end with {', '.join(sorted(allowed))}."
     return None

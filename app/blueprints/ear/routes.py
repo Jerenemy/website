@@ -51,4 +51,4 @@ def proxy(path):
             headers=headers
         )
     except requests.exceptions.ConnectionError:
-        return {"error": "The secondary ML service (EAR) is currently offline or offline. Please ensure it is running on Port 5001."}, 503
+        return {"error": "The secondary ML service (EAR) is currently offline. Please ensure it is running on Port 5001."}, 503

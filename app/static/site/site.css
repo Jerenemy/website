@@ -1,0 +1,376 @@
+/* THE DESIGN LANGUAGE. Every page but the homepage scene is built from the pieces in this file,
+   and this file holds no values of its own: colours, type, space and timing all come from
+   static/site/tokens.css (and the active theme). Templates: templates/layout.html and the
+   macros in templates/_ui.html. The written guide: static/site/README.md.
+
+   The homepage is the reference. Its rules carry over: one family in two voices (the small
+   tracked LABEL, the sentence-case TEXT), an 8 px grid, hairlines instead of boxes, numbers
+   for order, and one point of colour that means "you are here". */
+
+/* ---------------------------------------------------------------- base */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh; min-height: 100svh;
+  background: var(--bg); color: var(--ink-2);
+  font: 400 var(--text-size)/var(--text-lead) var(--font);
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--select-bg); color: var(--select-ink); }
+a { color: inherit; text-decoration: none; }
+a:focus { outline: none; }
+:focus-visible { outline: 1px solid var(--ink); outline-offset: 5px; }
+img, svg, video { display: block; max-width: 100%; height: auto; }
+h1, h2, h3, h4, p, figure, blockquote, dl, dd { margin: 0; }
+button { font: inherit; color: inherit; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* The label voice: numbers, names of things, navigation. */
+.label, .masthead, .links, .tabs, .pager, .foot {
+  font-size: var(--label-size); line-height: var(--label-lead);
+  letter-spacing: var(--track); text-transform: uppercase; font-weight: 400;
+}
+.label { color: var(--ink-3); }
+
+/* ---------------------------------------------------------------- the frame
+   The name top left, the links top right: exactly where the homepage puts them, so moving
+   between any two pages leaves every word of the frame in place. */
+/* The frame spans the window, as on the homepage; the content keeps to the left of it (where
+   the homepage's caption and its plain index sit), never wider than --page-max. */
+.page { padding: var(--margin); }
+.page > main, .page > .pager, .page > .foot { max-width: var(--page-max); }
+.frame { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s4); }
+.masthead a { color: var(--ink); }
+.links ul { display: flex; flex-wrap: wrap; gap: 28px; margin: 0; padding: 0; list-style: none; }
+.links a { color: var(--ink-2); transition: color var(--t-mid) var(--ease); }
+.links a:hover, .links a:focus-visible, .links a[aria-current="page"] { color: var(--ink); }
+
+/* ---------------------------------------------------------------- the page's head
+   Every page opens the same way: where it sits (the light, its number in the loop, its kind),
+   what it is (the title), the one line that says so, then what can be done with it. */
+.head { margin-top: var(--s20); max-width: 980px; }
+.head__where { display: flex; align-items: center; gap: var(--s2); color: var(--ink-3); }
+.head__where a { color: var(--ink-2); transition: color var(--t-mid) var(--ease); }
+.head__where a:hover, .head__where a:focus-visible { color: var(--ink); }
+.head__title {
+  margin-top: var(--s3); color: var(--ink);
+  font-size: var(--title-size); line-height: var(--title-lead);
+  font-weight: var(--title-weight); letter-spacing: var(--title-track);
+  text-wrap: balance;
+}
+.head__line { margin-top: var(--s3); max-width: 40ch; color: var(--ink-2); font-size: var(--lede-size); line-height: var(--lede-lead); text-wrap: pretty; }
+.head__actions { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin-top: var(--s5); }
+/* A long title (a post's) steps down a size so it still reads as one thought. */
+.head--long .head__title { font-size: calc(var(--title-size) * 0.66); line-height: 1.1; letter-spacing: -0.015em; }
+/* Whatever follows the head stands clear of it (sections and tabs set their own distance). */
+.head + * { margin-top: var(--s12); }
+.head__mark { width: 72px; height: 72px; margin-bottom: var(--s5); }
+.head__mark img { width: 100%; height: 100%; border-radius: 22%; box-shadow: 0 0 0 1px var(--rule); }
+
+/* The light: the homepage's one colour, carried onto the page it led to. Once per page. */
+.here { position: relative; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.here::after {
+  content: ""; position: absolute; inset: -6px; border-radius: 50%;
+  border: 1px solid var(--accent); opacity: 0;
+}
+.is-in .here::after, .here.is-in::after { animation: here-seat 1.4s var(--ease) 0.25s; }
+@keyframes here-seat { 0% { opacity: 0.6; transform: scale(2.4); } 100% { opacity: 0; transform: scale(1); } }
+
+/* A page's own pages (Overview, Support, Privacy): tabs under the head, the current one lit. */
+.tabs { display: flex; gap: var(--s4); margin-top: var(--s6); border-bottom: 1px solid var(--rule); }
+.tabs a { position: relative; padding: var(--s2) 0; color: var(--ink-3); transition: color var(--t-mid) var(--ease); }
+.tabs a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform var(--t-mid) var(--ease); }
+.tabs a:hover, .tabs a:focus-visible { color: var(--ink-2); }
+.tabs a[aria-current="page"] { color: var(--ink); }
+.tabs a[aria-current="page"]::after { transform: none; }
+
+/* ---------------------------------------------------------------- sections
+   A section is a rule, a name in the margin column, and its content beside it. */
+.sect {
+  display: grid; grid-template-columns: var(--label-col) var(--body-col); column-gap: var(--s5);
+  margin-top: var(--s16); padding-top: var(--s3); border-top: 1px solid var(--rule);
+}
+.sect + .sect { margin-top: var(--s12); }
+.sect__name { color: var(--ink-3); display: flex; gap: var(--s2); }
+.sect__name .no { color: var(--ink-3); min-width: 2ch; }
+.sect__name .t { color: var(--ink-2); }
+.sect__body { min-width: 0; }
+.sect__body > * + * { margin-top: var(--s5); }
+.sect--wide .sect__body { grid-column: 1 / -1; margin-top: var(--s5); }
+.sect__title { color: var(--ink); font-size: var(--h2-size); line-height: var(--h2-lead); font-weight: var(--heading-weight); letter-spacing: -0.01em; max-width: 26ch; text-wrap: balance; }
+.sect__title + * { margin-top: var(--s3); }
+
+/* ---------------------------------------------------------------- reading text */
+.prose { max-width: var(--measure); }
+.prose > * + * { margin-top: var(--s3); }
+.prose p, .prose li { text-wrap: pretty; }
+.prose .lede, .lede { color: var(--ink); font-size: var(--lede-size); line-height: var(--lede-lead); }
+.prose h2 { margin-top: var(--s12); color: var(--ink); font-size: var(--h2-size); line-height: var(--h2-lead); font-weight: var(--heading-weight); letter-spacing: -0.01em; }
+.prose h3 { margin-top: var(--s6); color: var(--ink); font-size: var(--text-size); line-height: var(--text-lead); font-weight: var(--strong-weight); }
+.prose h2 + *, .prose h3 + * { margin-top: var(--s2); }
+.prose strong, .prose b { color: var(--ink); font-weight: var(--strong-weight); }
+.prose em { font-style: italic; }
+.prose a, .link { color: var(--ink); text-decoration: underline; text-decoration-color: var(--hair); text-decoration-thickness: 1px; text-underline-offset: 4px; transition: text-decoration-color var(--t-mid) var(--ease); }
+.prose a:hover, .prose a:focus-visible, .link:hover, .link:focus-visible { text-decoration-color: var(--ink); }
+.prose ul, .prose ol { padding: 0; list-style: none; }
+.prose li + li { margin-top: var(--s1); }
+.prose ul > li { position: relative; padding-left: var(--s3); }
+.prose ul > li::before { content: ""; position: absolute; left: 0; top: calc(var(--text-lead) / 2); width: 10px; height: 1px; background: var(--tick); }
+.prose ol { counter-reset: n; }
+.prose ol > li { position: relative; padding-left: var(--s5); counter-increment: n; }
+.prose ol > li::before { content: counter(n, decimal-leading-zero); position: absolute; left: 0; top: 0.35em; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); }
+.prose blockquote { padding-left: var(--s3); border-left: 1px solid var(--hair); color: var(--ink); }
+.prose hr { height: 1px; margin: var(--s8) 0; border: 0; background: var(--rule); }
+.prose code { font-family: var(--font-mono); font-size: 0.88em; color: var(--ink); background: var(--surface); padding: 0.1em 0.35em; }
+.prose pre { overflow-x: auto; padding: var(--s3); background: var(--surface); border: 1px solid var(--rule); font-size: var(--small-size); line-height: var(--small-lead); }
+.prose pre code { padding: 0; background: none; font-size: inherit; }
+.prose img { margin: var(--s5) 0; border: 1px solid var(--rule); }
+.prose table { width: 100%; border-collapse: collapse; font-size: var(--small-size); line-height: var(--small-lead); }
+.prose th { color: var(--ink-3); font-weight: 400; text-align: left; text-transform: uppercase; letter-spacing: var(--track); font-size: var(--label-size); }
+.prose th, .prose td { padding: var(--s1) var(--s2) var(--s1) 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.small, .note { font-size: var(--small-size); line-height: var(--small-lead); }
+.note { color: var(--ink-3); }
+
+/* ---------------------------------------------------------------- actions
+   The homepage's OPEN: a label on a hairline, with the arrow that leaves. The only button. */
+.open {
+  position: relative; display: inline-flex; align-items: center; gap: var(--s1); padding: 4px 0;
+  color: var(--ink); background: none; border: 0; border-radius: 0; cursor: pointer;
+  font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
+}
+.open::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--hair); transform-origin: left; transition: background-color var(--t-mid) var(--ease); }
+.open:hover::after, .open:focus-visible::after { background: var(--ink); }
+.open svg { width: 8px; height: 8px; transition: transform var(--t-mid) var(--ease); }
+.open:hover svg, .open:focus-visible svg { transform: translate(2px, -2px); }
+.open--quiet { color: var(--ink-2); }
+.prose .open { text-decoration: none; }
+/* A row of actions anywhere but the head. */
+.actions { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); }
+.open[aria-disabled="true"] { color: var(--ink-3); cursor: progress; }
+.open:disabled { color: var(--ink-3); cursor: not-allowed; }
+.open:disabled::after { background: var(--rule); }
+/* A link within the page points down, not out. */
+.open[href^="#"] svg { transform: rotate(135deg); }
+.open[href^="#"]:hover svg, .open[href^="#"]:focus-visible svg { transform: rotate(135deg) translate(2px, -2px); }
+.open--back svg { transform: rotate(-135deg); }
+.open--back:hover svg, .open--back:focus-visible svg { transform: rotate(-135deg) translate(2px, -2px); }
+
+/* ---------------------------------------------------------------- the index
+   A numbered list of things to open: the homepage's list, everywhere a list of things is. */
+.index { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--rule); }
+.index > li { border-top: 1px solid var(--rule); }
+.index__row {
+  display: grid; grid-template-columns: 4ch 1fr auto; column-gap: var(--s3); row-gap: 4px; align-items: baseline;
+  padding: var(--s3) 0;
+}
+a.index__row { transition: padding var(--t-mid) var(--ease); }
+.index__no { grid-row: 1; color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); }
+.index__title { grid-row: 1; color: var(--ink); font-size: var(--h2-size); line-height: var(--h2-lead); font-weight: var(--heading-weight); letter-spacing: -0.01em; }
+.index__meta { grid-row: 1; color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; white-space: nowrap; }
+.index__line { grid-column: 2 / -1; color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); max-width: 60ch; }
+.index__line > * + * { margin-top: var(--s1); }
+a.index__row .index__title { transition: color var(--t-mid) var(--ease); }
+a.index__row:hover, a.index__row:focus-visible { padding-left: var(--s1); }
+a.index__row:focus-visible { outline-offset: -1px; }
+.index--compact .index__row { padding: var(--s2) 0; }
+.index--compact .index__title { font-size: var(--text-size); line-height: var(--text-lead); }
+/* A question and its answer: the same row, opened in place. */
+details.index__item > summary { list-style: none; cursor: pointer; }
+details.index__item > summary::-webkit-details-marker { display: none; }
+details.index__item .index__meta::before { content: "+"; display: inline-block; transition: transform var(--t-mid) var(--ease); }
+details.index__item[open] .index__meta::before { transform: rotate(45deg); }
+details.index__item .index__answer { padding: 0 0 var(--s3) calc(4ch + var(--s3)); color: var(--ink-2); max-width: calc(var(--measure) + 4ch); }
+details.index__item .index__answer > * + * { margin-top: var(--s2); }
+
+/* ---------------------------------------------------------------- facts
+   Small key / value pairs: version, platform, year, stack. */
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--s3) var(--s4); }
+.facts > div { padding-top: var(--s2); border-top: 1px solid var(--rule); }
+.facts dt { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.facts dd { margin-top: var(--s1); color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); }
+
+/* ---------------------------------------------------------------- points
+   Three or four short claims side by side, each numbered: the features of a thing. */
+.points { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s5) var(--s4); margin: 0; padding: 0; list-style: none; }
+/* Four never split three and one: they pair. */
+.points:has(> li:nth-child(4):last-child) { grid-template-columns: repeat(auto-fit, minmax(max(220px, 40%), 1fr)); }
+.sect__title + .points, .sect__title + .index, .sect__title + .facts { margin-top: var(--s6); }
+.points > li { padding-top: var(--s2); border-top: 1px solid var(--rule); }
+.points .no { display: block; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); }
+.points h3 { margin-top: var(--s4); color: var(--ink); font-size: var(--text-size); line-height: var(--text-lead); font-weight: var(--strong-weight); }
+.points p { margin-top: var(--s1); color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); max-width: 40ch; }
+
+/* ---------------------------------------------------------------- showing the work
+   A rendering of the real thing sits on the page's ground in a device of its own shape: a
+   window for the desktop, a phone for the phone. The device is neutral; what is inside it may
+   wear the product's own colours (it is the product, not the site). */
+.figure figcaption { display: flex; gap: var(--s2); margin-top: var(--s2); color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.figure figcaption .t { color: var(--ink-2); }
+.figure--plain img { border: 1px solid var(--rule); }
+
+.device--window { overflow: hidden; border-radius: var(--radius-window); background: var(--surface); box-shadow: var(--shadow-device); }
+.device--window::before {
+  content: ""; display: block; height: 28px; border-bottom: 1px solid var(--rule);
+  background:
+    radial-gradient(circle at 16px 50%, var(--tick) 0 4px, transparent 4.5px),
+    radial-gradient(circle at 32px 50%, var(--tick) 0 4px, transparent 4.5px),
+    radial-gradient(circle at 48px 50%, var(--tick) 0 4px, transparent 4.5px),
+    var(--surface-2);
+}
+.device--window img, .device--window video { width: 100%; }
+
+.device--phone {
+  position: relative; width: min(100%, 320px); aspect-ratio: 9 / 19.5; margin-inline: auto;
+  padding: 10px; border-radius: var(--radius-phone); background: var(--surface-2); box-shadow: var(--shadow-device);
+}
+.device--phone > .screen { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: calc(var(--radius-phone) - 10px); }
+.device--phone > .screen > img { width: 100%; height: 100%; object-fit: cover; }
+
+/* A pair: a large figure and the words about it beside it, which stay in view as it scrolls by. */
+.pair { display: grid; grid-template-columns: 3fr 2fr; gap: var(--s6); align-items: start; }
+.pair > :last-child { position: sticky; top: var(--s5); }
+.pair > :last-child > * + * { margin-top: var(--s4); }
+.figure--plain a { display: block; cursor: zoom-in; }
+/* Drawn from its PDF: the canvas lies exactly over the stand-in image and fades in once whole. */
+.figure--pdf .figure__frame { position: relative; display: block; border: 1px solid var(--rule); cursor: zoom-in; }
+.figure--pdf .figure__frame img { width: 100%; }
+.figure--pdf canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity var(--t-slow) var(--ease); }
+.figure--pdf.is-drawn canvas { opacity: 1; }
+
+/* The showcase: words on one side, the rendering on the other, alternating down the page. */
+.show { display: grid; grid-template-columns: var(--label-col) var(--body-col); column-gap: var(--s5); align-items: center; margin-top: var(--s16); }
+.show__copy { align-self: start; padding-top: var(--s3); border-top: 1px solid var(--rule); }
+.show__copy .no { color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); }
+.show__copy h2 { margin-top: var(--s3); color: var(--ink); font-size: var(--h2-size); line-height: var(--h2-lead); font-weight: var(--heading-weight); letter-spacing: -0.01em; text-wrap: balance; }
+.show__copy p { margin-top: var(--s2); color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); max-width: 34ch; }
+.show__media { min-width: 0; }
+.show--flip { grid-template-columns: var(--body-col) var(--label-col); }
+.show--flip .show__copy { order: 2; }
+.show--phone { grid-template-columns: 1fr 1fr; }
+
+/* ---------------------------------------------------------------- forms
+   The contact page's fields: a label, a hairline to write on. */
+.form { max-width: 440px; }
+.field + .field { margin-top: var(--s4); }
+.field label { display: block; margin-bottom: var(--s1); color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.field input, .field textarea, .field select {
+  display: block; width: 100%; margin: 0; padding: var(--s1) 0;
+  background: transparent; border: 0; border-bottom: 1px solid var(--hair); border-radius: 0;
+  -webkit-appearance: none; appearance: none; box-shadow: none; outline: none;
+  color: var(--ink); caret-color: var(--ink);
+  font: 400 var(--small-size)/var(--small-lead) var(--font); letter-spacing: 0.01em;
+  transition: border-color var(--t-mid) var(--ease);
+}
+.field textarea { min-height: 136px; resize: vertical; }
+.field input::placeholder, .field textarea::placeholder { color: var(--ink-3); }
+.field input:hover, .field textarea:hover { border-bottom-color: var(--ink-3); }
+.field input:focus, .field textarea:focus { border-bottom-color: var(--ink); }
+.field input:-webkit-autofill, .field input:-webkit-autofill:hover, .field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink); box-shadow: 0 0 0 1000px var(--bg) inset; transition: background-color 9999s 0s;
+}
+.field :user-invalid { box-shadow: none; border-bottom-color: var(--ink-2); }
+.form .send { margin-top: var(--s5); }
+/* Scripts write a colour per outcome inline; here every outcome is told in grey. */
+.status { min-height: 20px; margin-top: var(--s2); color: var(--ink-2) !important; font-size: var(--small-size); line-height: var(--small-lead); }
+.honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+/* ---------------------------------------------------------------- tables */
+.table { overflow-x: auto; }
+.table table { width: 100%; border-collapse: collapse; font-size: var(--small-size); line-height: var(--small-lead); }
+.table caption { padding-bottom: var(--s2); text-align: left; color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
+.table th { color: var(--ink-3); font-weight: 400; font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; text-align: left; }
+.table th, .table td { padding: var(--s2) var(--s3) var(--s2) 0; border-top: 1px solid var(--rule); white-space: nowrap; }
+.table td { color: var(--ink); }
+.table tbody th { color: var(--ink-2); }
+.table small { display: block; color: var(--ink-3); font-size: var(--label-size); letter-spacing: 0.04em; }
+
+/* ---------------------------------------------------------------- the foot
+   Works are a loop on the homepage; they are a loop here too. The previous and the next work,
+   and the way back to the index, open where this page sits in it. */
+.pager { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: var(--s3); margin-top: var(--s20); padding-top: var(--s3); border-top: 1px solid var(--rule); }
+.pager a { display: block; color: var(--ink-3); transition: color var(--t-mid) var(--ease); }
+.pager a:hover, .pager a:focus-visible { color: var(--ink); }
+.pager .t { display: block; margin-top: var(--s1); color: var(--ink); font-size: var(--h2-size); line-height: var(--h2-lead); letter-spacing: -0.01em; text-transform: none; transition: transform var(--t-mid) var(--ease); }
+.pager__prev:hover .t { transform: translateX(-4px); }
+.pager__next { text-align: right; }
+.pager__next:hover .t { transform: translateX(4px); }
+.pager__index { align-self: center; text-align: center; }
+.foot { display: flex; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; margin-top: var(--s8); color: var(--ink-3); }
+.pager + .foot { margin-top: var(--s5); }
+.foot a { transition: color var(--t-mid) var(--ease); }
+.foot a:hover, .foot a:focus-visible { color: var(--ink); }
+.foot ul { display: flex; gap: var(--s3); margin: 0; padding: 0; list-style: none; }
+
+/* ---------------------------------------------------------------- motion
+   Between pages: the frame (name and links) holds still; the rest of the old page falls away
+   quickly, and the new page arrives in reading order, each piece rising a little. Where the
+   browser can cross documents (View Transitions), it does this itself; elsewhere static/site
+   site.js fades the page out before the link is followed. Content further down arrives the
+   same way when it scrolls into view. Nothing moves under reduced motion. */
+@view-transition { navigation: auto; }
+.masthead { view-transition-name: masthead; }
+.links { view-transition-name: links; }
+::view-transition-group(masthead), ::view-transition-group(links) { animation-duration: var(--t-mid); animation-timing-function: var(--ease); }
+::view-transition-old(root) { animation: vt-leave var(--t-fast) var(--ease-out) both; }
+::view-transition-new(root) { animation: none; }
+@keyframes vt-leave { to { opacity: 0; } }
+
+html.is-leaving main, html.is-leaving .pager, html.is-leaving .foot { opacity: 0; transition: opacity var(--t-fast) var(--ease-out); }
+
+.js [data-reveal] { opacity: 0; transform: translateY(var(--rise)); }
+.js [data-reveal].is-in {
+  opacity: 1; transform: none;
+  transition: opacity var(--t-slow) var(--ease), transform var(--t-slow) var(--ease);
+  transition-delay: calc(var(--i, 0) * var(--stagger));
+}
+/* Arriving from the homepage, whose door ends on its void: the page rises out of that dark. */
+html.from-void body::after {
+  content: ""; position: fixed; inset: 0; z-index: 2147483647; pointer-events: none;
+  background: var(--world-bg); animation: from-void 0.7s var(--ease) forwards;
+}
+@keyframes from-void { to { opacity: 0; visibility: hidden; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01s !important; animation-delay: 0s !important; transition-duration: 0.01s !important; transition-delay: 0s !important; }
+  .js [data-reveal] { opacity: 1; transform: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+/* ---------------------------------------------------------------- narrower
+   The margin column folds above its content; the frame keeps one row; the margin halves. */
+@media (max-width: 900px) {
+  .sect, .show, .show--flip, .show--phone, .pair { grid-template-columns: 1fr; row-gap: var(--s3); }
+  .pair > :last-child { position: static; }
+  .show--flip .show__copy { order: 0; }
+  .show { row-gap: var(--s5); }
+  .sect--wide .sect__body { margin-top: 0; }
+}
+@media (max-width: 640px) {
+  :root { --margin: var(--margin-phone); }
+  .head { margin-top: var(--s12); }
+  .frame { flex-direction: column; align-items: stretch; gap: var(--s3); }
+  .links ul { gap: var(--s2) 20px; }
+  .sect { margin-top: var(--s12); }
+  .sect + .sect { margin-top: var(--s8); }
+  .show { margin-top: var(--s12); }
+  .index__row { grid-template-columns: 3ch 1fr; }
+  .index__meta { grid-column: 2; grid-row: auto; }
+  details.index__item .index__answer { padding-left: calc(3ch + var(--s3)); }
+  .pager { grid-template-columns: 1fr 1fr; }
+  .pager__index { grid-column: 1 / -1; grid-row: 2; text-align: left; }
+  .pager .t { font-size: var(--text-size); line-height: var(--text-lead); }
+}
+@media (max-width: 480px) {
+  .links ul { justify-content: space-between; gap: 0; flex-wrap: nowrap; }
+}
+@media (max-width: 359px) { .links a { letter-spacing: 0.07em; } }
+/* A finger: 16 px text keeps iOS from zooming into a field; actions get 44 px rows. */
+@media (pointer: coarse) {
+  .field input, .field textarea { font-size: 16px; line-height: 24px; }
+  .open { padding: 14px 0; }
+  .open::after { bottom: 10px; }
+  .links a { display: inline-block; padding: 8px 0; margin: -8px 0; }
+}
+@media (forced-colors: active) { .here { background: Highlight; forced-color-adjust: none; } }

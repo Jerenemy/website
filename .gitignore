@@ -1,8 +1,13 @@
 *
 # except
 !.gitignore
+# github actions
+!.github/
+!.github/workflows/
+!.github/workflows/*
 # !pyproject.toml
-!poetry.lock
+# pyproject.toml and poetry.lock stay per machine: the server keeps its own Python env
+# !poetry.lock
 !README.md
 !__init__.py
 # app
@@ -10,6 +15,7 @@
 !app/config.py
 !app/extensions.py
 !app/wtt.py
+!app/design.py
 # !tests/
 # !tests/test_wtt.py
 # blueprints
@@ -31,9 +37,6 @@
 # templates admin
 !app/templates/admin/
 !app/templates/admin/*
-# templates sections
-!app/templates/sections/
-!app/templates/sections/*
 # templates zaychess
 !app/templates/zaychess
 !app/templates/zaychess/*
@@ -51,11 +54,35 @@
 !app/static/vendor
 !app/static/vendor/glightbox
 !app/static/vendor/glightbox/*
+# pdf.js (Mozilla, Apache-2.0), versioned by its folder: renders the posters from their PDFs
+# (static/site/pdf-figure.js). The .mjs builds are renamed .js so any nginx serves them as JavaScript.
+!app/static/vendor/pdfjs-6.4.299/
+!app/static/vendor/pdfjs-6.4.299/*
+!app/static/vendor/pdfjs-6.4.299/standard_fonts/
+!app/static/vendor/pdfjs-6.4.299/standard_fonts/*
 # static js
 !/app/static/js
 !/app/static/js/*
 # static game
 !app/static/game
+# static home: the homepage scene (TRIBAR). Every module in src/ is loaded at run time, so the
+# directory ships whole; vendor/ ships only the versioned three.js bundle (the unminified
+# three.module.js/three.core.js beside it are its local build input and stay out).
+!app/static/home/
+!app/static/home/package.json
+!app/static/home/styles.css
+!app/static/home/src/
+!app/static/home/src/*.js
+!app/static/home/vendor/
+!app/static/home/vendor/three-r186/
+!app/static/home/vendor/three-r186/three.module.min.js
+# static site: the design system (tokens, themes, pieces, motion, works' renderings, its guide)
+!app/static/site/
+!app/static/site/*
+!app/static/site/themes/
+!app/static/site/themes/*.css
+!app/static/site/works/
+!app/static/site/works/*.css
 # static images
 !app/static/img
 !app/static/img/*
@@ -111,6 +138,7 @@ app/blog/*.pyc
 !app/clash_royale.py
 !tests/
 !tests/test_clash_royale.py
+!tests/test_home.py
 !deploy/systemd/
 !deploy/systemd/*
 
@@ -118,6 +146,24 @@ app/blog/*.pyc
 !app/data/
 !app/data/.gitignore
 !app/data/portfolio.json
+
+# The homepage's design record and the proofs that guard it (the paradox rule, the regression
+# checklist): design/homepage-demo runs the code in app/static/home through three symlinks.
+# Its captures (shots/), the other concepts and the proposal stay local.
+!design/
+!design/homepage-demo/
+!design/homepage-demo/CONCEPT.md
+!design/homepage-demo/INTEGRATION.md
+!design/homepage-demo/index.html
+!design/homepage-demo/data.js
+!design/homepage-demo/package.json
+!design/homepage-demo/src
+!design/homepage-demo/styles.css
+!design/homepage-demo/vendor
+!design/homepage-demo/site
+!design/homepage-demo/tools/
+!design/homepage-demo/tools/*
+
 # Job application bot review pages (admin) and their tests
 !app/jobbot.py
 !tests/test_jobbot.py
