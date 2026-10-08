@@ -36,13 +36,20 @@ jobs:
             echo "$CHANGED"
 
             # The site restarts on every deploy (or a manual run); the two side services only
-            # when their own folder changed.
+            # when their own folder changed AND they are already running. `restart` starts a
+            # stopped program, and ear_service is stopped on purpose (it runs the server out of
+            # memory), so a deploy must never bring it back.
+            # status exits 3 when any program is down: capture it, report only.
+            STATUS=$(sudo supervisorctl status || true)
             sudo supervisorctl restart personal_website
-            if echo "$CHANGED" | grep -q '^projects/ear/'; then
-              sudo supervisorctl restart ear_service
-            fi
-            if echo "$CHANGED" | grep -q '^projects/attack_target_network/'; then
-              sudo supervisorctl restart attack_target_network
-            fi
-            # status exits 3 when any program is down (ear_service is stopped on purpose): report only.
+            for SVC in ear_service attack_target_network; do
+              DIR=projects/${SVC%_service}/
+              if echo "$CHANGED" | grep -q "^$DIR"; then
+                if echo "$STATUS" | grep -qE "^$SVC +RUNNING"; then
+                  sudo supervisorctl restart "$SVC"
+                else
+                  echo "$SVC changed but is not running: left stopped"
+                fi
+              fi
+            done
             sudo supervisorctl status || true
