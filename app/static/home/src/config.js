@@ -37,17 +37,6 @@ export const PLACE = {
   mistReach: 1.7,      // its horizontal reach, in monument radii
   footDepth: 0.9,      // radii below the centre where the monument's foot is: the mist starts there
   vignette: 0.22,      // how far the corners fall away
-  pierContrast: 0.32,  // piers are this fraction darker than the air at the same height: one tone, no more
-  pierEdgePx: 1.5,     // CSS px: half the width of a pier's edge, crisp enough to read as built
-  // Colossal piers: x offset from the frame's centre and half width, both in frame HEIGHTS,
-  // so their size is the hall's and not the window's: a phone sees one pier, a wide screen
-  // four of very different widths, unevenly spaced, so they read as a hall glimpsed and not
-  // a pattern.
-  piers: [[-0.66, 0.055], [-0.34, 0.11], [0.12, 0.065], [0.52, 0.16]],
-  pierSpreadFrom: 1.6, // aspect ratio the pier offsets are tuned for; wider frames spread them in proportion,
-                       // so a cinema-wide window is not a hall with an empty right quarter
-  plinth: 0.15,        // each pier widens by this fraction at its foot...
-  plinthHeight: 0.12,  // ...over this fraction of the frame height, so it stands on the mist (still x, y only)
   grain: 0.014,        // display units; also the dither that keeps the ramp from banding
 };
 
