@@ -1,0 +1,33 @@
+/* THEME: nature. A summer dusk in a wood: the blocks are mossy, dirt-seamed rock, the light a
+   firefly, the motes other fireflies far off. Loaded after static/site/tokens.css, it overrides
+   only what it changes (see that file for the contract); scene.js beside it draws the world. */
+:root {
+  color-scheme: dark;
+
+  /* The one hue: a firefly's yellow-green. The scene reads it for the light and its glow on the stone. */
+  --accent: #d6ff5a;
+
+  /* The pages: deep dusk green-grey, pale warm ink. */
+  --bg: #121a16;
+  --surface: #1a2420;
+  --surface-2: #232e29;
+
+  --ink: #e6e8d9;
+  --ink-2: #b0b7a3;
+  --ink-3: #85907e;       /* 4:1 on --bg */
+  --tick: #5f6b5a;
+
+  --hair: rgba(230, 232, 217, 0.3);
+  --rule: rgba(230, 232, 217, 0.12);
+
+  /* The homepage's interface, drawn over the dusk air. */
+  --world-bg: #0d1614;
+  --world-ink: #e8ead8;
+  --world-ink-2: #b1b8a2;
+  --world-ink-3: #86917d;
+  --world-tick: #66715f;
+  --world-hair: rgba(232, 234, 216, 0.3);
+  --world-rule: rgba(232, 234, 216, 0.12);
+
+  --shadow-device: 0 40px 120px -40px rgba(0, 10, 5, 0.9), 0 0 0 1px var(--rule);
+}

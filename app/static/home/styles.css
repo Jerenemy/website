@@ -95,8 +95,8 @@ html.gl.is-live.is-leaving .masthead, html.gl.is-live.is-leaving .links, html.gl
 html.gl.is-live.is-leaving .leader, html.gl.is-live.is-leaving .dock, html.gl.is-leaving .tag { opacity: 0; transition: opacity var(--door-fade) linear; }
 html.gl .masthead { position: fixed; top: var(--margin); left: var(--margin); z-index: 2; }
 html.gl .links { position: fixed; top: var(--margin); right: var(--margin); z-index: 2; margin: 0; }
-/* The switcher takes the free corner: bottom left in landscape, top right in portrait (where the
-   links have gone to the bottom row). */
+/* The switcher takes the free room: the bottom left corner in landscape, the row under the name in
+   portrait (where the links have gone to the bottom row). */
 html.gl .themes { position: fixed; bottom: var(--margin); left: var(--margin); z-index: 2; margin: 0; }
 
 /* The index: one tick per work, the unrolled loop, on the right edge. The current tick is
@@ -200,8 +200,8 @@ html.gl .leader { transition: opacity 1.1s var(--ease) 0.3s, left 0.45s var(--ea
 html.gl.is-tall { --margin: 20px; }
 html.gl.is-tall .masthead { top: 22px; }
 html.gl.is-tall .links { top: auto; left: var(--margin); right: var(--margin); bottom: calc(18px + env(safe-area-inset-bottom)); }
-html.gl.is-tall .themes { bottom: auto; left: auto; top: 22px; right: var(--margin); }
-html.gl.is-tall .themes ul { justify-content: flex-end; gap: 14px; }
+html.gl.is-tall .themes { bottom: auto; top: 50px; left: var(--margin); right: var(--margin); }   /* the row under the name */
+html.gl.is-tall .themes ul { gap: 12px 14px; }
 html.gl.is-tall .links ul { justify-content: space-between; gap: 0; flex-wrap: nowrap; }   /* one row: a second would lie on the strip */
 html.gl.is-tall .links a { display: block; padding: 8px 0; }
 html.gl.is-tall .rail { top: auto; left: var(--margin); right: var(--margin); bottom: calc(58px + env(safe-area-inset-bottom)); transform: none; }

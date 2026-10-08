@@ -226,7 +226,7 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
     vec3 toEdge = vHalf - abs(vBox) + axisN * 1.0e3;
 
     // --- the material (src/theme.js) ---------------------------------------------------------
-    Surface sf = surfaceAt(SurfaceIn(vRest, vBox, vHalf, nS, toEdge, travel, tread, step(0.5, dot(nS, tread)), blockIndex, isStep ? 1.0 : 0.0, uTime));
+    Surface sf = surfaceAt(SurfaceIn(vRest, vBox, vHalf, nS, toEdge, travel, tread, step(0.5, dot(nS, tread)), dot(vHalf - vBox, tread), blockIndex, isStep ? 1.0 : 0.0, uTime));
     int side = int(vMeta.x + 0.5);
     vec3 bumpM = uSideRot[side] * sf.bump;
     vec3 nM = normalize(normalize(vNormalMon) + bumpM);                           // monument space: the key's
@@ -372,7 +372,7 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
       float own = smoothstep(0.0, ${SHADING.doorOwn.toFixed(4)}, lit * uDoorHold);
       float neutral = (${SHADING.doorAmbient.toFixed(4)} * form + keyIn) * (1.0 - own) * mist * dim;
       vec3 nIn = n * uDoorAxes;   // the inner face's normal, structure space
-      vec3 inner = surfaceAt(SurfaceIn(rest, vBox, vHalf, nIn, vec3(1.0e3), travel, tread, step(0.5, dot(nIn, tread)), blockIndex, 1.0, uTime)).albedo
+      vec3 inner = surfaceAt(SurfaceIn(rest, vBox, vHalf, nIn, vec3(1.0e3), travel, tread, step(0.5, dot(nIn, tread)), dot(vHalf - vBox, tread), blockIndex, 1.0, uTime)).albedo
         * (vec3(neutral) + uAccent * (uDoorLight.w * ${SHADING.glowPower.toFixed(2)} * lit)) * uExposure;
       lin = mix(lin, shoulder(inner), door);
     }

@@ -23,6 +23,14 @@
 // src/glsl.js (toSRGB, hash12, grain) and the noise functions here (hash13, valueNoise, vnoise).
 // A chunk may define its own helper functions before the one the contract names. The defaults
 // below ARE the scene's own world (void), and the reference for what each hook must deliver.
+// A hook replaces the void's whole, so the config values only the void's reads are moot beside it:
+// PALETTE.stoneAlbedo and SHADING.mottling/speckle/blockVariance beside a `surface`; PLACE.airDeep/
+// airLift/rampDrift/pocket*/mist/vignette beside an `air`; LANTERN.haloGain/haloGrain/bloom/bloomGain
+// and PALETTE.coreDisplay beside a `light` (LANTERN.haloSize still sizes the quad, trailGain the
+// comet). Known limit: the light is screened over the frame (it can only brighten), so over a bright
+// air a halo thins toward white; a bright theme draws its lamp mostly as the core and the face it holds.
+// Mind GLSL's reserved words when naming variables: `half`, `patch`, `filter`, `input`, `output`,
+// `sample`, `fixed`, `long`, `short`, `double` are among the ones that fail to compile.
 //
 // What a theme must keep, so the paradox still reads and the interface still works:
 //   * The paradox rule. Nothing in a surface may depend on distance along the view: a block's
@@ -85,6 +93,7 @@ export const THEME_GLSL = /* glsl */ `
     vec3 travel;    // the unit axis the block's side runs along (the loop's direction here)
     vec3 up;        // the unit axis of the block's tread (its top; the light hovers above it)
     float onTop;    // 1 on the block's top face, 0 on its two walls
+    float fromTop;  // beams down from the block's top face (0 along its top edge): moss creeping down a wall, a nosing
     float block;    // the block's index round the loop: each block its own piece
     float isStep;   // 1 on a step (one per work), 0 on a plain block of a side
     float time;     // seconds
@@ -122,7 +131,9 @@ export const THEME_GLSL = /* glsl */ `
     float time;     // seconds
   };
 
-  // A point of one mote's point sprite.
+  // A point of one mote's point sprite. Its weight (m.alpha) already carries the slow twinkle and
+  // the size-weighted alpha of DUST (src/config.js): a theme that blinks or shapes its motes itself
+  // sets DUST.twinkle to 0 and raises DUST.alpha, then does the rest here.
   struct MoteIn {
     vec2 pc;        // -1..1 across the sprite
     float alpha;    // the mote's weight now (its twinkle, its fade in and out)
