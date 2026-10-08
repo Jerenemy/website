@@ -1,8 +1,6 @@
 // The place. One full-screen pass behind everything: the air of a hall too large to see.
 // Near-black above (the ceiling is beyond sight), lifting through slow, drifting mist to
-// charcoal below; a few colossal piers stand in it, one tone darker than the air at the
-// same height, so they vanish upward into the dark and dissolve downward into the mist;
-// a pocket of lifted air behind the monument keeps its darkest faces legible; ground mist
+// charcoal below; a pocket of lifted air behind the monument keeps its darkest faces legible; ground mist
 // pools under it; the corners fall away.
 //
 // Paradox rule: everything here is a function of screen x, y and time only, never of
@@ -13,17 +11,12 @@ import { PLACE } from './config.js';
 import { GRADE } from './glsl.js';
 
 const f = (v) => v.toFixed(5);
-// Offsets are in frame heights, spread out in proportion on frames wider than the piers were
-// placed for; each pier widens at its foot (the plinth) so it stands on the mist.
-const piersGLSL = PLACE.piers.map(([dx, hw]) =>
-  /* glsl */ `pier = max(pier, 1.0 - smoothstep(-uEdge, uEdge, abs(frag.x - 0.5 * uViewport.x - ${f(dx)} * spread * uViewport.y) - ${f(hw)} * plinth * uViewport.y));`).join('\n        ');
 
 export function createBackdrop() {
   const uniforms = {
     uViewport: { value: new THREE.Vector2(1, 1) },   // device pixels
     uCenter: { value: new THREE.Vector2(0.5, 0.5) }, // monument centre, device pixels, y up
     uRadius: { value: 600 },                         // monument bounding radius, device pixels
-    uEdge: { value: 1.5 },                           // half the width of a pier's soft edge, device pixels
     uTime: { value: 0 },
     uExposure: { value: 1 },
   };
@@ -37,7 +30,6 @@ export function createBackdrop() {
       uniform vec2 uViewport;
       uniform vec2 uCenter;
       uniform float uRadius;
-      uniform float uEdge;
       uniform float uTime;
       uniform float uExposure;
       ${GRADE}
@@ -56,14 +48,7 @@ export function createBackdrop() {
 
         // The air: a vertical ramp the mist wanders across.
         float h = smoothstep(-0.05, 1.05, uv.y + (n - 0.5) * ${f(PLACE.rampDrift)});
-        float air = mix(${f(PLACE.airLift)}, ${f(PLACE.airDeep)}, h);
-
-        // Piers: flat silhouettes keyed by the air at their own height, nothing else.
-        float pier = 0.0;
-        float spread = max(1.0, aspect / ${f(PLACE.pierSpreadFrom)});
-        float plinth = 1.0 + ${f(PLACE.plinth)} * (1.0 - smoothstep(0.0, ${f(PLACE.plinthHeight)}, uv.y));
-        ${piersGLSL}
-        float tone = air * (1.0 - ${f(PLACE.pierContrast)} * pier);
+        float tone = mix(${f(PLACE.airLift)}, ${f(PLACE.airDeep)}, h);
 
         // A pocket of lifted air behind the monument, and the mist that pools under it.
         vec2 toCentre = (frag - uCenter) / uRadius;
@@ -92,7 +77,6 @@ export function createBackdrop() {
       uniforms.uViewport.value.set(layout.width * layout.dpr, layout.height * layout.dpr);
       uniforms.uCenter.value.set(cx * layout.dpr, (layout.height - cy) * layout.dpr);
       uniforms.uRadius.value = radius * layout.dpr;
-      uniforms.uEdge.value = PLACE.pierEdgePx * layout.dpr;
     },
     dispose() { mesh.geometry.dispose(); material.dispose(); },
   };
