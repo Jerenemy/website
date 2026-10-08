@@ -88,6 +88,7 @@ Pieces available inside sections (all in `site.css`):
 * `.form` > `.field` (label + input on a hairline), `.open.send` to submit, `.status` for the outcome.
 * `.table`: data tables.
 * `.figure` with `figcaption` (`<span class="no">FIG 01</span><span class="t">…</span>`).
+* `.pair`: a large figure with its words beside it (`<div class="pair"><figure>…</figure><div>…</div></div>`); the words stay in view.
 * `.actions`: a row of `ui.open` actions inside a section.
 * `.note`, `.small`, `.link` (an inline link outside `.prose`).
 

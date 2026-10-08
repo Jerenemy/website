@@ -1,32 +1,32 @@
 {
   "items": [
     {
-      "id": "diffusion",
-      "title": "Diffusion",
-      "short_desc": "I used diffusion models to generate drug-like molecules that bind to the Y220C mutant of p53, and I presented this work at the ACS Nerd Conference and the Wesleyan Biophysics Retreat.",
-      "long_desc": "This poster focuses on using diffusion models for structure-conditioned molecular generation. The project combines SE(3)-equivariant networks, pocket-aware conditioning, and guided sampling to steer the generative process toward molecules predicted to bind the Y220C variant of p53. It highlights how diffusion architectures can integrate spatial protein features, optimize chemical properties during sampling, and outperform traditional RL-based tuning approaches for targeted drug-design tasks.",
+      "id": "posters",
+      "title": "Posters",
+      "short_desc": "",
+      "long_desc": "",
       "image_full": "img/projects/poster-10-29-25-jeremy-zay-full.png",
       "image_thumb": "img/projects/poster-10-29-25-jeremy-zay-thumb.png",
-      "image_alt": "Diffusion",
+      "image_alt": "Research posters on diffusion and reinforcement learning for mutant p53",
       "sort_order": 0,
       "is_published": true,
       "kind": "research",
-      "line": "Diffusion models that design molecules for mutant p53",
-      "href": "/poster-diffusion-2025"
+      "line": "Generative models that design molecules for mutant p53",
+      "href": "/posters"
     },
     {
-      "id": "reinforcement-learning",
-      "title": "Reinforcement Learning",
-      "short_desc": "I used reinforcement learning fine-tuning to generate molecules that bind to mutant p53, and presented my poster at the UC Merced Mercury Conference and Wesleyan Biophysics Retreat.",
-      "long_desc": "This poster presents a reinforcement-learning framework for generating small molecules guided by molecular dynamics simulations of the p53 Y220C mutant. The workflow combines MD-derived structural insights, docking-based reward functions, and an actor-critic RL model to steer generation toward allosteric effectors with favorable binding profiles. By integrating simulation data with RL-driven optimization, the project explores how feedback from protein conformational behavior can shape molecular design policies and improve targeted allosteric reactivation strategies.",
-      "image_full": "img/projects/poster-full.jpg",
-      "image_thumb": "img/projects/poster-thumb.jpg",
-      "image_alt": "Molecular Dynamics Simulations of p53 Poster",
+      "id": "eqoscan",
+      "title": "eQoScan",
+      "short_desc": "",
+      "long_desc": "",
+      "image_full": "",
+      "image_thumb": "",
+      "image_alt": "",
       "sort_order": 1,
       "is_published": true,
-      "kind": "research",
-      "line": "RL-guided molecule generation for p53 Y220C",
-      "href": "/poster-rl-2024"
+      "kind": "product",
+      "line": "Reusable container tracking that won a WesHack prize",
+      "href": "/eqoscan"
     },
     {
       "id": "curve-explorer",
@@ -49,7 +49,7 @@
       "long_desc": "KArchive combines semantic and keyword search across archived YouTube transcripts to retrieve relevant passages and generate answers with timestamped citations. Built with React, FastAPI, and Supabase/PostgreSQL, it brings video summaries and transcript-based questions into one interface. <a href=\"https://karchive.dad\" target=\"_blank\" rel=\"noopener\">Visit KArchive</a>",
       "image_full": "img/projects/karchive.svg",
       "image_thumb": "img/projects/karchive.svg",
-      "image_alt": "KArchive — searchable video archive",
+      "image_alt": "KArchive \u2014 searchable video archive",
       "sort_order": 3,
       "is_published": true,
       "kind": "product",
@@ -139,6 +139,34 @@
       "kind": "play",
       "line": "The arcade classic, rebuilt in PyGame",
       "href": "/game"
+    },
+    {
+      "id": "diffusion",
+      "title": "Diffusion",
+      "short_desc": "I used diffusion models to generate drug-like molecules that bind to the Y220C mutant of p53, and I presented this work at the ACS Nerd Conference and the Wesleyan Biophysics Retreat.",
+      "long_desc": "This poster focuses on using diffusion models for structure-conditioned molecular generation. The project combines SE(3)-equivariant networks, pocket-aware conditioning, and guided sampling to steer the generative process toward molecules predicted to bind the Y220C variant of p53. It highlights how diffusion architectures can integrate spatial protein features, optimize chemical properties during sampling, and outperform traditional RL-based tuning approaches for targeted drug-design tasks.",
+      "image_full": "img/projects/poster-10-29-25-jeremy-zay-full.png",
+      "image_thumb": "img/projects/poster-10-29-25-jeremy-zay-thumb.png",
+      "image_alt": "Diffusion",
+      "sort_order": 20,
+      "is_published": false,
+      "kind": "research",
+      "line": "Diffusion models that design molecules for mutant p53",
+      "href": "/poster-diffusion-2025"
+    },
+    {
+      "id": "reinforcement-learning",
+      "title": "Reinforcement Learning",
+      "short_desc": "I used reinforcement learning fine-tuning to generate molecules that bind to mutant p53, and presented my poster at the UC Merced Mercury Conference and Wesleyan Biophysics Retreat.",
+      "long_desc": "This poster presents a reinforcement-learning framework for generating small molecules guided by molecular dynamics simulations of the p53 Y220C mutant. The workflow combines MD-derived structural insights, docking-based reward functions, and an actor-critic RL model to steer generation toward allosteric effectors with favorable binding profiles. By integrating simulation data with RL-driven optimization, the project explores how feedback from protein conformational behavior can shape molecular design policies and improve targeted allosteric reactivation strategies.",
+      "image_full": "img/projects/poster-full.jpg",
+      "image_thumb": "img/projects/poster-thumb.jpg",
+      "image_alt": "Molecular Dynamics Simulations of p53 Poster",
+      "sort_order": 21,
+      "is_published": false,
+      "kind": "research",
+      "line": "RL-guided molecule generation for p53 Y220C",
+      "href": "/poster-rl-2024"
     }
   ]
 }

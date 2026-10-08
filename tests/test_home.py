@@ -153,8 +153,8 @@ class HomeTests(unittest.TestCase):
         html = self.client.get("/").text
         page = parse(html)
         self.assertIn("<title>Jeremy Zay</title>", html)
-        self.assertIn('<span class="sr">Diffusion, Research, </span><span class="line">Diffusion models that design molecules for mutant p53</span>', html)
-        self.assertIn(f'<span class="no">01 / {len(self.published()):02d}</span><span class="title">Diffusion</span>', html)
+        self.assertIn('<span class="sr">Posters, Research, </span><span class="line">Generative models that design molecules for mutant p53</span>', html)
+        self.assertIn(f'<span class="no">01 / {len(self.published()):02d}</span><span class="title">Posters</span>', html)
         self.assertIn('aria-label="Jeremy Zay, home"', html)
         for element_id in ("stage", "masthead", "rail", "caption", "head", "cap-a", "cap-b", "detail", "cap-kind",
                            "cap-line", "cap-open", "announce", "cap-hint", "links", "leader", "dock", "tag", "tag-no", "tag-title"):
@@ -237,6 +237,16 @@ class HomeTests(unittest.TestCase):
                     response = self.client.get(href)
                     response.close()
                     self.assertEqual(response.status_code, 200)
+
+    def test_posters_page_shows_every_poster(self):
+        """The two research posters are one work: one page with both, newest first, each with its PDF."""
+        for path in ("/posters", "/posters/"):
+            self.assertEqual(self.client.get(path).status_code, 200, path)
+        html = self.client.get("/posters").text
+        self.assertLess(html.index('id="diffusion"'), html.index('id="reinforcement-learning"'))
+        for pdf in ("/poster-diffusion-2025", "/poster-rl-2024"):
+            self.assertIn(f'href="{pdf}"', html)
+            self.assertEqual(self.client.get(pdf).status_code, 200, pdf)
 
     def test_contact_page_renders_the_form(self):
         for path in ("/contact", "/contact/"):
