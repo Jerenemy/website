@@ -1,5 +1,6 @@
 {#- The site's look, for any page's <head>: the mark, the tokens (every value; static/site/tokens.css)
-    and the active theme over them (app/design.py). The homepage includes this too. #}
+    and the active theme's tokens over them (app/design.py; static/site/themes/<name>/theme.css).
+    The homepage includes this too, and reads the theme's scene module from <html data-scene>. #}
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23050505'/%3E%3Cpath d='M16 6 27 25H5z' fill='none' stroke='%23d8d8d8' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ccircle cx='5' cy='25' r='3.2' fill='%23ff4a1c'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="{{ url_for('static', filename='site/tokens.css') }}">
   {%- if site_theme_css %}

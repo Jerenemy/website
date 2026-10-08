@@ -302,6 +302,9 @@ details.index__item .index__answer > * + * { margin-top: var(--s2); }
 .foot a { transition: color var(--t-mid) var(--ease); }
 .foot a:hover, .foot a:focus-visible { color: var(--ink); }
 .foot ul { display: flex; gap: var(--s3); margin: 0; padding: 0; list-style: none; }
+/* The theme switcher (templates/_themes.html): the themes by name, the current one in ink. */
+.foot .themes ul { flex-wrap: wrap; gap: var(--s2); }
+.foot .themes a[aria-current="true"] { color: var(--ink); }
 
 /* ---------------------------------------------------------------- motion
    Between pages: the frame (name and links) holds still; the rest of the old page falls away

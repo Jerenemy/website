@@ -1,12 +1,16 @@
 // Motes: idle life, and the only thing that gives the void a volume. They drift entirely in
 // the vertex shader (no per-frame CPU work). A second, short-lived population is thrown
-// from a point whenever something heavy locks into place.
+// from a point whenever something heavy locks into place. The counts and the motion are DUST
+// (src/config.js); how a mote looks is the theme's (src/theme.js `mote`).
 import * as THREE from 'three';
-import { PALETTE, SHADING } from './config.js';
+import { PALETTE, SHADING, DUST } from './config.js';
+import { GRADE } from './glsl.js';
+import { hook, VOID_MOTE } from './theme.js';
 
-const AMBIENT_COUNT = 150;
-const BURST_COUNT = 90;
-const BURST_LIFE = 2.2;
+const AMBIENT_COUNT = DUST.ambientCount;
+const BURST_COUNT = DUST.burstCount;
+const BURST_LIFE = DUST.burstLife;
+const f = (v) => v.toFixed(4);
 
 export function createDust() {
   const total = AMBIENT_COUNT + BURST_COUNT;
@@ -55,20 +59,22 @@ export function createDust() {
       varying float vAlpha;
       varying float vWarm;
       varying float vChroma;
+      varying vec4 vSeed;
+      varying float vKind;
       void main() {
         vec3 p;
         float alpha;
         float size;
         if (aKind < 0.5) {
           // ambient: a slow fall with a sideways wander, wrapped inside the view
-          float speed = 0.012 + aSeed.w * 0.02;
+          float speed = ${f(DUST.fall[0])} + aSeed.w * ${f(DUST.fall[1])};
           vec2 q = aSeed.xy * 2.0 - 1.0;
           q.y = fract(q.y * 0.5 + 0.5 - uTime * speed) * 2.0 - 1.0;
-          q.x += 0.03 * sin(uTime * (0.11 + aSeed.z * 0.13) + aSeed.w * 40.0);
-          p = vec3(q * uExtent * 1.05, (aSeed.z - 0.5) * 16.0);
-          float twinkle = 0.6 + 0.4 * sin(uTime * (0.4 + aSeed.x) + aSeed.y * 30.0);
-          alpha = (0.015 + 0.075 * aSeed.w * aSeed.w) * twinkle * smoothstep(1.0, 0.8, abs(q.y));
-          size = 1.0 + 1.6 * aSeed.z * aSeed.z;
+          q.x += ${f(DUST.wander)} * sin(uTime * (0.11 + aSeed.z * 0.13) + aSeed.w * 40.0);
+          p = vec3(q * uExtent * 1.05, (aSeed.z - 0.5) * ${f(DUST.depth)});
+          float twinkle = ${f(1 - DUST.twinkle)} + ${f(DUST.twinkle)} * sin(uTime * (0.4 + aSeed.x) + aSeed.y * 30.0);
+          alpha = (${f(DUST.alpha[0])} + ${f(DUST.alpha[1])} * aSeed.w * aSeed.w) * twinkle * smoothstep(1.0, 0.8, abs(q.y));
+          size = ${f(DUST.size[0])} + ${f(DUST.size[1])} * aSeed.z * aSeed.z;
         } else {
           // burst: thrown, slowed by drag, then left to sink
           float age = uTime - uBurstTime;
@@ -85,6 +91,7 @@ export function createDust() {
         // A mote in the light's reach carries its hue; further out the light only brightens it.
         vChroma = 1.0 - smoothstep(${SHADING.moteRed[0].toFixed(3)}, ${SHADING.moteRed[1].toFixed(3)}, length(toLight));
         vAlpha = alpha * uFade;
+        vSeed = aSeed; vKind = aKind;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
         gl_PointSize = size * uPixelRatio;
       }
@@ -92,16 +99,16 @@ export function createDust() {
     fragmentShader: /* glsl */ `
       precision highp float;
       uniform vec3 uAccent;
+      uniform float uTime;
       varying float vAlpha;
       varying float vWarm;
       varying float vChroma;
+      varying vec4 vSeed;
+      varying float vKind;
+      ${GRADE}
+      ${hook('mote', VOID_MOTE)}
       void main() {
-        float d = length(gl_PointCoord - 0.5) * 2.0;
-        float a = smoothstep(1.0, 0.2, d) * vAlpha;
-        // Motes are neutral; near the lantern they carry its light, nothing else.
-        vec3 tint = mix(vec3(dot(uAccent, vec3(0.2126, 0.7152, 0.0722))), uAccent, vChroma);
-        vec3 c = vec3(0.75) + tint * vWarm * 2.5;
-        gl_FragColor = vec4(c * a, 1.0);
+        gl_FragColor = moteAt(MoteIn(gl_PointCoord * 2.0 - 1.0, vAlpha, vWarm, vChroma, vSeed, vKind, uTime));
       }
     `,
   });

@@ -2,9 +2,11 @@
 the active theme, the frame's name and links, and where the page sits in the loop of works.
 
 The look itself is in static/site/tokens.css (every value) and static/site/site.css (every piece);
-a theme is static/site/themes/<name>.css. The default theme is the SITE_THEME setting (empty or
-"void": tokens.css alone). Any page previews another with ?theme=<name>, which a cookie keeps
-for the rest of the visit; ?theme=void clears it.
+a theme is a folder, static/site/themes/<name>/: theme.css (the tokens it overrides) and, when
+it also changes the homepage's world, scene.js (static/home/src/theme.js is the contract). The
+default theme is the SITE_THEME setting (empty or "void": tokens.css alone and the scene's own
+world). Any page switches to another with ?theme=<name> (the switcher in every page's frame),
+which a cookie keeps for the rest of the visit; ?theme=void clears it.
 """
 from __future__ import annotations
 
@@ -18,7 +20,18 @@ DEFAULT_THEME = "void"
 
 
 def _themes(static_folder: str) -> set[str]:
-    return {p.stem for p in (Path(static_folder) / "site" / "themes").glob("*.css")}
+    """The themes on disk: every folder of static/site/themes with a theme.css."""
+    return {p.parent.name for p in (Path(static_folder) / "site" / "themes").glob("*/theme.css")}
+
+
+def _has_scene(static_folder: str, theme: str) -> bool:
+    return (Path(static_folder) / "site" / "themes" / theme / "scene.js").is_file()
+
+
+def theme_choices(static_folder: str, current: str) -> list[dict]:
+    """The switcher's rows (templates/_themes.html): the default first, then the rest by name."""
+    names = [DEFAULT_THEME] + sorted(_themes(static_folder) - {DEFAULT_THEME})
+    return [{"name": name, "current": name == current} for name in names]
 
 
 def _requested_theme() -> str:
@@ -67,9 +80,13 @@ def init_app(app: Flask) -> None:
         except Exception:   # a page must render even if the portfolio cannot be read
             current_app.logger.exception("Works unavailable for the page frame")
             works = []
+        static_folder = current_app.static_folder
         return {
             "site_theme": theme,
-            "site_theme_css": None if theme == DEFAULT_THEME else url_for("static", filename=f"site/themes/{theme}.css"),
+            "site_theme_css": None if theme == DEFAULT_THEME else url_for("static", filename=f"site/themes/{theme}/theme.css"),
+            # The scene's side of the theme (static/home/src/theme.js loads it); None: the scene's own world.
+            "site_theme_scene": url_for("static", filename=f"site/themes/{theme}/scene.js") if theme != DEFAULT_THEME and _has_scene(static_folder, theme) else None,
+            "site_themes": theme_choices(static_folder, theme),
             "frame": _home_person(),
             "work_nav": _work_nav(works),
             "year": date.today().year,

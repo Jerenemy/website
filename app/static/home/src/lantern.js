@@ -15,15 +15,19 @@
 // The one place it can be behind something is the door: once it has gone into the opening the
 // riser round it hides it, and only what lies within the opening on screen is still seen
 // (src/frame.js passes the opening's outline and how far in the light is).
+//
+// How it looks is the theme's (src/theme.js `light`, with the LANTERN values of src/config.js):
+// the void's is a halo of lit air, a bloom in the eye and a core that burns white.
 import * as THREE from 'three';
-import { PALETTE, SHADING } from './config.js';
+import { PALETTE, SHADING, LANTERN } from './config.js';
 import { GRADE } from './glsl.js';
+import { hook, VOID_LIGHT } from './theme.js';
 
-const HALO_SIZE = 3.4;   // beams, full quad width
+const HALO_SIZE = LANTERN.haloSize;   // beams, full quad width
 const CORE_RADIUS = SHADING.lightRadius;
-const BLOOM = 0.012;     // beams squared: the bloom's spread (exp(-r^2 / BLOOM)); under 3% beyond 0.2 beams
-const TRAIL_POINTS = 36; // afterimages laid back along the path while the light is moving
-const TRAIL_SIZE = 0.36; // beams, diameter of the newest afterimage
+const BLOOM = LANTERN.bloom;          // beams squared: the bloom's spread (exp(-r^2 / BLOOM))
+const TRAIL_POINTS = LANTERN.trailPoints; // afterimages laid back along the path while the light is moving
+const TRAIL_SIZE = LANTERN.trailSize; // beams, diameter of the newest afterimage
 const SCREEN = { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneMinusDstColorFactor, blendDst: THREE.OneFactor };
 
 const spriteVertex = /* glsl */ `
@@ -47,6 +51,7 @@ const spriteFragment = /* glsl */ `
   varying vec2 vUv;
   varying vec2 vWorld;
   ${GRADE}
+  ${hook('light', VOID_LIGHT)}
   void main() {
     // Inside the wall the riser hides the light except through the opening (antialiased edges).
     float seen = 1.0;
@@ -58,14 +63,7 @@ const spriteFragment = /* glsl */ `
       seen = mix(1.0, clamp(min(edge.x, edge.y) + 0.5, 0.0, 1.0), uMaskOn);
     }
     float r = length(vUv) * ${(HALO_SIZE / 2).toFixed(3)};   // beams from the centre
-    float edge = smoothstep(${(HALO_SIZE / 2).toFixed(3)}, ${(HALO_SIZE / 2 * 0.55).toFixed(3)}, r);
-    float halo = 0.055 / (r * r + 0.055) * edge;
-    float bloom = exp(-r * r / ${BLOOM.toFixed(3)});
-    float core = smoothstep(${(CORE_RADIUS * 1.25).toFixed(4)}, ${(CORE_RADIUS * 0.55).toFixed(4)}, r);
-    // In display space: halo and bloom carry the hue, the core burns to white.
-    vec3 c = uPart < 0.5
-      ? uAccent * halo * 0.42 * uPower + grain(gl_FragCoord.xy, uTime, 0.012) * step(0.004, halo)
-      : uAccent * bloom * 0.9 * uPower + vec3(1.0, 0.9, 0.82) * core * min(uPower, 1.0);
+    vec3 c = lightAt(LightIn(r, vUv, gl_FragCoord.xy, uPower, uPart, uTime));
     gl_FragColor = vec4(max(c, 0.0) * uWeight * seen, 1.0);
   }
 `;
@@ -129,7 +127,7 @@ export function createLantern() {
       varying float vFade;
       void main() {
         float d = length(gl_PointCoord - 0.5) * 2.0;
-        gl_FragColor = vec4(uAccent * max(exp(-d * d * 3.5) - 0.03, 0.0) * vFade * 0.2, 1.0);
+        gl_FragColor = vec4(uAccent * max(exp(-d * d * 3.5) - 0.03, 0.0) * vFade * ${LANTERN.trailGain.toFixed(3)}, 1.0);
       }
     `,
   });

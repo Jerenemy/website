@@ -435,6 +435,88 @@ class AdminTests(unittest.TestCase):
         self.assertEqual(self.portfolio.read_text(), before)
 
 
+class ThemeTests(unittest.TestCase):
+    """A theme is a folder of static/site/themes (app/design.py): its theme.css over the tokens on
+    every page, its scene.js (when it has one) handed to the homepage's scene, and a row in the
+    switcher of every page's frame (templates/_themes.html)."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.portfolio = Path(self.temp.name) / "portfolio.json"
+        shutil.copy(SHIPPED_PORTFOLIO, self.portfolio)
+        self.app = create_app()
+        self.app.config.update(TESTING=True, SECRET_KEY="test-only", PORTFOLIO_DATA_PATH=str(self.portfolio),
+                               SITE_SETTINGS_PATH=str(Path(self.temp.name) / "site_settings.json"))
+        self.client = self.app.test_client()
+
+    def themes(self):
+        return sorted(p.parent.name for p in (SITE_STATIC / "themes").glob("*/theme.css"))
+
+    def test_every_theme_folder_is_complete(self):
+        names = self.themes()
+        self.assertIn("paper", names)
+        for name in names:
+            with self.subTest(theme=name):
+                self.assertRegex(name, r"^[a-z0-9-]+$")   # the name is a URL parameter and a CSS file's folder
+                self.assertNotEqual(name, "void")          # the default has no folder: it is tokens.css alone
+                css = (SITE_STATIC / "themes" / name / "theme.css").read_text()
+                self.assertIn(":root", css)
+                scene = SITE_STATIC / "themes" / name / "scene.js"
+                if scene.exists():
+                    source = scene.read_text()
+                    self.assertIn("export default", source)
+                    self.assertNotRegex(source, r"^import ", "a scene module stands alone: no imports")
+
+    def test_default_is_the_void_with_no_theme_files(self):
+        html = self.client.get("/").text
+        self.assertIn('<html lang="en" data-theme="void">', html)
+        self.assertNotIn("/themes/", html.split("<body")[0].replace("_themes", ""))   # no theme.css, no scene.js
+
+    def test_query_switches_the_theme_and_the_cookie_keeps_it(self):
+        response = self.client.get("/?theme=paper")
+        self.assertIn('data-theme="paper"', response.text)
+        self.assertIn('href="/static/site/themes/paper/theme.css"', response.text)
+        self.assertIn("theme=paper", response.headers.get("Set-Cookie", ""))
+        self.assertIn('data-theme="paper"', self.client.get("/contact").text)   # kept for the visit
+        response = self.client.get("/?theme=void")
+        self.assertIn('data-theme="void"', response.text)
+        self.assertIn("theme=;", response.headers.get("Set-Cookie", ""))        # cleared
+
+    def test_unknown_theme_is_ignored(self):
+        self.assertIn('data-theme="void"', self.client.get("/?theme=nope").text)
+        self.assertIn('data-theme="void"', self.client.get("/?theme=../tokens").text)
+
+    def test_scene_module_is_handed_to_the_homepage_only_when_the_theme_has_one(self):
+        for name in self.themes():
+            html = self.client.get(f"/?theme={name}").text
+            scene = SITE_STATIC / "themes" / name / "scene.js"
+            with self.subTest(theme=name, scene=scene.exists()):
+                url = f"/static/site/themes/{name}/scene.js"
+                if scene.exists():
+                    self.assertIn(f'data-scene="{url}"', html)
+                    self.assertIn(f'<link rel="modulepreload" href="{url}">', html)
+                else:
+                    self.assertNotIn("data-scene", html)
+
+    def test_switcher_lists_every_theme_on_every_page(self):
+        expected = ["void"] + self.themes()
+        for path in ("/", "/contact", "/?theme=paper"):
+            html = self.client.get(path).text
+            names = re.findall(r'<a href="\?theme=([a-z0-9-]+)"', html)
+            with self.subTest(path=path):
+                self.assertEqual(names, expected)
+                current = re.findall(r'<a href="\?theme=([a-z0-9-]+)" aria-current="true"', html)
+                self.assertEqual(current, ["paper" if "theme=paper" in path else "void"])
+
+    def test_every_theme_renders_its_pages(self):
+        for name in self.themes():
+            for path in ("/", "/contact", "/blog"):
+                with self.subTest(theme=name, path=path):
+                    self.assertEqual(self.client.get(f"{path}?theme={name}").status_code, 200)
+            self.assertEqual(self.client.get(f"/static/site/themes/{name}/theme.css").status_code, 200)
+
+
 class ShippedAssetsTests(unittest.TestCase):
     """What the homepage loads exists, and git will carry it to the server (the repository's
     .gitignore is an allowlist: a file without its own entry silently never deploys)."""
@@ -443,7 +525,8 @@ class ShippedAssetsTests(unittest.TestCase):
         files = [HOME_STATIC / "styles.css", SITE_STATIC / "tokens.css", SITE_STATIC / "site.css", SITE_STATIC / "site.js",
                  HOME_STATIC / "vendor" / "three-r186" / "three.module.min.js"]
         files += sorted((HOME_STATIC / "src").glob("*.js"))
-        files += sorted((SITE_STATIC / "themes").glob("*.css")) + sorted((SITE_STATIC / "works").glob("*.css"))
+        files += sorted((SITE_STATIC / "themes").glob("*/theme.css")) + sorted((SITE_STATIC / "themes").glob("*/scene.js"))
+        files += sorted((SITE_STATIC / "works").glob("*.css"))
         files += [SITE_STATIC / "pdf-figure.js"]
         pdfjs = ROOT / "app" / "static" / "vendor" / "pdfjs-6.4.299"
         files += [pdfjs / "pdf.min.js", pdfjs / "pdf.worker.min.js"] + sorted((pdfjs / "standard_fonts").glob("*"))
@@ -464,7 +547,8 @@ class ShippedAssetsTests(unittest.TestCase):
     def test_homepage_files_are_not_git_ignored(self):
         paths = [str(p.relative_to(ROOT)) for p in self.needed()]
         paths += ["app/templates/home.html", "app/templates/contact.html", "app/templates/_preview_meta.html",
-                  "app/templates/layout.html", "app/templates/_ui.html", "app/templates/_theme.html", "app/design.py",
+                  "app/templates/layout.html", "app/templates/_ui.html", "app/templates/_theme.html", "app/templates/_themes.html",
+                  "app/design.py",
                   "app/static/img/brand/tribar-preview.jpg", "tests/test_home.py"]
         # The design record and the proofs that guard the paradox rule (design/homepage-demo).
         demo = "design/homepage-demo/"

@@ -1,0 +1,8 @@
+{#- The theme switcher, for any page's frame: one row per theme on disk (app/design.py
+    theme_choices), the current one marked. A plain link: ?theme=<name> on the page itself, which
+    the server answers with that look and a cookie that keeps it for the visit. #}
+  <nav class="themes" id="themes" aria-label="Theme"><ul>
+    {%- for t in site_themes %}
+    <li><a href="?theme={{ t.name }}"{% if t.current %} aria-current="true"{% endif %}>{{ t.name }}</a></li>
+    {%- endfor %}
+  </ul></nav>

@@ -353,6 +353,7 @@ export function createFrame(parts, hooks) {
     const u = monument.uniforms;
     const lightX = drawnWorld.x, lightY = drawnWorld.y;
     u.uStageRot.value.copy(stage.stageRot);
+    u.uRigRot.value.setFromMatrix4(stage.rig.matrixWorld);   // the tilt: a bumped normal into world space
     u.uLantern.value = outside;
     u.uTime.value = clock;
     u.uExposure.value = fade * (1 + flash * IMPACT.flashExposure);
