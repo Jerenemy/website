@@ -47,4 +47,5 @@ jobs:
             if echo "$CHANGED" | grep -q '^poetry.lock$'; then
               echo "::warning::poetry.lock changed: run 'poetry install --no-root' on the server and restart"
             fi
-            sudo supervisorctl status
+            # status exits 3 when any program is down (ear_service is stopped on purpose): report only.
+            sudo supervisorctl status || true
