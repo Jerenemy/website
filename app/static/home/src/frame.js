@@ -24,7 +24,7 @@
 // picture every frame but slowly, so a settled scene is drawn at a fraction of the rAF rate;
 // an intent, a travel or an idle beat (src/idle.js) brings it back to full rate at once.
 import * as THREE from 'three';
-import { DIM, MOTION, INTRO, IMPACT, SHADING, UI, RECOVERY, PALETTE } from './config.js';
+import { DIM, MOTION, INTRO, IMPACT, SHADING, UI, RECOVERY, PALETTE, SOUND } from './config.js';
 import { Spring, easeOutCubic, smoothstep } from './spring.js';
 import { tiltToward } from './tribar.js';
 import { newFrame, doorFrame, toDoor, fromDoor, lightFor, insideness, createPath, slideOn, cavityLight } from './door.js';
@@ -36,11 +36,11 @@ const LEAN_HOME = 0.004;  // share of its lean below which the light leaning in 
 
 /**
  * @param parts  everything main.js built: canvas, tribar, seam, stage, monument, lantern, dust,
- *               backdrop, intro, voyage, tilt, lifts, idle, ui, state, works, flags
+ *               backdrop, intro, voyage, tilt, lifts, idle, ui, sound, state, works, flags
  * @param hooks  { pickStation(x, y), setFocus(i, source), leave(), ready(), abandon() }
  */
 export function createFrame(parts, hooks) {
-  const { canvas, tribar, seam, stage, monument, lantern, dust, backdrop, intro, voyage, tilt, lifts, idle, ui, state, works, flags } = parts;
+  const { canvas, tribar, seam, stage, monument, lantern, dust, backdrop, intro, voyage, tilt, lifts, idle, ui, sound, state, works, flags } = parts;
   const { light, stone } = voyage;
   const { arrival, door, departure, impact, pointer } = state;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -77,6 +77,10 @@ export function createFrame(parts, hooks) {
   const owner = createHold(tribar);
   const seenLight = new Float32Array(tribar.blocks.length * 3), faceOwn = new Float32Array(tribar.blocks.length * 3);
   const blockLight = [0, 0, 0], doorThere = [0, 0, 0], heldAt = [0, 0, 0];
+  // What the sound hears this frame (src/sound.js), and what it measured the last one by.
+  const heard = { rumble: 0, light: 0, swell: 0, swellHead: 0, swellPan: 0, blocks: tribar.blocks.length };
+  const liftWas = new Float32Array(tribar.blocks.length);
+  let sidesWere = -1, doorWas = 0;
 
   const blockOf = (station) => (station >= 0 ? tribar.stations[station].block : -1);
   /** 1 while two blocks touch, 0 once they stand SHADING.jointOpen apart (smooth between). */
@@ -85,17 +89,26 @@ export function createFrame(parts, hooks) {
 
   // ---- effects ---------------------------------------------------------------------------
   function mark() { state.dirty = true; }
-  function strike(scale) { impact.age = 0; impact.scale = scale; }
+  function strike(scale) { impact.age = 0; impact.scale = scale; sound.thud(scale); }
+  /** Where a structure point lies across the screen, for the sound (-1 left .. 1 right, held in from the edges). */
+  function panAt(structPoint) {
+    stage.project(structPoint, px);
+    return Math.max(-1, Math.min(1, px.x / stage.layout.width * 2 - 1)) * 0.7;
+  }
+  function treadOf(block) {
+    const b = tribar.blocks[block];
+    point3[0] = b.center[0]; point3[1] = b.center[1]; point3[2] = b.center[2];
+    point3[b.tread] += b.half[b.tread];
+    return point3;
+  }
   function burstAt(structPoint, gain = 1) {
     // Dust leaves outward, away from the monument's centre.
     structToWorld(structPoint, w3);
     dust.burst(w3, w3.x - stage.base.x, w3.y - stage.base.y, state.clock, gain);
   }
   function burstFromTread(block, gain) {
-    const b = tribar.blocks[block];
-    point3[0] = b.center[0]; point3[1] = b.center[1]; point3[2] = b.center[2];
-    point3[b.tread] += b.half[b.tread];
-    burstAt(point3, gain);
+    burstAt(treadOf(block), gain);
+    sound.contact(gain);
   }
 
   // ---- layout ----------------------------------------------------------------------------
@@ -140,7 +153,7 @@ export function createFrame(parts, hooks) {
       // settles onto the first step. From here the visitor is in: input is taken and the
       // page is ready, while the blocks finish settling under them.
       arrival.ignited = true;
-      if (!state.calm && !flags.skipIntro) { strike(1); light.snap(voyage.position - 0.5); burstAt(seamPoint); }
+      if (!state.calm && !flags.skipIntro) { strike(1); sound.ignite(); light.snap(voyage.position - 0.5); burstAt(seamPoint); }
       state.phase = 'idle';
       hooks.ready();
     }
@@ -184,6 +197,10 @@ export function createFrame(parts, hooks) {
     door.block = want.block;
     if (state.calm) door.open = want.open;
     else door.open = Math.min(1, Math.max(0, door.open + (want.open ? dt / MOTION.doorOpen : -dt / MOTION.doorClose)));
+    // The slot is heard as it starts to slide: open from shut, or shut from wide open.
+    if (door.block >= 0 && doorWas === 0 && door.open > 0) sound.door(true, state.calm ? 0.05 : MOTION.doorOpen, panAt(tribar.blocks[door.block].center));
+    else if (door.block >= 0 && doorWas === 1 && door.open < 1) sound.door(false, state.calm ? 0.05 : MOTION.doorClose, panAt(tribar.blocks[door.block].center));
+    doorWas = door.open;
     // Leaning in: only at a door wide open on the presented step, the light docked, the seam shut (as
     // for going in, so the way is the proven one), and only while the visitor points at the way in.
     // Going in, the lean is where the slide begins; with the light gone, it is spent.
@@ -311,7 +328,7 @@ export function createFrame(parts, hooks) {
       toDoor(doorAt, lightFor(tribar, tribar.blocks[door.block].station, light.value, seam.carry, point3), doorLight);
       if (sliding) {
         // From its dock, over the nosing, to the porch, in: carrying on from as far as it leaned.
-        if (!wasSliding) { path.plan(doorLight, doorAt.depth); slideFrom = lean.value * path.alongTo(SHADING.doorLean); }
+        if (!wasSliding) { path.plan(doorLight, doorAt.depth); slideFrom = lean.value * path.alongTo(SHADING.doorLean); sound.enter(MOTION.doorSlide, panAt(doorAt.origin)); }
         path.at(slideOn(departure.t / MOTION.doorSlide, path.porch, slideFrom), doorLight);
         held = true;
       } else if (lean.value > 0) {
@@ -380,6 +397,7 @@ export function createFrame(parts, hooks) {
     if (stoneMoving && !moving && !voyage.scrubbing && voyage.position !== arrivedAt) {
       arrivedAt = voyage.position;
       ui.arrive();
+      sound.seat(voyage.current());
       if (!state.calm) burstAt(tribar.stations[voyage.current()].tread);
     }
     stoneMoving = moving;
@@ -441,6 +459,24 @@ export function createFrame(parts, hooks) {
     ui.setTag(focus, tagAt.x, tagAt.y);
   }
 
+  /** The continuous voices: how fast the stone and its steps and the light move, and the swell (src/sound.js). */
+  function listen(dt) {
+    if (!sound.live) { sidesWere = -1; liftWas.set(lifts.now); return; }
+    const moving = !state.calm && dt > 0;
+    // The arrival: the three sides drifting home, measured by how far apart they still hang.
+    let sides = 0;
+    if (arrival.sample) for (const off of arrival.sample.sideOff) sides += Math.hypot(off[0], off[1], off[2]);
+    const gathering = moving && sidesWere >= 0 ? Math.abs(sidesWere - sides) / dt / (3 * INTRO.sideDrift) : 0;
+    sidesWere = arrival.sample ? sides : -1;
+    let shifting = 0;
+    for (let i = 0; i < liftWas.length; i++) { shifting += Math.abs(lifts.now[i] - liftWas[i]); liftWas[i] = lifts.now[i]; }
+    heard.rumble = moving ? Math.max(Math.abs(stone.velocity) / SOUND.rollFull, shifting / dt / SOUND.grindFull, gathering) : 0;
+    heard.light = moving && departure.t < 0 ? Math.abs(light.velocity) / MOTION.trailFullSpeed : 0;
+    heard.swell = idle.swellAmp; heard.swellHead = idle.swellHead;
+    if (idle.swellAmp > 0) heard.swellPan = panAt(tribar.blocks[Math.floor(idle.swellHead) % tribar.blocks.length].center);
+    sound.step(heard);
+  }
+
   function tick(stamp) {
     raf = requestAnimationFrame(tick);
     // ?slow=k scales the clock here, before anything integrates.
@@ -488,6 +524,7 @@ export function createFrame(parts, hooks) {
     present();
     noteArrival();
     point();
+    listen(dt);
 
     // Settled: every spring landed exactly, nothing in flight, nothing pending from the
     // visitor, no idle beat under way. The picture can then only change by an intent
@@ -516,7 +553,7 @@ export function createFrame(parts, hooks) {
     /** The light leaves for the door from where it is drawn this frame. */
     depart() { departure.t = 0; tilt.release(); mark(); },
     /** The link has been followed: no more frames until the page is shown again. */
-    pause() { setRunning(false); },
+    pause() { setRunning(false); sound.hush(); },
     /** The page is here again after a departure: the loop runs on. */
     resume() { mark(); setRunning(!document.hidden && !contextDown); },
     /** Attach to the page and start the loop. */

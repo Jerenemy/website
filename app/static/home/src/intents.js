@@ -195,7 +195,7 @@ export function createIntents(parts, frame) {
       else open();                                           // armed only once the caption is readable
     },
     enter(e) {
-      if (e.target instanceof HTMLAnchorElement) return false;   // links handle their own Enter
+      if (e.target instanceof HTMLAnchorElement || e.target instanceof HTMLButtonElement) return false;   // links and buttons handle their own Enter
       if (state.phase === 'intro') return true;                 // a key only hurries the arrival
       if (state.selected >= 0) { open(true); return true; }  // a double Enter is one Enter until armed
       return activate(voyage.current(), true);

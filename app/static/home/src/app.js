@@ -31,6 +31,7 @@ import { createIdle } from './idle.js';
 import { createState } from './state.js';
 import { createFrame } from './frame.js';
 import { createIntents } from './intents.js';
+import { createSound } from './sound.js';
 
 const root = document.documentElement;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -88,8 +89,9 @@ function createApp() {
   stage.scene.add(backdrop.mesh, dust.points, ...lantern.sprites);
   stage.rig.add(...monument.meshes);
   const voyage = createVoyage(tribar, () => intents.moved(), start);
+  const sound = createSound(document.getElementById('sound'));   // off until the visitor turns it on
   const parts = {
-    canvas, tribar, seam: createSeam(tribar), stage, monument, lantern, dust, backdrop, voyage, ui, state, works, flags,
+    canvas, tribar, seam: createSeam(tribar), stage, monument, lantern, dust, backdrop, voyage, ui, sound, state, works, flags,
     intro: createIntro(tribar), tilt: createTilt(), lifts: createLifts(tribar), idle: createIdle(tribar),
   };
   const frame = createFrame(parts, {
@@ -107,7 +109,7 @@ function createApp() {
   window.addEventListener('pageshow', onPageShow);
   frame.start();
   if (represent >= 0) ready.then(() => intents.activate(represent, leftByKeyboard));
-  return { intents, frame, dispose() { unbind(); window.removeEventListener('pageshow', onPageShow); frame.dispose(); } };
+  return { intents, frame, dispose() { unbind(); window.removeEventListener('pageshow', onPageShow); frame.dispose(); sound.dispose(); } };
 }
 
 if (!flags.noGL && works.length && hasWebGL2()) {
