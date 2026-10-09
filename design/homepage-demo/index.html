@@ -77,10 +77,18 @@
 
   <!-- The theme switcher (app/templates/_themes.html lists the folders of site/themes). -->
   <nav class="themes" id="themes" aria-label="Theme"><ul>
-    <li><a href="?theme=void" aria-current="true">void</a></li>
+    <li><a href="?theme=void">void</a></li>
     <li><a href="?theme=wood">wood</a></li>
     <li><a href="?theme=minecraft">minecraft</a></li>
   </ul></nav>
+  <script>
+    // The current theme marked, from the same ?theme=<name> (the server marks it in _themes.html).
+    (function () {
+      var m = /[?&]theme=([a-z0-9-]+)/.exec(location.search), name = m ? m[1] : 'void';
+      var a = document.querySelector('#themes a[href="?theme=' + name + '"]');
+      if (a) a.setAttribute('aria-current', 'true');
+    })();
+  </script>
 
   <div class="leader" id="leader" aria-hidden="true"></div>
   <div class="dock" id="dock" aria-hidden="true"></div>
