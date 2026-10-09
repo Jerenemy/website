@@ -6,7 +6,9 @@ a theme is a folder, static/site/themes/<name>/: theme.css (the tokens it overri
 it also changes the homepage's world, scene.js (static/home/src/theme.js is the contract). The
 default theme is the SITE_THEME setting (empty or "void": tokens.css alone and the scene's own
 world). Any page switches to another with ?theme=<name> (the switcher in every page's frame),
-which a cookie keeps for the rest of the visit; ?theme=void clears it.
+which a cookie keeps for the rest of the visit; ?theme=void clears it. A theme folder holding a
+file named `hidden` is kept out of the switcher but still answers to ?theme=<name>: a look in the
+making, previewable by its URL.
 """
 from __future__ import annotations
 
@@ -24,13 +26,20 @@ def _themes(static_folder: str) -> set[str]:
     return {p.parent.name for p in (Path(static_folder) / "site" / "themes").glob("*/theme.css")}
 
 
+def _hidden(static_folder: str) -> set[str]:
+    """The themes on disk that sit out of the switcher: those whose folder holds a `hidden` file."""
+    return {p.parent.name for p in (Path(static_folder) / "site" / "themes").glob("*/hidden")}
+
+
 def _has_scene(static_folder: str, theme: str) -> bool:
     return (Path(static_folder) / "site" / "themes" / theme / "scene.js").is_file()
 
 
 def theme_choices(static_folder: str, current: str) -> list[dict]:
-    """The switcher's rows (templates/_themes.html): the default first, then the rest by name."""
-    names = [DEFAULT_THEME] + sorted(_themes(static_folder) - {DEFAULT_THEME})
+    """The switcher's rows (templates/_themes.html): the default first, then the rest by name,
+    the hidden ones left out (the current theme stays listed even when hidden, so it reads as chosen)."""
+    names = [DEFAULT_THEME] + sorted(name for name in _themes(static_folder) - {DEFAULT_THEME}
+                                     if name == current or name not in _hidden(static_folder))
     return [{"name": name, "current": name == current} for name in names]
 
 

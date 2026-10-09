@@ -14,7 +14,10 @@
 // name, and never has to rewrite a shader to do it. `glsl` holds the four looks a theme can
 // draw itself, one shader chunk each, every one defining a function the scene's shaders call:
 //
-//   surface  Surface surfaceAt(SurfaceIn s)   the blocks' material (src/monument.js)
+//   surface  Surface surfaceAt(SurfaceIn s)   the blocks' material (src/monument.js); optionally also
+//            float surfaceCover(SurfaceIn s), the fragment's coverage (0..1; default 1): a theme whose
+//            blocks are not boxes carves their outline with it. silhouetteCover(s, r), below, is the
+//            coverage of a box whose arrises are rounded by r beams, antialiased: the usual answer.
 //   air      vec3 airAt(AirIn a)              the air behind everything (src/backdrop.js)
 //   light    vec3 lightAt(LightIn l)          the light itself as drawn (src/lantern.js); with
 //            LANTERN.blend 'over' also float lightCover(LightIn l), its coverage
@@ -105,6 +108,8 @@ export const THEME_GLSL = /* glsl */ `
     float block;    // the block's index round the loop: each block its own piece
     float isStep;   // 1 on a step (one per work), 0 on a plain block of a side
     float time;     // seconds
+    vec3 view;      // toward the eye, structure space, unit: a direction only (the whole picture turns with it;
+                    // both ends of the seam see the same one), never a distance along it
   };
   // What the material gives back, in linear light.
   struct Surface {
@@ -156,6 +161,46 @@ export const THEME_GLSL = /* glsl */ `
     float kind;     // 0 an ambient mote, 1 a burst mote (thrown when something lands)
     float time;     // seconds
   };
+
+  // The coverage of a box whose arrises are rounded by r: 1 where the line of sight through this
+  // point still meets the rounded block, 0 where it misses (the corners of the outline, and a hair
+  // inside its straight edges), antialiased over a pixel. The rounded block is the box shrunk by r
+  // and swollen back by a sphere of r, so the test is the distance, across the view, from the point
+  // to the shrunk box's outline (a hexagon: the projection of a box) against r. Pass the result back
+  // from surfaceCover; the scene writes it as the fragment's coverage.
+  float silhouetteCover(SurfaceIn s, float r) {
+    vec3 V = s.view;
+    vec3 a = abs(V.x) < 0.9 ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 0.0);
+    vec3 e1 = normalize(cross(V, a)), e2 = cross(V, e1);
+    vec3 h = max(s.ext - r, 0.0);
+    // The shrunk box's three axes, projected across the view: the outline is their zonotope.
+    vec2 g0 = h.x * vec2(e1.x, e2.x), g1 = h.y * vec2(e1.y, e2.y), g2 = h.z * vec2(e1.z, e2.z);
+    g0 *= g0.y < 0.0 || (g0.y == 0.0 && g0.x < 0.0) ? -1.0 : 1.0;
+    g1 *= g1.y < 0.0 || (g1.y == 0.0 && g1.x < 0.0) ? -1.0 : 1.0;
+    g2 *= g2.y < 0.0 || (g2.y == 0.0 && g2.x < 0.0) ? -1.0 : 1.0;
+    vec2 t;   // sort by angle
+    if (g0.x * g1.y - g0.y * g1.x < 0.0) { t = g0; g0 = g1; g1 = t; }
+    if (g1.x * g2.y - g1.y * g2.x < 0.0) { t = g1; g1 = g2; g2 = t; }
+    if (g0.x * g1.y - g0.y * g1.x < 0.0) { t = g0; g0 = g1; g1 = t; }
+    vec2 v[6];
+    v[0] = -(g0 + g1 + g2); v[1] = v[0] + 2.0 * g0; v[2] = v[1] + 2.0 * g1;
+    v[3] = v[2] + 2.0 * g2; v[4] = v[3] - 2.0 * g0; v[5] = v[4] - 2.0 * g1;
+    vec2 p = vec2(dot(s.box, e1), dot(s.box, e2));
+    // Signed distance to the hexagon.
+    float d2 = dot(p - v[0], p - v[0]);
+    float sgn = 1.0;
+    vec2 prev = v[5];
+    for (int i = 0; i < 6; i++) {
+      vec2 e = prev - v[i], w = p - v[i];
+      vec2 b = w - e * clamp(dot(w, e) / max(dot(e, e), 1.0e-12), 0.0, 1.0);
+      d2 = min(d2, dot(b, b));
+      bvec3 c = bvec3(p.y >= v[i].y, p.y < prev.y, e.x * w.y > e.y * w.x);
+      if (all(c) || all(not(c))) sgn = -sgn;
+      prev = v[i];
+    }
+    float d = sgn * sqrt(d2) - r;
+    return clamp(-d / max(fwidth(d), 1.0e-6) + 0.5, 0.0, 1.0);
+  }
 `;
 
 // ---------------------------------------------------------------- the void: the scene's own world
@@ -170,6 +215,11 @@ export const VOID_SURFACE = () => /* glsl */ `
     float albedo = ${CONFIG.PALETTE.stoneAlbedo.toFixed(3)} * (1.0 + (mottle - 0.5) * ${(CONFIG.SHADING.mottling * 2).toFixed(3)} + speckle * ${(CONFIG.SHADING.speckle * 2).toFixed(3)} + quarry * ${(CONFIG.SHADING.blockVariance * 2).toFixed(3)});
     return Surface(vec3(albedo), vec3(0.0), 0.0, 1.0, vec3(0.0));
   }
+`;
+
+/** The void's blocks are boxes: every fragment of them counts. */
+export const VOID_COVER = /* glsl */ `
+  float surfaceCover(SurfaceIn s) { return 1.0; }
 `;
 
 /** The air of a hall too large to see: near-black above, charcoal and mist below (PLACE). */
@@ -222,7 +272,9 @@ export const VOID_MOTE = () => /* glsl */ `
 
 /** The chunk a shader includes: the shared declarations, then the theme's hook or the void's. */
 export function hook(name, fallback) {
-  return THEME_GLSL + '\n' + (THEME.glsl[name] || fallback());
+  const chunk = THEME.glsl[name] || fallback();
+  const cover = name === 'surface' && !/\bsurfaceCover\s*\(/.test(chunk) ? VOID_COVER : '';
+  return THEME_GLSL + '\n' + chunk + cover;
 }
 
 // ---------------------------------------------------------------- loading

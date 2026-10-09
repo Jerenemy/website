@@ -69,6 +69,7 @@ const varyingsChunk = /* glsl */ `
   flat varying vec3 vExtra;  // occluder A is cross-side, occluder B is cross-side, emphasis
   flat varying vec3 vLight;  // the light as this block sees it (structure space: src/door.js lightFor)
   flat varying float vOwn;   // this face: how far the light holds it (0..1)
+  flat varying vec3 vToEye;  // toward the eye, structure space (the material's view: src/theme.js)
 `;
 
 /** @param pass 'stone' or 'behind' (the near end, moved back along the view: see the header) */
@@ -116,6 +117,8 @@ const blockVertexShader = (pass) => /* glsl */ `
     vExtra = vec3(step(9.5, aOcc.x), step(9.5, aOcc.y), aDyn.w);
     vLight = aLight;
     vOwn = dot(aOwn, max(normal, 0.0));   // the visible faces are the + ones; a - face is never held
+    // The eye is world +z (an orthographic camera): back through the rig, the roll and the side's twist.
+    vToEye = normalize(((vec3(0.0, 0.0, 1.0) * mat3(modelMatrix)) * uStageRot) * uSideRot[side]);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(st, 1.0);
     ${pass === 'behind' ? 'gl_Position.z += 2.0 * uSeamDepth;   // NDC spans two depth units' : ''}
   }
@@ -226,7 +229,13 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
     vec3 toEdge = vHalf - abs(vBox) + axisN * 1.0e3;
 
     // --- the material (src/theme.js) ---------------------------------------------------------
-    Surface sf = surfaceAt(SurfaceIn(vRest, vBox, vHalf, nS, toEdge, travel, tread, step(0.5, dot(nS, tread)), dot(vHalf - vBox, tread), blockIndex, isStep ? 1.0 : 0.0, uTime));
+    SurfaceIn sIn = SurfaceIn(vRest, vBox, vHalf, nS, toEdge, travel, tread, step(0.5, dot(nS, tread)), dot(vHalf - vBox, tread), blockIndex, isStep ? 1.0 : 0.0, uTime, vToEye);
+    Surface sf = surfaceAt(sIn);
+    // A theme whose blocks are not boxes carves their outline: the fragment's coverage (src/theme.js
+    // surfaceCover), written as alpha and turned into sample coverage (alphaToCoverage), so the carved
+    // edge is antialiased by the same multisampling as every arris.
+    float cover = surfaceCover(sIn);
+    if (cover <= 0.0) discard;
     int side = int(vMeta.x + 0.5);
     vec3 bumpM = uSideRot[side] * sf.bump;
     vec3 nM = normalize(normalize(vNormalMon) + bumpM);                           // monument space: the key's
@@ -372,13 +381,13 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
       float own = smoothstep(0.0, ${SHADING.doorOwn.toFixed(4)}, lit * uDoorHold);
       float neutral = (${SHADING.doorAmbient.toFixed(4)} * form + keyIn) * (1.0 - own) * mist * dim;
       vec3 nIn = n * uDoorAxes;   // the inner face's normal, structure space
-      vec3 inner = surfaceAt(SurfaceIn(rest, vBox, vHalf, nIn, vec3(1.0e3), travel, tread, step(0.5, dot(nIn, tread)), dot(vHalf - vBox, tread), blockIndex, 1.0, uTime)).albedo
+      vec3 inner = surfaceAt(SurfaceIn(rest, vBox, vHalf, nIn, vec3(1.0e3), travel, tread, step(0.5, dot(nIn, tread)), dot(vHalf - vBox, tread), blockIndex, 1.0, uTime, vToEye)).albedo
         * (vec3(neutral) + uAccent * (uDoorLight.w * ${SHADING.glowPower.toFixed(2)} * lit)) * uExposure;
       lin = mix(lin, shoulder(inner), door);
     }
     vec3 color = toSRGB(lin);
     color += grain(gl_FragCoord.xy, uTime, ${SHADING.grainAmount.toFixed(4)});
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color, cover);
   }
 `;
 
@@ -467,6 +476,7 @@ export function createMonument(tribar) {
   };
   const materials = ['stone', 'behind'].map((pass) => new THREE.ShaderMaterial({
     uniforms, vertexShader: blockVertexShader(pass), fragmentShader: fragmentShader({ phantoms, count, pass }),
+    alphaToCoverage: true,   // a theme's carved outline (surfaceCover) is antialiased by the multisampling
   }));
   const meshes = sets.map((set, k) => {
     const mesh = new THREE.Mesh(set.geometry, materials[k]);
