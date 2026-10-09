@@ -45,6 +45,7 @@ export function createInterface({ person, works, scaled, onFocus, onActivate, on
   const canvas = $('stage');
   const masthead = $('masthead'), rail = $('rail'), links = $('links'), caption = $('caption'), head = $('head');
   const themes = $('themes');   // the theme switcher (templates/_themes.html), when the page has one
+  const soundToggle = $('sound');   // the speaker (src/sound.js), when the page has one
   const leader = $('leader'), dock = $('dock'), tag = $('tag'), tagNo = $('tag-no'), tagTitle = $('tag-title');
   const layers = [$('cap-a'), $('cap-b')].map((el) => ({ el, no: el.querySelector('.no'), title: el.querySelector('.title') }));
   const detail = $('detail'), capKind = $('cap-kind'), capLine = $('cap-line'), capOpen = $('cap-open'), announcer = $('announce');
@@ -368,10 +369,10 @@ export function createInterface({ person, works, scaled, onFocus, onActivate, on
       return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
     },
     /** The arrival: the interface is invisible, so nothing in it may take focus. */
-    withhold() { for (const node of [masthead, rail, caption, links, themes]) if (node) node.inert = true; },
+    withhold() { for (const node of [masthead, rail, caption, links, themes, soundToggle]) if (node) node.inert = true; },
     reveal() {
       if (live()) root.classList.add('is-live');
-      for (const node of [masthead, rail, caption, links, themes]) if (node) node.inert = false;
+      for (const node of [masthead, rail, caption, links, themes, soundToggle]) if (node) node.inert = false;
       measureLeader();
     },
   };

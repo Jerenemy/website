@@ -79,6 +79,19 @@ html:not(.gl) main { grid-area: 2 / 1 / auto / -1; min-width: 0; }
 .themes a { color: var(--stone-low); transition: color 0.25s var(--ease); }
 .themes a:hover, .themes a:focus-visible, .themes a[aria-current="true"] { color: var(--stone); }
 html:not(.gl) .themes { grid-area: 3 / 1 / auto / -1; margin-top: 48px; }
+/* The speaker (src/sound.js): the scene's sound, so only with the scene. Waves when on, a cross when off. */
+.sound { display: none; }
+html.gl .sound {
+  display: block; position: fixed; z-index: 2; right: calc(var(--margin) - 10px); bottom: calc(var(--margin) - 10px);
+  width: 36px; height: 36px; padding: 10px; margin: 0; border: 0; background: none; cursor: pointer;
+  color: var(--stone-low); transition: color 0.25s var(--ease);
+}
+html.gl .sound:hover, html.gl .sound:focus-visible, html.gl .sound[aria-pressed="true"] { color: var(--stone); }
+html.gl .sound:focus { outline: none; }
+html.gl .sound:focus-visible { outline: 1px solid var(--stone); outline-offset: -4px; }
+.sound svg { display: block; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.1; stroke-linejoin: round; stroke-linecap: round; }
+.sound .wave, .sound[aria-pressed="true"] .mute { display: none; }
+.sound[aria-pressed="true"] .wave { display: inline; }
 
 /* ---------------------------------------------------------------- the scene */
 html.gl, html.gl body { overflow: hidden; overscroll-behavior: none; }
@@ -91,7 +104,7 @@ html.gl.is-drawn #stage { opacity: 1; }
 /* The light has gone through the door: the scene fades to the void before the link is
    followed, and the page goes with it as one: nothing is left pointing at a dark canvas. */
 html.gl.is-drawn.is-leaving #stage { opacity: 0; transition-duration: var(--door-fade); }
-html.gl.is-live.is-leaving .masthead, html.gl.is-live.is-leaving .links, html.gl.is-live.is-leaving .themes, html.gl.is-live.is-leaving .rail, html.gl.is-live.is-leaving .caption,
+html.gl.is-live.is-leaving .masthead, html.gl.is-live.is-leaving .links, html.gl.is-live.is-leaving .themes, html.gl.is-live.is-leaving .sound, html.gl.is-live.is-leaving .rail, html.gl.is-live.is-leaving .caption,
 html.gl.is-live.is-leaving .leader, html.gl.is-live.is-leaving .dock, html.gl.is-leaving .tag { opacity: 0; transition: opacity var(--door-fade) linear; }
 html.gl .masthead { position: fixed; top: var(--margin); left: var(--margin); z-index: 2; }
 html.gl .links { position: fixed; top: var(--margin); right: var(--margin); z-index: 2; margin: 0; }
@@ -186,8 +199,8 @@ html.gl .tag {
 html.gl .tag.is-on { opacity: 1; }
 
 /* Arrival: the interface is withheld until the monument has locked. */
-html.gl .masthead, html.gl .links, html.gl .themes, html.gl .rail, html.gl .caption, html.gl .leader, html.gl .dock { opacity: 0; transition: opacity 1.1s var(--ease); }
-html.gl.is-live .masthead, html.gl.is-live .links, html.gl.is-live .themes, html.gl.is-live .rail, html.gl.is-live .caption, html.gl.is-live .leader, html.gl.is-live .dock { opacity: 1; }
+html.gl .masthead, html.gl .links, html.gl .themes, html.gl .sound, html.gl .rail, html.gl .caption, html.gl .leader, html.gl .dock { opacity: 0; transition: opacity 1.1s var(--ease); }
+html.gl.is-live .masthead, html.gl.is-live .links, html.gl.is-live .themes, html.gl.is-live .sound, html.gl.is-live .rail, html.gl.is-live .caption, html.gl.is-live .leader, html.gl.is-live .dock { opacity: 1; }
 html.gl.is-live .rail { transition-delay: 0.15s; }
 html.gl.is-live .caption, html.gl.is-live .leader, html.gl.is-live .dock { transition-delay: 0.3s, 0s, 0s; }
 html.gl .leader { transition: opacity 1.1s var(--ease) 0.3s, left 0.45s var(--ease), width 0.45s var(--ease); }
@@ -202,6 +215,7 @@ html.gl.is-tall .masthead { top: 22px; }
 html.gl.is-tall .links { top: auto; left: var(--margin); right: var(--margin); bottom: calc(18px + env(safe-area-inset-bottom)); }
 html.gl.is-tall .themes { bottom: auto; top: 50px; left: var(--margin); right: var(--margin); }   /* the row under the name */
 html.gl.is-tall .themes ul { gap: 12px 14px; }
+html.gl.is-tall .sound { bottom: auto; top: 6px; right: 6px; width: 44px; height: 44px; padding: 14px; }   /* the name's row, opposite it */
 html.gl.is-tall .links ul { justify-content: space-between; gap: 0; flex-wrap: nowrap; }   /* one row: a second would lie on the strip */
 html.gl.is-tall .links a { display: block; padding: 8px 0; }
 html.gl.is-tall .rail { top: auto; left: var(--margin); right: var(--margin); bottom: calc(58px + env(safe-area-inset-bottom)); transform: none; }

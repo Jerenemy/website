@@ -364,3 +364,30 @@ export const RECOVERY = {
   // back at the visitor's next click, key or wheel (src/intents.js), never while it may be loading.
 };
 
+
+export const SOUND = {
+  // The scene's sound (src/sound.js): off until the visitor turns it on, synthesized, never a file.
+  // Soft music and rumbling: the light plays notes and a drone, the stone rumbles and thuds softly.
+  master: 0.5,            // overall level
+  fade: 0.25,             // s: time constant of the master turning on and off
+  follow: 0.08,           // s: time constant with which the continuous voices follow the scene
+  updateHz: 20,           // the continuous voices are retuned at most this often
+  rumble: 0.22,           // the stone rolling and its steps rising and falling, full at rollFull / grindFull
+  rollFull: 3,            // stations/s
+  grindFull: 5,           // beams/s, summed over every block
+  air: 0.035,             // a breath of air while the light moves, full at MOTION.trailFullSpeed
+  drone: 0.03,            // the drone at rest (it doubles while the light moves)
+  droneFade: 0.4,         // s: the drone opens and closes this slowly
+  thud: 0.16,             // the strike: 1 is the arrival's
+  contact: 0.07,          // a step landing on the loop, sized by how far it fell
+  seat: 0.045,            // the note of the work the light settles on
+  ignite: 0.03,           // each note of the chord the struck light blooms with
+  swell: 0.03,            // each note of the swell's run round the loop
+  door: 0.05,             // the slot's soft slide
+  enter: 0.05,            // the falling pair as the light goes in
+  noteAttack: 0.03,       // s
+  noteDecay: 0.5,         // s: time constant of a note's fade
+  echo: 0.35,             // how much of every note goes to the echo...
+  echoTime: 0.31,         // s
+  echoFeedback: 0.38,
+};
