@@ -453,9 +453,12 @@ class ThemeTests(unittest.TestCase):
     def themes(self):
         return sorted(p.parent.name for p in (SITE_STATIC / "themes").glob("*/theme.css"))
 
+    def listed(self):
+        return [name for name in self.themes() if not (SITE_STATIC / "themes" / name / "hidden").exists()]
+
     def test_every_theme_folder_is_complete(self):
         names = self.themes()
-        self.assertIn("paper", names)
+        self.assertIn("wood", names)
         for name in names:
             with self.subTest(theme=name):
                 self.assertRegex(name, r"^[a-z0-9-]+$")   # the name is a URL parameter and a CSS file's folder
@@ -474,11 +477,11 @@ class ThemeTests(unittest.TestCase):
         self.assertNotIn("/themes/", html.split("<body")[0].replace("_themes", ""))   # no theme.css, no scene.js
 
     def test_query_switches_the_theme_and_the_cookie_keeps_it(self):
-        response = self.client.get("/?theme=paper")
-        self.assertIn('data-theme="paper"', response.text)
-        self.assertIn('href="/static/site/themes/paper/theme.css"', response.text)
-        self.assertIn("theme=paper", response.headers.get("Set-Cookie", ""))
-        self.assertIn('data-theme="paper"', self.client.get("/contact").text)   # kept for the visit
+        response = self.client.get("/?theme=wood")
+        self.assertIn('data-theme="wood"', response.text)
+        self.assertIn('href="/static/site/themes/wood/theme.css"', response.text)
+        self.assertIn("theme=wood", response.headers.get("Set-Cookie", ""))
+        self.assertIn('data-theme="wood"', self.client.get("/contact").text)   # kept for the visit
         response = self.client.get("/?theme=void")
         self.assertIn('data-theme="void"', response.text)
         self.assertIn("theme=;", response.headers.get("Set-Cookie", ""))        # cleared
@@ -499,15 +502,26 @@ class ThemeTests(unittest.TestCase):
                 else:
                     self.assertNotIn("data-scene", html)
 
+    def test_hidden_theme_answers_to_its_url_but_sits_out_of_the_switcher(self):
+        hidden = sorted(set(self.themes()) - set(self.listed()))
+        self.assertIn("nature", hidden)
+        for name in hidden:
+            with self.subTest(theme=name):
+                html = self.client.get(f"/?theme={name}").text
+                self.assertIn(f'data-theme="{name}"', html)
+                self.assertIn(f'<a href="?theme={name}" aria-current="true"', html)   # chosen: it reads as such
+                html = self.client.get("/?theme=void").text
+                self.assertNotIn(f'?theme={name}"', html)
+
     def test_switcher_lists_every_theme_on_every_page(self):
-        expected = ["void"] + self.themes()
-        for path in ("/", "/contact", "/?theme=paper"):
+        expected = ["void"] + self.listed()
+        for path in ("/", "/contact", "/?theme=wood"):
             html = self.client.get(path).text
             names = re.findall(r'<a href="\?theme=([a-z0-9-]+)"', html)
             with self.subTest(path=path):
                 self.assertEqual(names, expected)
                 current = re.findall(r'<a href="\?theme=([a-z0-9-]+)" aria-current="true"', html)
-                self.assertEqual(current, ["paper" if "theme=paper" in path else "void"])
+                self.assertEqual(current, ["wood" if "theme=wood" in path else "void"])
 
     def test_every_theme_renders_its_pages(self):
         for name in self.themes():

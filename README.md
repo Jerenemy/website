@@ -35,7 +35,8 @@ and an optional `scene.js` themes the homepage scene (its blocks' material, its 
 dust) through the contract in `app/static/home/src/theme.js`. Every theme on disk appears in the
 switcher at the bottom of the homepage and in every page's foot; `?theme=<name>` on any URL switches
 too, and a cookie keeps the choice for the visit (`?theme=void` clears it). `SITE_THEME=<name>` in the
-environment makes one the default. Shipped: `void` (the default, no folder), `paper`, `wood`, `nature`,
+environment makes one the default. A folder holding a file named `hidden` sits out of the switcher but
+still answers to `?theme=<name>` (`nature` and `ice` are hidden this way). Shipped: `void` (the default, no folder), `wood`, `nature`,
 `ice`, `minecraft`. The guide, with the contract and the rules a theme must keep, is
 `app/static/site/README.md`, "Themes".
 

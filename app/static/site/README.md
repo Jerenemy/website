@@ -9,7 +9,7 @@ boxes, numbers for order, and **one point of colour per page that means "you are
 | File | What it holds | Change it to… |
 | --- | --- | --- |
 | `static/site/tokens.css` | **Every value**: colour, type, space, radii, motion. | change the feel of the whole site, homepage included. |
-| `static/site/themes/<name>/` | A theme: `theme.css` (only the tokens it overrides) and, when it changes the homepage's world, `scene.js` (its material, air, light and dust: `static/home/src/theme.js` is the contract), with any fonts or textures it ships. | add a look (`paper/` is the tokens-only example). |
+| `static/site/themes/<name>/` | A theme: `theme.css` (only the tokens it overrides) and, when it changes the homepage's world, `scene.js` (its material, air, light and dust: `static/home/src/theme.js` is the contract), with any fonts or textures it ships. | add a look (a `theme.css` alone is enough for a tokens-only theme). |
 | `static/site/site.css` | Every piece (head, sections, lists, actions, devices, forms, tables, pager, motion). No values of its own. | change how a piece is built. |
 | `static/site/site.js` | Arrival (reveal) and leaving (page fade where View Transitions are missing). | change the motion's logic (timings are tokens). |
 | `static/site/works/<work>.css` | A work's *rendering of itself* (an app screen), scoped to `.app-<work>`. | draw a product. |
@@ -26,15 +26,17 @@ boxes, numbers for order, and **one point of colour per page that means "you are
   the visit, `?theme=void` clears it. The standalone demo (`design/homepage-demo`) takes the same
   `?theme=<name>`.
 * New theme: a folder `themes/<name>/` with a `theme.css` whose `:root { … }` overrides only what
-  changes; it appears in the switcher at once. The homepage's interface is drawn in `--world-*`
+  changes; it appears in the switcher at once (an empty file named `hidden` beside it keeps it
+  out of the switcher while `?theme=<name>` still shows it). The homepage's interface is drawn in `--world-*`
   over the scene's air, so a theme whose air is bright sets them dark (`--world-bg` is also what
   the canvas fades from and to, so it should sit near the air's tone), and the light in the scene
   is `--accent`.
 * A theme that changes the **world** (the blocks, the air, the light, the dust) adds a `scene.js`
   beside its `theme.css`: a plain ES module with no imports, exporting `{ config, glsl }`.
   `config` lays values over `static/home/src/config.js` by name (the key light, the mist, the halo,
-  the motes…); `glsl` holds up to four shader chunks, `surface` (the blocks' material),
-  `air`, `light` and `mote`, each a function of a documented struct. The contract, the structs and
+  the motes…); `glsl` holds up to four shader chunks, `surface` (the blocks' material, and optionally
+  `surfaceCover`, which carves the blocks' outline: rounded corners, a lumpy edge), `air`, `light`
+  and `mote`, each a function of a documented struct. The contract, the structs and
   the void's own implementations (the reference for each hook) are in `static/home/src/theme.js`.
   Fonts and textures a theme needs live in its folder and ship with it (the repository's
   `.gitignore` allowlists `themes/**`). What a theme must keep: the paradox rule (no surface may

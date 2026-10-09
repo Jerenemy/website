@@ -7,7 +7,7 @@
    own. Change a value here and the whole site changes with it.
 
    A THEME is a second file, static/site/themes/<name>.css, loaded after this one, that
-   overrides only the properties it changes (themes/paper.css is the example). Choose it with
+   overrides only the properties it changes (themes/wood/theme.css is an example). Choose it with
    SITE_THEME=<name>, or preview it on any page with ?theme=<name> (?theme=void returns here).
    Rename nothing: the names are the contract. */
 :root {
