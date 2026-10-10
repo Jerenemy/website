@@ -8,8 +8,8 @@
   <title>Jeremy Zay</title>
   {#- Not shown on the page (the homepage carries almost no text); it still serves search and link previews. #}
   <meta name="description" content="{{ site_settings.home_description | striptags }}">
-  {%- include "_preview_meta.html" %}
-  {%- include "_theme.html" %}
+  {%- include "partials/_preview_meta.html" %}
+  {%- include "partials/_theme.html" %}
   <link rel="stylesheet" href="{{ url_for('static', filename='home/styles.css') }}">
   <script>
     // Before first paint. An old link to the contact section goes to the contact page. The scene's
@@ -72,7 +72,7 @@
     {%- endfor %}
   </ul></nav>
 
-  {%- include "_themes.html" %}
+  {%- include "partials/_themes.html" %}
   {#- Sound, off until turned on (static/home/src/sound.js keeps the choice); the scene's only, so the
       plain index never shows it. #}
   <button class="sound" id="sound" type="button" aria-pressed="false" aria-label="Sound"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path class="wave" d="M10.4 5.6a3.4 3.4 0 0 1 0 4.8M12.3 3.7a6 6 0 0 1 0 8.6"/><path class="mute" d="M10.5 6.2l3.6 3.6M14.1 6.2l-3.6 3.6"/></svg></button>

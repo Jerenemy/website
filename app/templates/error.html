@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% import "_ui.html" as ui with context %}
+{% import "partials/_ui.html" as ui with context %}
 {#- Any page that does not exist, or failed: the frame stays, so the way on is always in view. #}
 {% block title %}{{ code }} · {{ frame.name }}{% endblock %}
 {% block content %}

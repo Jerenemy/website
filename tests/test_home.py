@@ -438,7 +438,7 @@ class AdminTests(unittest.TestCase):
 class ThemeTests(unittest.TestCase):
     """A theme is a folder of static/site/themes (app/design.py): its theme.css over the tokens on
     every page, its scene.js (when it has one) handed to the homepage's scene, and a row in the
-    switcher of every page's frame (templates/_themes.html)."""
+    switcher of every page's frame (templates/partials/_themes.html)."""
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -560,8 +560,8 @@ class ShippedAssetsTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("git") and (ROOT / ".git").exists(), "needs a git checkout")
     def test_homepage_files_are_not_git_ignored(self):
         paths = [str(p.relative_to(ROOT)) for p in self.needed()]
-        paths += ["app/templates/home.html", "app/templates/contact.html", "app/templates/_preview_meta.html",
-                  "app/templates/layout.html", "app/templates/_ui.html", "app/templates/_theme.html", "app/templates/_themes.html",
+        paths += ["app/templates/home.html", "app/templates/contact.html", "app/templates/partials/_preview_meta.html",
+                  "app/templates/layout.html", "app/templates/partials/_ui.html", "app/templates/partials/_theme.html", "app/templates/partials/_themes.html",
                   "app/design.py",
                   "app/static/img/brand/tribar-preview.jpg", "tests/test_home.py"]
         # The design record and the proofs that guard the paradox rule (design/homepage-demo).

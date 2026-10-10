@@ -89,12 +89,12 @@ def contact():
 
 @bp.get("/game")
 def game():
-    return render_template("game.html")
+    return render_template("works/game.html")
 
 @bp.get("/blog")
 def blog():
     posts = get_blog_store().list_posts()
-    return render_template("blog.html", posts=posts)
+    return render_template("blog/index.html", posts=posts)
 
 
 @bp.get("/blog/<slug>")
@@ -102,7 +102,7 @@ def blog_post(slug: str):
     post = get_blog_store().get_post(slug)
     if post is None:
         abort(404)
-    return render_template("blog_post.html", post=post)
+    return render_template("blog/post.html", post=post)
 
 @bp.get("/resume")
 def resume():
@@ -137,7 +137,7 @@ def posters():
         # The page draws each poster from its PDF (static, so nginx serves and caches it) and
         # links to the poster's own address.
         shown.append({**item, "year": year, "pdf": url_for(pdf), "pdf_file": url_for("static", filename=pdf_file)})
-    return render_template("posters.html", posters=shown)
+    return render_template("works/posters.html", posters=shown)
 
 
 @bp.get("/poster-rl-2024")
@@ -161,7 +161,7 @@ def poster_diffusion_2025():
 @bp.get('/zaychess', strict_slashes=False)  
 def zaychess():
     return render_template(
-        'zaychess/zaychess.html',
+        'works/zaychess/zaychess.html',
         zaychess_current_version=ZAYCHESS_CURRENT_VERSION,
         zaychess_min_macos=ZAYCHESS_MIN_MACOS,
     )
@@ -169,7 +169,7 @@ def zaychess():
 @bp.get('/zaychess/support', strict_slashes=False)
 def zaychess_support():
     return render_template(
-        'zaychess/zaychess_support.html',
+        'works/zaychess/zaychess_support.html',
         zaychess_current_version=ZAYCHESS_CURRENT_VERSION,
         zaychess_min_macos=ZAYCHESS_MIN_MACOS,
     )
@@ -177,30 +177,30 @@ def zaychess_support():
 @bp.get('/zaychess/privacy', strict_slashes=False)
 def zaychess_privacy():
     return render_template(
-        'zaychess/zaychess_privacy.html',
+        'works/zaychess/zaychess_privacy.html',
         zaychess_current_version=ZAYCHESS_CURRENT_VERSION,
     )
 
 @bp.get('/eqoscan')  
 def eqoscan():
-    return render_template('eqoscan.html')
+    return render_template('works/eqoscan.html')
 
 @bp.get('/moinllm')
 def moinllm():
-    return render_template('moinllm.html')
+    return render_template('works/moinllm.html')
 
 @bp.get('/deltalab')
 def deltalab():
-    return render_template('attack_target_graph_interactive_v1.html')
+    return render_template('works/deltalab.html')
 
 @bp.get('/sonar', strict_slashes=False)
 def sonar():
-    return render_template('sonar/sonar.html')
+    return render_template('works/sonar/sonar.html')
 
 @bp.get('/sonar/support', strict_slashes=False)
 def sonar_support():
-    return render_template('sonar/sonar_support.html')
+    return render_template('works/sonar/sonar_support.html')
 
 @bp.get('/sonar/privacy', strict_slashes=False)
 def sonar_privacy():
-    return render_template('sonar/sonar_privacy.html')
+    return render_template('works/sonar/sonar_privacy.html')

@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "works/sonar/_sonar.html" as sonar with context %}
+{% block title %}Sonar Support · Jeremy Zay{% endblock %}
+{% block description %}Get help with Sonar accounts, podcast search, episode logs, ratings, reviews, and support requests.{% endblock %}
+{% block content %}
+  {{ sonar.sonar_head('public.sonar_support', title="Support") }}
+
+  {% call ui.sect("01", "Quick help", id="quick-help") %}
+    <h2 class="sect__title">The most common issues, first.</h2>
+    <ol class="points">
+      <li><span class="no">01</span><h3>Account access</h3><p>Confirm the username or email tied to your account, check for typos, and try signing in again on a stable network connection.</p></li>
+      <li><span class="no">02</span><h3>Podcast search</h3><p>Sonar uses the open Podcast Index catalog. If a show or episode is missing, include the podcast title and RSS feed URL in your request.</p></li>
+      <li><span class="no">03</span><h3>Logs and reviews</h3><p>Ratings, reviews, loved episodes, and listen later updates save automatically. Reopen the episode page if a change does not appear right away.</p></li>
+    </ol>
+  {% endcall %}
+
+  {% call ui.sect("02", "Contact", id="contact") %}
+    <h2 class="sect__title">Send the details that help fix it.</h2>
+    <div class="prose">
+      <p>For account, search, sync, rating, review, or feed issues, include enough context to reproduce what happened:</p>
+      <ol>
+        <li><strong>Your account:</strong> Sonar username and the email address you use to sign in.</li>
+        <li><strong>Your device:</strong> iPhone model, iOS version, and Sonar app version if available.</li>
+        <li><strong>The issue:</strong> Podcast name, episode title, screenshots, and the exact action that failed.</li>
+      </ol>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("03", "Email", id="email") %}
+    <dl class="facts">
+      <div><dt>Support</dt><dd>{{ ui.open("mailto:support@sonar.show?subject=Sonar%20Support%20Request", "support@sonar.show") }}</dd></div>
+      <div><dt>Typical topics</dt><dd>Sign in, missing podcasts, feed refresh, ratings, reviews, listen later, followers, and profile stats.</dd></div>
+    </dl>
+  {% endcall %}
+
+  {% call ui.sect("04", "FAQ", id="faq") %}
+    <ol class="index index--compact">
+      <li>
+        <details class="index__item">
+          <summary class="index__row"><span class="index__no">01</span><span class="index__title">Why is a podcast or episode missing?</span><span class="index__meta" aria-hidden="true"></span></summary>
+          <div class="index__answer"><p>Sonar searches the Podcast Index catalog. Some publishers have delayed metadata, alternate show names, or RSS feed changes. Send the title and RSS feed URL so it can be checked.</p></div>
+        </details>
+      </li>
+      <li>
+        <details class="index__item">
+          <summary class="index__row"><span class="index__no">02</span><span class="index__title">Why did my rating or review not appear immediately?</span><span class="index__meta" aria-hidden="true"></span></summary>
+          <div class="index__answer"><p>Sonar saves changes automatically and refreshes the feed after updates. If the feed looks stale, reopen the episode or profile page and check your network connection.</p></div>
+        </details>
+      </li>
+      <li>
+        <details class="index__item">
+          <summary class="index__row"><span class="index__no">03</span><span class="index__title">Can I delete or edit a review?</span><span class="index__meta" aria-hidden="true"></span></summary>
+          <div class="index__answer"><p>Reviews are tied to your episode log. Open the episode or review detail in Sonar to update the text, change the rating, or remove the log.</p></div>
+        </details>
+      </li>
+    </ol>
+  {% endcall %}
+{% endblock %}
+{% block foot %}
+  <ul><li><a href="{{ url_for('public.sonar') }}">Overview</a></li><li><a href="{{ url_for('public.sonar_privacy') }}">Privacy</a></li></ul>
+{% endblock %}

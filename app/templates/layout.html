@@ -12,7 +12,7 @@
   <title>{% block title %}Jeremy Zay{% endblock %}</title>
   <meta name="description" content="{% block description %}Personal website and portfolio of Jeremy Zay.{% endblock %}">
   {%- block preview %}{% endblock %}
-  {%- include "_theme.html" %}
+  {%- include "partials/_theme.html" %}
   <link rel="stylesheet" href="{{ url_for('static', filename='site/site.css') }}">
   {%- block head %}{% endblock %}
   <script>
@@ -57,7 +57,7 @@
     <footer class="foot">
       <span>© {{ year }} {{ frame.name }}</span>
       {%- block foot %}{% endblock %}
-      {%- include "_themes.html" %}
+      {%- include "partials/_themes.html" %}
     </footer>
   </div>
   {%- block scripts %}{% endblock %}

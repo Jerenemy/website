@@ -10,7 +10,7 @@ from threading import Event
 
 import requests
 from app import create_app
-from app.clash_royale import SEEDS, SCORES, TrackerError, add_account, api, battle_record, database, normalize_tag, sync
+from app.blueprints.clash_royale import SEEDS, SCORES, TrackerError, add_account, api, battle_record, database, normalize_tag, sync
 
 
 def battle(winner=0, loser=1, timestamp=None, crowns=(1, 0), kind='friendly'):
@@ -34,7 +34,7 @@ class ClashTests(unittest.TestCase):
     def ready(self):
         with database() as db:
             db.execute("INSERT INTO state VALUES ('verified','1')")
-        with patch('app.clash_royale.api', return_value=[]):
+        with patch('app.blueprints.clash_royale.api', return_value=[]):
             sync()
         with database() as db:
             db.execute('UPDATE players SET registered=?, baseline=?', (time.time()-100, time.time()-100))
@@ -61,10 +61,10 @@ class ClashTests(unittest.TestCase):
             db.execute('UPDATE scores SET wins=9 WHERE winner=? AND loser=?', (SEEDS[0][1], SEEDS[1][1]))
         self.app.test_cli_runner().invoke(args=['init-clash-db'])
         self.assertEqual(self.wins(), 9)
-        self.assertIn('overflow-x: auto', Path('app/static/css/pages/will_sucks.css').read_text())
+        self.assertIn('.table { overflow-x: auto; }', Path('app/static/site/site.css').read_text())
 
     def test_baseline_and_verification_gate(self):
-        with patch('app.clash_royale.api', return_value=[battle(timestamp=time.time()-20)]):
+        with patch('app.blueprints.clash_royale.api', return_value=[battle(timestamp=time.time()-20)]):
             sync()
             self.assertEqual(self.wins(), 0)
             with database() as db:
@@ -82,7 +82,7 @@ class ClashTests(unittest.TestCase):
         self.assertEqual(battle_record(match)[0], battle_record(reverse)[0])
         logs = [match, reverse, battle(crowns=(0, 0)), battle(kind='PvP'), battle(timestamp=time.time()-1000)]
         two = battle(); two['team'] = two['team'] * 2; logs.append(two)
-        with patch('app.clash_royale.api', return_value=logs):
+        with patch('app.blueprints.clash_royale.api', return_value=logs):
             sync(); sync()
         self.assertEqual(self.wins(), 1)
         self.assertEqual(self.wins(1, 0), 1)
@@ -96,7 +96,7 @@ class ClashTests(unittest.TestCase):
             if tag == SEEDS[1][1]:
                 raise TrackerError('Timed out')
             return [battle(timestamp=time.time()-5)]
-        with patch('app.clash_royale.api', side_effect=fetch):
+        with patch('app.blueprints.clash_royale.api', side_effect=fetch):
             message, failed = sync()
         self.assertTrue(failed)
         self.assertEqual(self.wins(), 1)
@@ -110,9 +110,9 @@ class ClashTests(unittest.TestCase):
         self.ready()
         tag = '#PPY0289'
         self.assertEqual(normalize_tag(' ppy0289 '), tag)
-        with patch('app.clash_royale.api', side_effect=[{'name': '<New>', 'tag': tag}, []]):
+        with patch('app.blueprints.clash_royale.api', side_effect=[{'name': '<New>', 'tag': tag}, []]):
             add_account('ppy0289', '127.0.0.1')
-        with patch('app.clash_royale.api') as fetch:
+        with patch('app.blueprints.clash_royale.api') as fetch:
             add_account(tag, '127.0.0.1')
             fetch.assert_not_called()
         html = self.client.get('/will-sucks').text
@@ -127,9 +127,9 @@ class ClashTests(unittest.TestCase):
             add_account(tag, '127.0.0.1')
 
     def test_failed_account_and_api_timeout(self):
-        with patch('app.clash_royale.api', side_effect=TrackerError('Player not found')):
+        with patch('app.blueprints.clash_royale.api', side_effect=TrackerError('Player not found')):
             self.assertIn('Player not found', self.post('accounts', tag='#PPY0289').text)
-        with patch('app.clash_royale.requests.get', side_effect=requests.Timeout):
+        with patch('app.blueprints.clash_royale.requests.get', side_effect=requests.Timeout):
             with self.assertRaisesRegex(TrackerError, 'could not be reached'):
                 api(SEEDS[0][1])
         with database() as db:
@@ -137,7 +137,7 @@ class ClashTests(unittest.TestCase):
 
     def test_csrf_missing_credentials_cooldown(self):
         self.assertEqual(self.client.post('/will-sucks/sync').status_code, 400)
-        with patch('app.clash_royale.api', return_value=[]):
+        with patch('app.blueprints.clash_royale.api', return_value=[]):
             sync(manual=True)
             with self.assertRaisesRegex(TrackerError, '60 seconds'):
                 sync(manual=True)
@@ -156,7 +156,7 @@ class ClashTests(unittest.TestCase):
         def run():
             with self.app.app_context():
                 return sync()
-        with patch('app.clash_royale.api', side_effect=fetch), ThreadPoolExecutor(max_workers=1) as pool:
+        with patch('app.blueprints.clash_royale.api', side_effect=fetch), ThreadPoolExecutor(max_workers=1) as pool:
             future = pool.submit(run)
             try:
                 self.assertTrue(started.wait(5))
@@ -167,7 +167,7 @@ class ClashTests(unittest.TestCase):
             future.result()
 
     def test_malformed_payload_and_proxy_ip(self):
-        from app.clash_royale import client_ip
+        from app.blueprints.clash_royale import client_ip
         for malformed in ({}, dict(battle(), team=None), dict(battle(), gameMode=None), dict(battle(), battleTime='bad')):
             self.assertIsNone(battle_record(malformed))
         with self.app.test_request_context(headers={'X-Real-IP': '203.0.113.7'}, environ_base={'REMOTE_ADDR': '127.0.0.1'}):
@@ -179,7 +179,7 @@ class ClashTests(unittest.TestCase):
         self.ready()
         with database() as db:
             db.execute('UPDATE players SET registered=? WHERE tag=?', (time.time()+100, SEEDS[1][1]))
-        with patch('app.clash_royale.api', return_value=[battle()]):
+        with patch('app.blueprints.clash_royale.api', return_value=[battle()]):
             sync()
         self.assertEqual(self.wins(), 0)
 

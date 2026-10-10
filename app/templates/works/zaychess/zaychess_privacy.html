@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "works/zaychess/_zaychess.html" as zaychess with context %}
+{% block title %}Zaychess Privacy Policy · Jeremy Zay{% endblock %}
+{% block description %}Privacy policy for Zaychess for macOS: no account, no analytics, no tracking; game data stays on your device.{% endblock %}
+{% block content %}
+  {{ zaychess.zaychess_head('public.zaychess_privacy', title="Privacy") }}
+
+  {% call ui.sect("01", "Summary") %}
+    <div class="prose">
+      <p class="lede">Zaychess {{ zaychess_current_version }} does not collect analytics or tracking data.</p>
+      <ul>
+        <li>This policy applies to Zaychess version {{ zaychess_current_version }}.</li>
+        <li>No account required.</li>
+        <li>No analytics, tracking or advertising SDKs.</li>
+        <li>Game data stays on your device.</li>
+      </ul>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("02", "Data you provide") %}
+    <div class="prose">
+      <p>If you contact support, you may provide your name, email and message through the support form. This information is used only to respond to your request and is not sold. Messages are delivered to the developer via the site email backend.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("03", "Network use") %}
+    <div class="prose">
+      <p>Multiplayer uses the relay matchmaking server to connect players. There are no gameplay analytics and no account-based telemetry.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("04", "Local storage") %}
+    <div class="prose">
+      <p>Zaychess stores saved games (<code>.chesslog</code>), preferences and local runtime data on your machine. There is no required cloud account or cloud sync.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("05", "Changes") %}
+    <div class="prose">
+      <p>This policy currently corresponds to Zaychess {{ zaychess_current_version }}. If the policy changes, the updated version will be posted on this page.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("06", "Contact") %}
+    <div class="prose">
+      <p>Questions? Use the support form at <a href="{{ url_for('public.zaychess_support') }}#contact">jeremyzay.com/zaychess/support</a>.</p>
+    </div>
+  {% endcall %}
+{% endblock %}
+{% block foot %}
+  <ul><li><a href="{{ url_for('public.zaychess') }}">Zaychess</a></li><li><a href="{{ url_for('public.zaychess_support') }}">Support</a></li></ul>
+{% endblock %}

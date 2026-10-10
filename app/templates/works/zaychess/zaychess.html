@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "works/zaychess/_zaychess.html" as zaychess with context %}
+{% block title %}Zaychess · A chess app for macOS{% endblock %}
+{% block description %}Zaychess is a macOS chess app with local hot-seat play, a configurable AI opponent, online matchmaking and saved games.{% endblock %}
+{% block content %}
+  {{ zaychess.zaychess_head('public.zaychess') }}
+
+  {%- set shots = [
+    ("home-screen.png", "Start fast", "The home screen puts every mode one click away: Local Game, ZayBot, Load Game and Multiplayer.", "Zaychess home screen with Local Game, ZayBot, Load Game and Multiplayer"),
+    ("drag-pawn.png", "Drag and drop", "Move pieces directly on the board. Legal destinations are highlighted as you drag.", "A pawn being dragged on the Zaychess board, its legal squares highlighted"),
+    ("choose-difficulty-aggr.png", "Match setup", "Before a ZayBot match, pick the difficulty on a slider; the aggressiveness for that level is shown as you move it.", "Choosing ZayBot's difficulty level, with its aggressiveness shown"),
+    ("vs-human-ai.png", "Resume a saved game", "When reopening a saved game, continue against another player or hand the other side to the AI.", "The resume prompt: continue a saved game against a human or the AI"),
+    ("waiting-for-opponent.png", "Online matchmaking", "Queue for an online game through the relay server; the waiting screen lets you cancel at any time.", "The multiplayer waiting screen while matchmaking"),
+  ] %}
+  {%- for file, title, text, alt in shots %}
+  {% call ui.show('%02d' % loop.index, title, text, device="window", flip=loop.index is even) %}
+    <img src="{{ url_for('static', filename='zaychess/img/' ~ file) }}" alt="{{ alt }}" loading="lazy">
+  {% endcall %}
+  {%- endfor %}
+
+  {% call ui.sect('%02d' % (shots | length + 1), "What it does") %}
+    <h2 class="sect__title">Three ways to play, and every game kept.</h2>
+    <ol class="points">
+      <li><span class="no">01</span><h3>ZayBot and Serendipity</h3><p>An AI opponent across 11 difficulty levels, its lower levels biased in style from passive to hyper-aggressive.</p></li>
+      <li><span class="no">02</span><h3>Local and online play</h3><p>Face to face on one Mac with automatic board flipping, or online through the relay server's matchmaking.</p></li>
+      <li><span class="no">03</span><h3>Portable sessions</h3><p>Save games to .chesslog files, load them later, and undo or redo with AI-aware reconstruction.</p></li>
+    </ol>
+  {% endcall %}
+
+  {% call ui.sect('%02d' % (shots | length + 2), "Facts") %}
+    <dl class="facts">
+      <div><dt>Platform</dt><dd>macOS{% if zaychess_min_macos %} {{ zaychess_min_macos }}+{% endif %}</dd></div>
+      {%- if zaychess_current_version %}
+      <div><dt>Version</dt><dd>{{ zaychess_current_version }}</dd></div>
+      {%- endif %}
+      <div><dt>Distribution</dt><dd>Mac App Store</dd></div>
+      <div><dt>Saved games</dt><dd>.chesslog</dd></div>
+      <div><dt>Data</dt><dd>No account, no tracking</dd></div>
+    </dl>
+  {% endcall %}
+{% endblock %}
+{% block foot %}
+  <ul><li><a href="{{ url_for('public.zaychess_support') }}">Support</a></li><li><a href="{{ url_for('public.zaychess_privacy') }}">Privacy</a></li></ul>
+{% endblock %}

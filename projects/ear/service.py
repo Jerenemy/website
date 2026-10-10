@@ -196,13 +196,13 @@ load_index()
 @app.route('/')
 def index():
     # Pass 'debug' status to the template
-    return render_template('ear/index.html', debug=app.debug)
+    return render_template('works/ear/index.html', debug=app.debug)
 
 @app.route('/ce-loss')
 @app.route('/ear/ce-loss')
 def ce_loss():
     # Pass 'debug' status to the template
-    return render_template('ear/ce_loss.html', debug=app.debug)
+    return render_template('works/ear/ce_loss.html', debug=app.debug)
 
 
 @app.route('/data/<path:filename>')

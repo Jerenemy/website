@@ -74,7 +74,7 @@ html:not(.gl) body { display: grid; grid-template-columns: auto 1fr; align-conte
 html:not(.gl) .masthead { grid-area: 1 / 1; }
 html:not(.gl) .links { grid-area: 1 / 2; justify-self: end; }
 html:not(.gl) main { grid-area: 2 / 1 / auto / -1; min-width: 0; }
-/* The theme switcher (templates/_themes.html): the themes by name, the current one in full ink. */
+/* The theme switcher (templates/partials/_themes.html): the themes by name, the current one in full ink. */
 .themes ul { display: flex; gap: 20px; flex-wrap: wrap; }
 .themes a { color: var(--stone-low); transition: color 0.25s var(--ease); }
 .themes a:hover, .themes a:focus-visible, .themes a[aria-current="true"] { color: var(--stone); }

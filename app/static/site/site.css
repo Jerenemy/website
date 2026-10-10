@@ -1,7 +1,7 @@
 /* THE DESIGN LANGUAGE. Every page but the homepage scene is built from the pieces in this file,
    and this file holds no values of its own: colours, type, space and timing all come from
    static/site/tokens.css (and the active theme). Templates: templates/layout.html and the
-   macros in templates/_ui.html. The written guide: static/site/README.md.
+   macros in templates/partials/_ui.html. The written guide: static/site/README.md.
 
    The homepage is the reference. Its rules carry over: one family in two voices (the small
    tracked LABEL, the sentence-case TEXT), an 8 px grid, hairlines instead of boxes, numbers
@@ -302,7 +302,7 @@ details.index__item .index__answer > * + * { margin-top: var(--s2); }
 .foot a { transition: color var(--t-mid) var(--ease); }
 .foot a:hover, .foot a:focus-visible { color: var(--ink); }
 .foot ul { display: flex; gap: var(--s3); margin: 0; padding: 0; list-style: none; }
-/* The theme switcher (templates/_themes.html): the themes by name, the current one in ink. */
+/* The theme switcher (templates/partials/_themes.html): the themes by name, the current one in ink. */
 .foot .themes ul { flex-wrap: wrap; gap: var(--s2); }
 .foot .themes a[aria-current="true"] { color: var(--ink); }
 
