@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "works/sonar/_sonar.html" as sonar with context %}
+{% block title %}Sonar · Podcast ratings and reviews{% endblock %}
+{% block description %}Sonar is an iOS app for tracking, rating, reviewing, and discovering podcast episodes.{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='site/works/sonar.css') }}">
+{% endblock %}
+{% block content %}
+  {{ sonar.sonar_head('public.sonar') }}
+
+  {#- The app itself, drawn in its own colours: the one place on the page they belong. -#}
+  {% call ui.show("01", "Radar", "A feed shaped by the people whose taste you trust: what they heard, how they rated it, what they had to say.", device="phone") %}
+    <div class="app-sonar" role="img" aria-label="Sonar's Radar feed: three episodes logged by people you follow, each with its rating in dots.">
+      <div class="app-sonar__status" aria-hidden="true"><span>9:41</span><span class="app-sonar__island"></span><span class="app-sonar__bars"></span></div>
+      <div class="app-sonar__top" aria-hidden="true"><span>Radar</span><span class="app-sonar__avatar"></span></div>
+      <div class="app-sonar__rings" aria-hidden="true"><span></span><span></span><span></span></div>
+      <ul class="app-sonar__feed" aria-hidden="true">
+        <li>
+          <span class="app-sonar__cover"></span>
+          <span class="app-sonar__text"><b>The Daily Audio Lab</b><small>Avery reviewed “How sound changes memory”</small>
+            <span class="app-sonar__dots" data-score="8"><i></i><i></i><i></i><i></i><i class="off"></i></span></span>
+        </li>
+        <li>
+          <span class="app-sonar__cover"></span>
+          <span class="app-sonar__text"><b>Signal Path</b><small>Mina logged “The best interview formats”</small>
+            <span class="app-sonar__dots" data-score="9"><i></i><i></i><i></i><i></i><i class="half"></i></span></span>
+        </li>
+        <li>
+          <span class="app-sonar__cover"></span>
+          <span class="app-sonar__text"><b>Open Channels</b><small>You saved “A short guide to better notes”</small>
+            <span class="app-sonar__dots"><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></span></span>
+        </li>
+      </ul>
+      <div class="app-sonar__tabbar" aria-hidden="true"><span class="on"></span><span></span><span></span><span></span></div>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("02", "What it does") %}
+    <h2 class="sect__title">Remember what you heard.</h2>
+    <ol class="points">
+      <li><span class="no">01</span><h3>Log every episode</h3><p>Mark an episode listened, loved, reviewed or saved for later, with the context of why it mattered.</p></li>
+      <li><span class="no">02</span><h3>Rate with signal</h3><p>A 1–10 scale in half steps, drawn in Sonar's dot language.</p></li>
+      <li><span class="no">03</span><h3>Follow better taste</h3><p>Recent reviews from people you follow, and a listening graph built on recommendations you trust.</p></li>
+      <li><span class="no">04</span><h3>Keep a later list</h3><p>A queue for the episodes worth coming back to.</p></li>
+    </ol>
+  {% endcall %}
+
+  {% call ui.sect("03", "The episode") %}
+    <div class="prose">
+      <p class="lede">Sonar treats a podcast episode as first-class media: searchable, rateable, reviewable, and connected to the people whose taste you care about.</p>
+      <p>Each episode page collects its average rating, the distribution of ratings and the reviews of its listeners. Your own log becomes a searchable record of what you heard and how you felt about it.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("04", "Facts") %}
+    <dl class="facts">
+      <div><dt>Platform</dt><dd>iPhone, iOS</dd></div>
+      <div><dt>Ratings</dt><dd>1–10, in half steps</dd></div>
+      <div><dt>Catalogue</dt><dd>Podcast Index</dd></div>
+      <div><dt>Support</dt><dd><a class="link" href="mailto:support@sonar.show">support@sonar.show</a></dd></div>
+    </dl>
+  {% endcall %}
+{% endblock %}
+{% block foot %}
+  <ul><li><a href="{{ url_for('public.sonar_support') }}">Support</a></li><li><a href="{{ url_for('public.sonar_privacy') }}">Privacy</a></li></ul>
+{% endblock %}

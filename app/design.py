@@ -36,7 +36,7 @@ def _has_scene(static_folder: str, theme: str) -> bool:
 
 
 def theme_choices(static_folder: str, current: str) -> list[dict]:
-    """The switcher's rows (templates/_themes.html): the default first, then the rest by name,
+    """The switcher's rows (templates/partials/_themes.html): the default first, then the rest by name,
     the hidden ones left out (the current theme stays listed even when hidden, so it reads as chosen)."""
     names = [DEFAULT_THEME] + sorted(name for name in _themes(static_folder) - {DEFAULT_THEME}
                                      if name == current or name not in _hidden(static_folder))

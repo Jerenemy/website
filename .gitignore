@@ -14,7 +14,6 @@
 !app/
 !app/config.py
 !app/extensions.py
-!app/wtt.py
 !app/design.py
 # !tests/
 # !tests/test_wtt.py
@@ -29,20 +28,16 @@
 # blueprints ear
 !app/blueprints/ear
 !app/blueprints/ear/*
-# templates
-!app/templates
-!app/templates/*
-!app/templates/ear
-!app/templates/ear/*
-# templates admin
-!app/templates/admin/
-!app/templates/admin/*
-# templates zaychess
-!app/templates/zaychess
-!app/templates/zaychess/*
-# templates sonar
-!app/templates/sonar
-!app/templates/sonar/*
+# blueprints that are one module each: wtt signups, the job bot's review pages, the clash table
+!app/blueprints/wtt/
+!app/blueprints/wtt/__init__.py
+!app/blueprints/jobbot/
+!app/blueprints/jobbot/__init__.py
+!app/blueprints/clash_royale/
+!app/blueprints/clash_royale/__init__.py
+# templates: every folder ships whole (partials/, blog/, works/, admin/, ...)
+!app/templates/
+!app/templates/**
 # static
 !app/static
 # static css
@@ -52,8 +47,6 @@
 !app/static/css/pages/*
 # static vendor
 !app/static/vendor
-!app/static/vendor/glightbox
-!app/static/vendor/glightbox/*
 # pdf.js (Mozilla, Apache-2.0), versioned by its folder: renders the posters from their PDFs
 # (static/site/pdf-figure.js). The .mjs builds are renamed .js so any nginx serves them as JavaScript.
 !app/static/vendor/pdfjs-6.4.299/
@@ -135,8 +128,7 @@ app/blog/*.pyc
 !app/blog_posts
 !app/blog_posts/*
 
-# Clash Royale tracker source, tests, and scheduler (runtime data stays ignored)
-!app/clash_royale.py
+# Clash Royale tracker tests and scheduler (runtime data stays ignored)
 !tests/
 !tests/test_clash_royale.py
 !tests/test_home.py
@@ -165,6 +157,8 @@ app/blog/*.pyc
 !design/homepage-demo/tools/
 !design/homepage-demo/tools/*
 
-# Job application bot review pages (admin) and their tests
-!app/jobbot.py
+# Job application bot review pages (admin): their tests
 !tests/test_jobbot.py
+
+# macOS folder metadata, wherever an allowlist above reaches
+.DS_Store

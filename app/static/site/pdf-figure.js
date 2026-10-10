@@ -1,4 +1,4 @@
-// A figure drawn from its PDF (templates/_ui.html, ui.pdf_figure): the first page is rendered
+// A figure drawn from its PDF (templates/partials/_ui.html, ui.pdf_figure): the first page is rendered
 // by pdf.js from the vector original, at the screen's own resolution, over the image that stands
 // in for it until then (and for good, if the PDF or pdf.js cannot be had). Each figure loads its
 // PDF only as it nears the screen, and draws again when its width changes.

@@ -44,7 +44,7 @@ export function createInterface({ person, works, scaled, onFocus, onActivate, on
   const root = document.documentElement;
   const canvas = $('stage');
   const masthead = $('masthead'), rail = $('rail'), links = $('links'), caption = $('caption'), head = $('head');
-  const themes = $('themes');   // the theme switcher (templates/_themes.html), when the page has one
+  const themes = $('themes');   // the theme switcher (templates/partials/_themes.html), when the page has one
   const soundToggle = $('sound');   // the speaker (src/sound.js), when the page has one
   const leader = $('leader'), dock = $('dock'), tag = $('tag'), tagNo = $('tag-no'), tagTitle = $('tag-title');
   const layers = [$('cap-a'), $('cap-b')].map((el) => ({ el, no: el.querySelector('.no'), title: el.querySelector('.title') }));

@@ -1,10 +1,14 @@
 import os
-from flask import Flask, redirect # <--- Add 'redirect' here
+from flask import Flask
 from dotenv import load_dotenv
+from . import design
 from .blueprints.public import bp as public_bp
 from .blueprints.api import bp as api_bp
 from .blueprints.admin import bp as admin_bp
 from .blueprints.ear import bp as ear_bp
+from .blueprints.wtt import bp as wtt_bp, init_db_command as init_wtt_command
+from .blueprints.jobbot import bp as jobbot_bp
+from .blueprints.clash_royale import bp as clash_bp, init_command, sync_command, verify_command
 from .extensions import mail
 from .config import Config
 
@@ -31,20 +35,13 @@ def create_app():
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(ear_bp, url_prefix="/ear")
-    from .wtt import bp as wtt_bp, init_db_command
-    app.register_blueprint(wtt_bp)
-    app.cli.add_command(init_db_command)
-    
-    from .jobbot import bp as jobbot_bp
-    app.register_blueprint(jobbot_bp)
-
-    from .clash_royale import bp as clash_bp, init_command, sync_command, verify_command
-    app.register_blueprint(clash_bp)
-    for command in (init_command, sync_command, verify_command):
+    app.register_blueprint(wtt_bp)          # /wtt and /admin/wtt
+    app.register_blueprint(jobbot_bp)       # /admin/jobs, a client of the getmeajob API
+    app.register_blueprint(clash_bp)        # /will-sucks
+    for command in (init_wtt_command, init_command, sync_command, verify_command):
         app.cli.add_command(command)
 
     # the site's look: theme, frame and place in the loop for every template (app/design.py)
-    from . import design
     design.init_app(app)
 
     # initialize extensions

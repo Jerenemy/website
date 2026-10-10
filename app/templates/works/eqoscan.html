@@ -1,0 +1,116 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}eQoScan · Reusable container tracking{% endblock %}
+{% block description %}eQoScan is a credit-based system for tracking reusable food containers on university campuses.{% endblock %}
+{% block content %}
+  {% call ui.head("eQoScan", line="A credit-based system for tracking reusable food containers on university campuses. Winner of the Internship Prize at WesHack.", where="Project") %}
+    {{ ui.open("#contact", "Request access") }}
+  {% endcall %}
+
+  {% call ui.show("01", "Demo", "Checking a container out and returning it in the eQoScan app.", device="window") %}
+    <video controls preload="metadata">
+      <source src="{{ url_for('static', filename='video/eqoscan_demo.mp4') }}" type="video/mp4">
+      <source src="{{ url_for('static', filename='video/eqoscan_demo.mp4') }}" type="video/quicktime">
+      Your browser does not support the video tag.
+    </video>
+  {% endcall %}
+
+  {% call ui.sect("02", "How it works", id="how-it-works") %}
+    <h2 class="sect__title">Track and return in seconds.</h2>
+    <ol class="points">
+      <li><span class="no">01</span><h3>Scan the location</h3><p>At a dining hall or return station, scan the location QR code in the eQoScan app.</p></li>
+      <li><span class="no">02</span><h3>Scan the container</h3><p>Scan the unique QR code on the reusable food container to link it to your account.</p></li>
+      <li><span class="no">03</span><h3>Credits update</h3><p>Your digital credits update instantly. Return containers to earn credits back for your next meal.</p></li>
+    </ol>
+  {% endcall %}
+
+  {% call ui.sect("03", "Features", id="features") %}
+    <ol class="points">
+      <li><span class="no">01</span><h3>University sign-in</h3><p>Sign-in with university Google accounts, so only authorized students can use the system.</p></li>
+      <li><span class="no">02</span><h3>Location history</h3><p>A map shows where and when you last checked out or returned a container.</p></li>
+      <li><span class="no">03</span><h3>Real-time database</h3><p>Firebase keeps the student app and the administrative dashboard in sync.</p></li>
+    </ol>
+  {% endcall %}
+
+  {% call ui.sect("04", "Facts") %}
+    <dl class="facts">
+      <div><dt>Recognition</dt><dd>Internship Prize, WesHack</dd></div>
+      <div><dt>Built for</dt><dd>University dining programs</dd></div>
+      <div><dt>Sign-in</dt><dd>University Google accounts</dd></div>
+      <div><dt>Web app</dt><dd>Python, Flask, Bootstrap, JavaScript</dd></div>
+      <div><dt>Mobile app</dt><dd>Swift</dd></div>
+      <div><dt>Database</dt><dd>Firebase, real time</dd></div>
+    </dl>
+  {% endcall %}
+
+  {#- The script below posts this form to /api/contact as JSON, the organisation folded into the message. #}
+  {% call ui.sect("05", "Team") %}
+    <div class="prose">
+      <p class="lede">Built in a weekend at WesHack, Wesleyan's hackathon, where it won the Internship Prize.</p>
+      <p>Two applications work in concert. With Yehor Mishchyriak, I built the web application: a dynamic QR code system, an interactive dashboard for the institution running the program, and the real-time database that bridges the web and mobile apps. Ambrose Vannier and Samvit Prem Singhal built the mobile app in Swift.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("06", "Contact", id="contact") %}
+    <h2 class="sect__title">Bring eQoScan to your campus.</h2>
+    <p class="note">Request a demo or technical documentation.</p>
+    <form id="contact-form" class="form">
+      <p class="field">
+        <label for="contact-name">Contact name</label>
+        <input id="contact-name" name="name" type="text" autocomplete="name" required>
+      </p>
+      <p class="field">
+        <label for="contact-email">University or work email</label>
+        <input id="contact-email" name="email" type="email" autocomplete="email" required>
+      </p>
+      <p class="field">
+        <label for="org-input">University or organization</label>
+        <input id="org-input" type="text" autocomplete="organization" required>
+      </p>
+      <p class="field">
+        <label for="message-input">Message (optional)</label>
+        <textarea id="message-input" rows="4" placeholder="Your dining system, your timeline"></textarea>
+      </p>
+      <button type="submit" class="open send"><span>Request information</span>{{ ui.arrow() }}</button>
+      <p id="contact-status" class="status" role="status" aria-live="polite"></p>
+    </form>
+  {% endcall %}
+{% endblock %}
+{% block scripts %}
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("contact-form");
+      const status = document.getElementById("contact-status");
+      if (!form) return;
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        status.textContent = "Sending…";
+        const data = Object.fromEntries(new FormData(form).entries());
+        const orgName = document.getElementById("org-input").value;
+        const userMessage = document.getElementById("message-input").value;
+        // The organisation leads the message so it is clear in the email that arrives.
+        const payload = {
+          name: data.name,
+          email: data.email,
+          message: `ORGANIZATION: ${orgName}\n\nMESSAGE:\n${userMessage ? userMessage : "No additional message provided."}`,
+        };
+        try {
+          const response = await fetch("/api/contact", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (response.ok) {
+            status.textContent = "Request sent. We'll be in touch shortly.";
+            form.reset();
+          } else {
+            status.textContent = "Failed to send. Please try again.";
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          status.textContent = "Network error. Please check your connection.";
+        }
+      });
+    });
+  </script>
+{% endblock %}

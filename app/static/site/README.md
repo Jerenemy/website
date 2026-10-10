@@ -14,9 +14,9 @@ boxes, numbers for order, and **one point of colour per page that means "you are
 | `static/site/site.js` | Arrival (reveal) and leaving (page fade where View Transitions are missing). | change the motion's logic (timings are tokens). |
 | `static/site/works/<work>.css` | A work's *rendering of itself* (an app screen), scoped to `.app-<work>`. | draw a product. |
 | `templates/layout.html` | The page: head, frame, main, pager, foot. | change every page's skeleton. |
-| `templates/_ui.html` | The pieces as Jinja macros. | add a piece. |
-| `templates/_theme.html` | The icon, the tokens and the active theme, for any `<head>`. | — |
-| `templates/_themes.html` | The theme switcher: every theme on disk, the current one marked; in every page's foot and the homepage's corner. | — |
+| `templates/partials/_ui.html` | The pieces as Jinja macros. | add a piece. |
+| `templates/partials/_theme.html` | The icon, the tokens and the active theme, for any `<head>`. | — |
+| `templates/partials/_themes.html` | The theme switcher: every theme on disk, the current one marked; in every page's foot and the homepage's corner. | — |
 | `app/design.py` | The active theme, the switcher's rows, the frame's links, the page's place in the works loop. | — |
 
 ### Themes
@@ -70,7 +70,7 @@ wear its own colours and type, styled in `static/site/works/<work>.css` and scop
 
 ```jinja
 {% extends "layout.html" %}
-{% import "_ui.html" as ui with context %}      {# with context: the pieces read work_nav #}
+{% import "partials/_ui.html" as ui with context %}  {# with context: the pieces read work_nav #}
 {% block title %}Name · Jeremy Zay{% endblock %}
 {% block description %}One sentence for search and previews.{% endblock %}
 {% block content %}

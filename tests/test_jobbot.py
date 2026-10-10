@@ -48,7 +48,7 @@ class JobBotPageTests(unittest.TestCase):
         self.client = self.app.test_client()
         self.calls = []
         self.responses = {}
-        patcher = patch("app.jobbot.requests.request", side_effect=self.fake_request)
+        patcher = patch("app.blueprints.jobbot.requests.request", side_effect=self.fake_request)
         patcher.start()
         self.addCleanup(patcher.stop)
 

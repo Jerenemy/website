@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% import "_ui.html" as ui with context %}
+{% import "partials/_ui.html" as ui with context %}
 {#- The contact form; static/js/contact.js posts it to /api/contact as JSON. method/action matter
     only without JavaScript: the browser then posts the form itself (never into a URL) and
     /api/contact answers with this page again, its outcome in the status line. #}
@@ -7,7 +7,7 @@
 {% block description %}{{ site_settings.home_description | striptags }}{% endblock %}
 {% block preview %}
   {%- set preview_title = "Contact · Jeremy Zay" %}
-  {%- include "_preview_meta.html" %}
+  {%- include "partials/_preview_meta.html" %}
 {%- endblock %}
 {% block content %}
   {{ ui.head("Contact", where="Contact") }}

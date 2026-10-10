@@ -1,6 +1,6 @@
 {#- The private pages' own pieces, on top of _ui.html. Their styles are static/css/pages/admin.css
     (jobs.css for the application pages). Import with: {% import "admin/_admin.html" as admin with context %} -#}
-{% import "_ui.html" as ui %}
+{% import "partials/_ui.html" as ui %}
 
 {#- The admin's own pages, as tabs under the head, the current one lit; logging out closes the row. -#}
 {% macro nav(current) -%}

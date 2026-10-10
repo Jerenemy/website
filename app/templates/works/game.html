@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Asteroids · {{ frame.name }}{% endblock %}
+{% block description %}Asteroids, a browser game, and its leaderboard.{% endblock %}
+{% block content %}
+  {% call ui.head("Asteroids", line=work_nav.work.line if work_nav else None, where="Game") %}
+    {{ ui.open(url_for('static', filename='game/index.html'), "Play", external=True) }}
+  {% endcall %}
+
+  {#- static/js/leaderboard.js reads /api/leaderboard and writes its rows into #lb as a table. #}
+  {% call ui.sect("01", "Leaderboard", id="leaderboard") %}
+    <div class="table" id="lb"><p class="note" role="status">Loading…</p></div>
+  {% endcall %}
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/leaderboard.js') }}" defer></script>
+{% endblock %}
