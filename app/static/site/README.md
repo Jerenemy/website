@@ -66,6 +66,14 @@ A page about a product may render the product itself. The rendering sits in a ne
 wear its own colours and type, styled in `static/site/works/<work>.css` and scoped to
 `.app-<work>`. Outside the device, the page is the site's. Screenshots go in the same devices.
 
+## A product's own page
+
+One exception: a page whose job is to sell an app people can download may wear the app's
+world from edge to edge, inside the site's frame (masthead, links, pager, foot). `/sonar` is
+the one such page: its world is `static/site/works/sonar.css`, scoped to `.sn` with its own
+`--sn-*` tokens, its script and images are in `static/sonar/`. Its support and privacy pages
+stay the site's.
+
 ## Building a page
 
 ```jinja
