@@ -1,46 +1,74 @@
 {% extends "layout.html" %}
 {% import "partials/_ui.html" as ui with context %}
 {#- The page about the person: the homepage's first block (the portfolio item "me", kind "about").
-    The words are Jeremy's own and live here, not in the portfolio store. The photos are
-    static/img/me*.jpeg; the year under each is the date in the photo's own file. #}
-{% block title %}Me · {{ frame.name }}{% endblock %}
-{% block description %}Jeremy Zay, in his own words: a childhood without screens, a Waldorf school, an Asteroids clone, Wesleyan, art and computer science.{% endblock %}
+    It is for whoever is hiring: what he builds, where he has worked, what he knows. The words
+    live here, not in the portfolio store. The personal story is its own page (me_story.html),
+    reached only from this page's last section. #}
+{% block title %}About · {{ frame.name }}{% endblock %}
+{% block description %}Jeremy Zay is a software engineer and machine learning researcher who ships whole products: iOS and macOS apps, a chess engine, diffusion models, and this site.{% endblock %}
 {% block content %}
-  {{ ui.head("Me") }}
-
-  {% call ui.sect("01", "Portrait", wide=True) %}
-    <figure class="figure figure--plain figure--photo">
-      <img src="{{ url_for('static', filename='img/me.jpeg') }}" alt="Jeremy Zay in a red graduation cap, looking down" width="1920" height="1280" style="--ratio: 3 / 2" decoding="async" fetchpriority="high">
-      <figcaption><span class="no">Fig 01</span><span class="t">2026</span></figcaption>
-    </figure>
+  {% call ui.head("Jeremy Zay", line="Software engineer and machine learning researcher. I build whole products, from the model to the interface.") %}
+    {{ ui.open(url_for('public.resume'), "Résumé", external=True) }}
+    {{ ui.open("https://github.com/Jerenemy", "GitHub", external=True) }}
+    {{ ui.open("https://www.linkedin.com/in/jeremy-zay/", "LinkedIn", external=True) }}
+    {{ ui.open(url_for('public.contact'), "Contact") }}
   {% endcall %}
 
-  {% call ui.sect("02", "Growing up") %}
+  {% call ui.sect("01", "Summary") %}
     <div class="prose">
-      <p class="lede">I come from an environment where technology was highly discouraged, if not banned. In a way it benefitted me; meant that instead of being addicted to video games as a child I was addicted to reading, legos, and strat-o-matic baseball cards. My dad even gave me his cards from the 80’s, and I treasured the mythical AAA base-runner Rickey Henderson. For a time I lost it and I’d make wishes at 4:44pm that I’d one day find the card. It’s lost now.</p>
-    </div>
-    <figure class="figure figure--plain figure--photo">
-      <img src="{{ url_for('static', filename='img/me-little.jpeg') }}" alt="Jeremy as a child, grinning at the rail of a lookout tower above a forest" width="1600" height="1195" style="--ratio: 1600 / 1195" loading="lazy" decoding="async">
-      <figcaption><span class="no">Fig 02</span><span class="t">2011</span></figcaption>
-    </figure>
-    <div class="prose">
-      <p>At school we learned cursive, string games, and to identify skunk cabbage in the woods. We played capture the flag, but my friend and I hid the flag too well which kinda broke the game. We slept in a teepee and woke up at sunrise to milk the cows across the street. We snuck out and hid from our teacher chaperone under the piano in the Eurythmy room.</p>
-      <p>Phones were banned in high school, so was typing notes, and there were certainly no CS classes offered. Math sufficed. For my independent senior project I decided to teach myself to harness this magic, until it was demystified and materialized into an Asteroids clone built in Python. Before ChatGPT, this was an accomplishment.</p>
+      <p class="lede">I graduated from Wesleyan in 2026 with majors in computer science, mathematics and integrative sciences. I like owning a thing end to end: the research, the backend, the interface, the tests, and the release.</p>
+      <p>Everything linked from this site I designed and built myself: two apps on the App Store, an AlphaZero-style chess engine, generative models that design drug candidates, and the site itself, an impossible-geometry scene written in WebGL with its own shaders, served by a Flask app with its own editor behind it.</p>
     </div>
   {% endcall %}
 
-  {% call ui.sect("03", "Wesleyan", wide=True) %}
-    <div class="pair">
-      <figure class="figure figure--plain figure--photo">
-        <img src="{{ url_for('static', filename='img/me-drawing.jpeg') }}" alt="Jeremy at a kitchen table, drawing a face in a sketchbook" width="1200" height="1600" style="--ratio: 3 / 4" loading="lazy" decoding="async">
-        <figcaption><span class="no">Fig 03</span><span class="t">2026</span></figcaption>
-      </figure>
-      <div>
-        <div class="prose">
-          <p>I decided I’d attend the college closest to Waldorf: Wesleyan. I didn’t want to choose between art and CS. I made an art instagram account with the bio “Aspiring starving artist”. It’s since been abandoned. I realized that CS is art too: “Every creative thought is art” said Beuys.</p>
-          <p>Enjoy this calm, non-technical alcove of my website.</p>
-        </div>
-      </div>
-    </div>
+  {% call ui.sect("02", "Built") %}
+    <ol class="index" aria-label="Things I built">
+      {%- for title, meta, line, href, external in [
+        ("Sonar", "iOS app", "Ratings and reviews for podcasts. Designed, built and shipped to the App Store.", url_for('public.sonar'), False),
+        ("Zaychess", "macOS app", "A chess app on the Mac App Store with local, LAN and engine play: game state, move validation, networking and interface, all mine.", url_for('public.zaychess'), False),
+        ("ZayBot", "Engine", "An AlphaZero-style chess engine: self-play, a policy–value network and tree search.", url_for('public.blog_post', slug='zaybot'), False),
+        ("Curve Explorer", "Chatham Financial", "Owned a feature in ONYX Pro end to end: React, TypeScript, C#/.NET APIs, 90% test coverage. Cut more than ten manual steps.", url_for('public.blog_post', slug='chatham-financial-internship'), False),
+        ("Molecule design", "Research", "Diffusion and reinforcement learning models that generate drug candidates for mutant p53. Presented at three conferences.", url_for('public.posters'), False),
+        ("Polydiff", "Research", "A diffusion model that draws polygons.", url_for('public.blog_post', slug='polydiff'), False),
+        ("KArchive", "Web app", "A searchable video archive that answers questions with citations.", "https://karchive.dad", True),
+        ("eQoScan", "Hackathon prize", "Time-bound QR codes for reusable containers. Led a team of four; won a prize at WesHack 2024.", url_for('public.eqoscan'), False),
+      ] %}
+      <li><a class="index__row" href="{{ href }}"{% if external %} target="_blank" rel="noopener"{% endif %}>
+        <span class="index__no" aria-hidden="true">{{ '%02d' % loop.index }}</span>
+        <span class="index__title">{{ title }}</span>
+        <span class="index__meta">{{ meta }}</span>
+        <span class="index__line">{{ line }}</span>
+      </a></li>
+      {%- endfor %}
+    </ol>
+  {% endcall %}
+
+  {% call ui.sect("03", "Experience") %}
+    <dl class="facts">
+      <div><dt>2026</dt><dd>Software Engineer Intern, Chatham Financial. Built Curve Explorer in ONYX Pro.</dd></div>
+      <div><dt>2024–2026</dt><dd>Lab Researcher, Thayer Lab, Wesleyan. Guided diffusion models for protein-targeted molecule generation in PyTorch; candidates reached −8.76 kcal/mol against p53 Y220C.</dd></div>
+      <div><dt>2022–2026</dt><dd>Teaching Assistant, Wesleyan. Four core CS courses (Python, C, AI, HPC), 100+ students.</dd></div>
+    </dl>
+  {% endcall %}
+
+  {% call ui.sect("04", "Education") %}
+    <dl class="facts">
+      <div><dt>Wesleyan University</dt><dd>BA, Computer Science, Mathematics and Integrative Sciences, 2026. GPA 3.76.</dd></div>
+      <div><dt>Coursework</dt><dd>Graduate machine learning, artificial intelligence, algorithms and complexity, program analysis, computer networks, probability and statistics, real analysis.</dd></div>
+    </dl>
+  {% endcall %}
+
+  {% call ui.sect("05", "Tools") %}
+    <dl class="facts">
+      <div><dt>Languages</dt><dd>Python, TypeScript, JavaScript, Swift, Java, C, C#, SQL, OCaml, GLSL, Bash</dd></div>
+      <div><dt>Machine learning</dt><dd>PyTorch, NumPy, pandas, scikit-learn, RDKit</dd></div>
+      <div><dt>Product</dt><dd>React, Flask, .NET, iOS and macOS, Three.js / WebGL, Vitest</dd></div>
+      <div><dt>Infrastructure</dt><dd>Git, Docker, Linux, HPC clusters, CI</dd></div>
+    </dl>
+  {% endcall %}
+
+  {% call ui.sect("06", "Elsewhere") %}
+    <p class="note">There is a longer story about where I come from, for anyone curious.</p>
+    <div class="actions">{{ ui.open(url_for('public.me_story'), "Background", quiet=True) }}</div>
   {% endcall %}
 {% endblock %}

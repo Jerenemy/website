@@ -212,6 +212,8 @@ details.index__item .index__answer > * + * { margin-top: var(--s2); }
 /* A photograph is seen whole: never taller than the screen, narrowing to keep its shape. The
    image gives its shape as --ratio (width / height), so it holds its size before it loads. */
 .figure--photo img { max-width: min(100%, (100svh - 2 * var(--s8)) * var(--ratio, 1)); }
+/* An inset photograph sits in the reading column at a snapshot's size, not the screen's. */
+.figure--inset img { max-width: min(100%, var(--inset)); }
 
 .device--window { overflow: hidden; border-radius: var(--radius-window); background: var(--surface); box-shadow: var(--shadow-device); }
 .device--window::before {

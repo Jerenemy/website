@@ -68,6 +68,7 @@
   --heading-weight: 400;
   --strong-weight: 500;
   --measure: 64ch;               /* the longest comfortable line of reading text */
+  --inset: 320px;                /* the widest a photograph set into reading text is drawn */
 
   /* ---------------------------------------------------------------- space
      An 8 px grid. --margin is the page's edge, the same as the homepage's. */
