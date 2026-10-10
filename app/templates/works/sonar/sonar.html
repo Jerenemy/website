@@ -1,67 +1,203 @@
 {% extends "layout.html" %}
 {% import "partials/_ui.html" as ui with context %}
-{% import "works/sonar/_sonar.html" as sonar with context %}
-{% block title %}Sonar · Podcast ratings and reviews{% endblock %}
-{% block description %}Sonar is an iOS app for tracking, rating, reviewing, and discovering podcast episodes.{% endblock %}
+{#- Sonar's own page: the one place on the site that wears a product's colours outside a device,
+    because its job is to sell the app (static/site/README.md, "A product's own page"). The
+    world is styled in static/site/works/sonar.css under .sn; the rater is static/sonar/sonar.js. -#}
+
+{#- The App Store link. Empty until Sonar is live: the buttons then say "Coming soon" and offer
+    to email when it launches. Paste the apps.apple.com URL here and every button becomes a download. -#}
+{%- set app_store_url = "" %}
+{%- set notify_url = "mailto:support@sonar.show?subject=Tell%20me%20when%20Sonar%20launches" %}
+{%- set img = url_for('static', filename='sonar/img/') %}
+
+{% macro get_sonar(where) -%}
+{%- if app_store_url %}
+<a class="sn-get" href="{{ app_store_url }}" target="_blank" rel="noopener" data-where="{{ where }}">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span><small>Free on iPhone</small>Get it on the App Store</span><span class="sr"> (opens in a new tab)</span>
+</a>
+{%- else %}
+<a class="sn-get" href="{{ notify_url }}" data-where="{{ where }}">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.6" fill="currentColor"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" opacity=".7"/><circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".4"/></svg>
+  <span><small>Coming soon to the App Store</small>Tell me when it launches</span>
+</a>
+{%- endif %}
+{%- endmacro %}
+
+{% macro phone(name, alt, cls="") -%}
+<img class="sn-phone {{ cls }}" src="{{ img }}phone-{{ name }}.webp" alt="{{ alt }}" width="880" height="1792" loading="{{ 'eager' if 'hero' in cls else 'lazy' }}" decoding="async">
+{%- endmacro %}
+
+{% block title %}Sonar · Your podcast diary for iPhone{% endblock %}
+{% block description %}Sonar is a podcast diary for iPhone. Log, rate and review every episode you hear, and see what your friends can't stop listening to. Letterboxd for podcasts.{% endblock %}
+{% block preview %}
+  {%- set og_title = "Sonar · Your podcast diary" %}
+  {%- set og_description = "Log, rate and review every episode you hear, and see what your friends can't stop listening to." %}
+  {%- set og_image = url_for('static', filename='sonar/img/og.jpg', _external=True) %}
+  <meta property="og:title" content="{{ og_title }}">
+  <meta property="og:description" content="{{ og_description }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.base_url }}">
+  <meta property="og:image" content="{{ og_image }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Sonar: Your podcast diary. Two iPhones showing an episode diary and a listening profile.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ og_title }}">
+  <meta name="twitter:description" content="{{ og_description }}">
+  <meta name="twitter:image" content="{{ og_image }}">
+{%- endblock %}
 {% block head %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='site/works/sonar.css') }}">
+  <link rel="preload" as="image" href="{{ img }}phone-diary.webp">
 {% endblock %}
+{% block body_class %}sn-page{% endblock %}
+
 {% block content %}
-  {{ sonar.sonar_head('public.sonar') }}
+<div class="sn">
+  {{ ui.tabs([
+    (url_for('public.sonar'), "Overview", True),
+    (url_for('public.sonar_support'), "Support", False),
+    (url_for('public.sonar_privacy'), "Privacy", False),
+  ], label="Sonar") }}
 
-  {#- The app itself, drawn in its own colours: the one place on the page they belong. -#}
-  {% call ui.show("01", "Radar", "A feed shaped by the people whose taste you trust: what they heard, how they rated it, what they had to say.", device="phone") %}
-    <div class="app-sonar" role="img" aria-label="Sonar's Radar feed: three episodes logged by people you follow, each with its rating in dots.">
-      <div class="app-sonar__status" aria-hidden="true"><span>9:41</span><span class="app-sonar__island"></span><span class="app-sonar__bars"></span></div>
-      <div class="app-sonar__top" aria-hidden="true"><span>Radar</span><span class="app-sonar__avatar"></span></div>
-      <div class="app-sonar__rings" aria-hidden="true"><span></span><span></span><span></span></div>
-      <ul class="app-sonar__feed" aria-hidden="true">
-        <li>
-          <span class="app-sonar__cover"></span>
-          <span class="app-sonar__text"><b>The Daily Audio Lab</b><small>Avery reviewed “How sound changes memory”</small>
-            <span class="app-sonar__dots" data-score="8"><i></i><i></i><i></i><i></i><i class="off"></i></span></span>
-        </li>
-        <li>
-          <span class="app-sonar__cover"></span>
-          <span class="app-sonar__text"><b>Signal Path</b><small>Mina logged “The best interview formats”</small>
-            <span class="app-sonar__dots" data-score="9"><i></i><i></i><i></i><i></i><i class="half"></i></span></span>
-        </li>
-        <li>
-          <span class="app-sonar__cover"></span>
-          <span class="app-sonar__text"><b>Open Channels</b><small>You saved “A short guide to better notes”</small>
-            <span class="app-sonar__dots"><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></span></span>
-        </li>
+  {#- ------------------------------------------------------------------ hero -#}
+  <header class="sn-hero">
+    <svg class="sn-rings" viewBox="-600 -600 1200 1200" aria-hidden="true">
+      {%- for r in [70, 140, 220, 310, 410, 520] %}
+      <circle r="{{ r }}" style="--k: {{ loop.index0 }}"/>
+      {%- endfor %}
+      <circle class="sn-rings__ping" r="70"/>
+      <circle class="sn-rings__ping sn-rings__ping--2" r="70"/>
+    </svg>
+
+    <div class="sn-hero__copy">
+      <p class="sn-eyebrow" data-reveal><img src="{{ img }}app-icon.png" alt="" width="28" height="28">Sonar for iPhone</p>
+      <h1 class="sn-display" data-reveal>Your podcast <em>diary.</em></h1>
+      <p class="sn-sub" data-reveal>Log, rate and review every episode you hear, and see what your friends can’t stop listening to.</p>
+      <div class="sn-hero__cta" data-reveal>
+        {{ get_sonar("hero") }}
+        <a class="sn-ghost" href="#rate">See how it works</a>
+      </div>
+      <ul class="sn-pills" data-reveal aria-label="Highlights">
+        <li>Rate &amp; review</li><li>Follow friends</li><li>Track streaks</li>
       </ul>
-      <div class="app-sonar__tabbar" aria-hidden="true"><span class="on"></span><span></span><span></span><span></span></div>
     </div>
-  {% endcall %}
 
-  {% call ui.sect("02", "What it does") %}
-    <h2 class="sect__title">Remember what you heard.</h2>
-    <ol class="points">
-      <li><span class="no">01</span><h3>Log every episode</h3><p>Mark an episode listened, loved, reviewed or saved for later, with the context of why it mattered.</p></li>
-      <li><span class="no">02</span><h3>Rate with signal</h3><p>A 1–10 scale in half steps, drawn in Sonar's dot language.</p></li>
-      <li><span class="no">03</span><h3>Follow better taste</h3><p>Recent reviews from people you follow, and a listening graph built on recommendations you trust.</p></li>
-      <li><span class="no">04</span><h3>Keep a later list</h3><p>A queue for the episodes worth coming back to.</p></li>
-    </ol>
-  {% endcall %}
-
-  {% call ui.sect("03", "The episode") %}
-    <div class="prose">
-      <p class="lede">Sonar treats a podcast episode as first-class media: searchable, rateable, reviewable, and connected to the people whose taste you care about.</p>
-      <p>Each episode page collects its average rating, the distribution of ratings and the reviews of its listeners. Your own log becomes a searchable record of what you heard and how you felt about it.</p>
+    <div class="sn-hero__stage" data-reveal>
+      <div class="sn-hero__halo" aria-hidden="true"></div>
+      {{ phone("episode", "", "sn-phone--hero sn-phone--left") }}
+      {{ phone("profile", "", "sn-phone--hero sn-phone--right") }}
+      {{ phone("diary", "Sonar's diary: every episode you've logged, with its date, your rating in dots and your one-line take.", "sn-phone--hero sn-phone--front") }}
+      <img class="sn-card sn-card--hero" src="{{ img }}crop-rate.webp" alt="" width="970" height="230">
     </div>
-  {% endcall %}
+  </header>
 
-  {% call ui.sect("04", "Facts") %}
-    <dl class="facts">
-      <div><dt>Platform</dt><dd>iPhone, iOS</dd></div>
-      <div><dt>Ratings</dt><dd>1–10, in half steps</dd></div>
-      <div><dt>Catalogue</dt><dd>Podcast Index</dd></div>
-      <div><dt>Support</dt><dd><a class="link" href="mailto:support@sonar.show">support@sonar.show</a></dd></div>
-    </dl>
-  {% endcall %}
+  {#- ------------------------------------------------------------- the problem -#}
+  <section class="sn-problem" aria-label="Why Sonar">
+    <p class="sn-statement" data-reveal>Podcast apps are great at <b>playing</b> episodes.<br><span>Terrible at remembering them.</span></p>
+    <p class="sn-problem__answer" data-reveal>Sonar is the missing memory: a diary for everything you listen to. Think Letterboxd, for podcasts.</p>
+  </section>
+
+  {#- ------------------------------------------------------------ the features -#}
+  <section class="sn-feat" id="rate" aria-labelledby="rate-h">
+    <div class="sn-feat__copy" data-reveal>
+      <p class="sn-kicker">Rate</p>
+      <h2 class="sn-h2" id="rate-h">Rate every <em>episode.</em></h2>
+      <p class="sn-body">Five dots, half-steps, one honest take. Mark it listened, give it a score, love the ones that stay with you, and write a line about why.</p>
+      <div class="sn-try">
+        <p class="sn-try__label">Try it. How was the last episode you heard?</p>
+        <div class="sn-rater" role="slider" tabindex="0" aria-label="Your rating" aria-valuemin="0" aria-valuemax="10" aria-valuenow="7" aria-valuetext="7 out of 10, really good" data-value="7">
+          {%- for i in range(5) %}<span class="sn-rater__dot"><i></i></span>{% endfor %}
+        </div>
+        <p class="sn-try__out" aria-live="polite"><b>7</b><span>/10</span> <em>Really good</em></p>
+      </div>
+    </div>
+    <div class="sn-feat__media" data-reveal>
+      {{ phone("episode", "An episode page in Sonar: show notes, links to Apple Podcasts and Spotify, and your log.") }}
+    </div>
+  </section>
+
+  <section class="sn-feat sn-feat--flip" aria-labelledby="social-h">
+    <div class="sn-feat__copy" data-reveal>
+      <p class="sn-kicker">Social</p>
+      <h2 class="sn-h2" id="social-h">Hear what friends <em>love.</em></h2>
+      <p class="sn-body">Follow the people whose taste you trust. Their ratings and reviews land in your feed, so the next great episode finds you, not the other way round.</p>
+      <ul class="sn-ticks">
+        <li>Fresh episodes from shows you follow</li>
+        <li>What you listened to recently, one tap away</li>
+        <li>Friends’ picks, with their scores and takes</li>
+      </ul>
+    </div>
+    <div class="sn-feat__media" data-reveal>
+      {{ phone("home", "Sonar's home: episodes for you, recently listened to, and what friends rated.") }}
+      <img class="sn-card sn-card--b" src="{{ img }}crop-review.webp" alt="A review in the feed: a date, a quote reading Great episode!, and a three-dot rating." width="1100" height="240" loading="lazy">
+    </div>
+  </section>
+
+  <section class="sn-feat" aria-labelledby="stats-h">
+    <div class="sn-feat__copy" data-reveal>
+      <p class="sn-kicker">Profile</p>
+      <h2 class="sn-h2" id="stats-h">Your taste, <em>in numbers.</em></h2>
+      <p class="sn-body">Your average rating, how your scores spread, how many hours you’ve listened, and a streak to keep alive. The more you log, the better you know your own ear.</p>
+      <dl class="sn-stats" aria-label="An example profile">
+        <div><dt>Listened</dt><dd data-count="23">23</dd></div>
+        <div><dt>Reviews</dt><dd data-count="11">11</dd></div>
+        <div><dt>Hours</dt><dd data-count="22">22</dd></div>
+      </dl>
+    </div>
+    <div class="sn-feat__media" data-reveal>
+      {{ phone("profile", "A Sonar profile: followers, a rating distribution and listening stats.") }}
+      <img class="sn-card sn-card--c" src="{{ img }}crop-stats.webp" alt="Stats: an average rating of 3.7, a histogram of ratings, and counts of listened, rated, reviews and loved." width="1086" height="590" loading="lazy">
+    </div>
+  </section>
+
+  <section class="sn-feat sn-feat--flip" aria-labelledby="search-h">
+    <div class="sn-feat__copy" data-reveal>
+      <p class="sn-kicker">Discover</p>
+      <h2 class="sn-h2" id="search-h">Every show. <em>One search.</em></h2>
+      <p class="sn-body">The whole open podcast catalogue in your pocket, millions of shows from the Podcast Index. Search podcasts, guests and people, and log anything you find.</p>
+    </div>
+    <div class="sn-feat__media" data-reveal>
+      {{ phone("search", "Searching Sonar for Radiolab: podcasts, guests and users, each in its own tab.") }}
+    </div>
+  </section>
+
+  {#- -------------------------------------------------------------- everything -#}
+  <section class="sn-all" aria-labelledby="all-h">
+    <h2 class="sn-h2 sn-all__title" id="all-h" data-reveal>Everything a listener <em>needs.</em></h2>
+    <ul class="sn-tiles">
+      <li data-reveal><span class="sn-ico sn-ico--log" aria-hidden="true"></span><h3>Log every listen</h3><p>One tap marks an episode heard, with the date it happened.</p></li>
+      <li data-reveal><span class="sn-ico sn-ico--dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><h3>Half-step ratings</h3><p>Ten points on five dots, so a 7 and an 8 are never the same.</p></li>
+      <li data-reveal><span class="sn-ico sn-ico--quote" aria-hidden="true">“</span><h3>Reviews</h3><p>A line or a page. Edit it, delete it, read everyone else’s.</p></li>
+      <li data-reveal><span class="sn-ico sn-ico--heart" aria-hidden="true"></span><h3>Loved</h3><p>The episodes you’d send a friend, kept in one place.</p></li>
+      <li data-reveal><span class="sn-ico sn-ico--flame" aria-hidden="true"></span><h3>Streaks</h3><p>Log a little every day and watch the streak grow.</p></li>
+      <li data-reveal><span class="sn-ico sn-ico--later" aria-hidden="true"></span><h3>Listen later</h3><p>A queue for the episodes worth coming back to.</p></li>
+    </ul>
+  </section>
+
+  {#- -------------------------------------------------------------- the close -#}
+  <section class="sn-close" aria-labelledby="close-h">
+    <svg class="sn-rings sn-rings--close" viewBox="-600 -600 1200 1200" aria-hidden="true">
+      {%- for r in [110, 200, 300, 410, 530] %}
+      <circle r="{{ r }}" style="--k: {{ loop.index0 }}"/>
+      {%- endfor %}
+      <circle class="sn-rings__ping" r="110"/>
+    </svg>
+    <img class="sn-close__icon" src="{{ img }}app-icon.png" alt="Sonar app icon" width="128" height="128" loading="lazy" data-reveal>
+    <h2 class="sn-display sn-display--close" id="close-h" data-reveal>Never forget a great <em>episode.</em></h2>
+    <p class="sn-sub" data-reveal>{{ "Sonar is free on iPhone." if app_store_url else "Sonar is coming to iPhone, free." }}</p>
+    <div class="sn-close__cta" data-reveal>{{ get_sonar("close") }}</div>
+    <p class="sn-close__help" data-reveal>Questions? <a href="{{ url_for('public.sonar_support') }}">Support</a> · <a href="mailto:support@sonar.show">support@sonar.show</a></p>
+  </section>
+</div>
 {% endblock %}
 {% block foot %}
   <ul><li><a href="{{ url_for('public.sonar_support') }}">Support</a></li><li><a href="{{ url_for('public.sonar_privacy') }}">Privacy</a></li></ul>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='sonar/sonar.js') }}" defer></script>
 {% endblock %}
