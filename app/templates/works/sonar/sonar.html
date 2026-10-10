@@ -6,7 +6,7 @@
 
 {#- The App Store link. Empty until Sonar is live: the buttons then say "Coming soon" and offer
     to email when it launches. Paste the apps.apple.com URL here and every button becomes a download. -#}
-{%- set app_store_url = "" %}
+{%- set app_store_url = "https://apps.apple.com/us/app/sonar-podcast-tracker/id6761410303" %}
 {%- set notify_url = "mailto:support@sonar.show?subject=Tell%20me%20when%20Sonar%20launches" %}
 {%- set img = url_for('static', filename='sonar/img/') %}
 
@@ -48,6 +48,9 @@
   <meta name="twitter:image" content="{{ og_image }}">
 {%- endblock %}
 {% block head %}
+  {%- if app_store_url %}
+  <meta name="apple-itunes-app" content="app-id={{ app_store_url.rsplit('/id', 1)[1] }}">
+  {%- endif %}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap">
