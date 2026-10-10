@@ -209,6 +209,9 @@ details.index__item .index__answer > * + * { margin-top: var(--s2); }
 .figure figcaption { display: flex; gap: var(--s2); margin-top: var(--s2); color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
 .figure figcaption .t { color: var(--ink-2); }
 .figure--plain img { border: 1px solid var(--rule); }
+/* A photograph is seen whole: never taller than the screen, narrowing to keep its shape. The
+   image gives its shape as --ratio (width / height), so it holds its size before it loads. */
+.figure--photo img { max-width: min(100%, (100svh - 2 * var(--s8)) * var(--ratio, 1)); }
 
 .device--window { overflow: hidden; border-radius: var(--radius-window); background: var(--surface); box-shadow: var(--shadow-device); }
 .device--window::before {

@@ -9,8 +9,8 @@
   {{ ui.head("Me") }}
 
   {% call ui.sect("01", "Portrait", wide=True) %}
-    <figure class="figure figure--plain">
-      <img src="{{ url_for('static', filename='img/me.jpeg') }}" alt="Jeremy Zay in a red graduation cap, looking down" width="1920" height="1280" decoding="async" fetchpriority="high">
+    <figure class="figure figure--plain figure--photo">
+      <img src="{{ url_for('static', filename='img/me.jpeg') }}" alt="Jeremy Zay in a red graduation cap, looking down" width="1920" height="1280" style="--ratio: 3 / 2" decoding="async" fetchpriority="high">
       <figcaption><span class="no">Fig 01</span><span class="t">2026</span></figcaption>
     </figure>
   {% endcall %}
@@ -19,8 +19,8 @@
     <div class="prose">
       <p class="lede">I come from an environment where technology was highly discouraged, if not banned. In a way it benefitted me; meant that instead of being addicted to video games as a child I was addicted to reading, legos, and strat-o-matic baseball cards. My dad even gave me his cards from the 80’s, and I treasured the mythical AAA base-runner Rickey Henderson. For a time I lost it and I’d make wishes at 4:44pm that I’d one day find the card. It’s lost now.</p>
     </div>
-    <figure class="figure figure--plain">
-      <img src="{{ url_for('static', filename='img/me-little.jpeg') }}" alt="Jeremy as a child, grinning at the rail of a lookout tower above a forest" width="1600" height="1195" loading="lazy" decoding="async">
+    <figure class="figure figure--plain figure--photo">
+      <img src="{{ url_for('static', filename='img/me-little.jpeg') }}" alt="Jeremy as a child, grinning at the rail of a lookout tower above a forest" width="1600" height="1195" style="--ratio: 1600 / 1195" loading="lazy" decoding="async">
       <figcaption><span class="no">Fig 02</span><span class="t">2011</span></figcaption>
     </figure>
     <div class="prose">
@@ -31,8 +31,8 @@
 
   {% call ui.sect("03", "Wesleyan", wide=True) %}
     <div class="pair">
-      <figure class="figure figure--plain">
-        <img src="{{ url_for('static', filename='img/me-drawing.jpeg') }}" alt="Jeremy at a kitchen table, drawing a face in a sketchbook" width="1200" height="1600" loading="lazy" decoding="async">
+      <figure class="figure figure--plain figure--photo">
+        <img src="{{ url_for('static', filename='img/me-drawing.jpeg') }}" alt="Jeremy at a kitchen table, drawing a face in a sketchbook" width="1200" height="1600" style="--ratio: 3 / 4" loading="lazy" decoding="async">
         <figcaption><span class="no">Fig 03</span><span class="t">2026</span></figcaption>
       </figure>
       <div>

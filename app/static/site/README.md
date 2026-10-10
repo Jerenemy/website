@@ -102,7 +102,8 @@ Pieces available inside sections (all in `site.css`):
 * `.facts`: key / value pairs (`<dl class="facts"><div><dt>…</dt><dd>…</dd></div>`).
 * `.form` > `.field` (label + input on a hairline), `.open.send` to submit, `.status` for the outcome.
 * `.table`: data tables.
-* `.figure` with `figcaption` (`<span class="no">FIG 01</span><span class="t">…</span>`).
+* `.figure` with `figcaption` (`<span class="no">FIG 01</span><span class="t">…</span>`); `.figure--photo`
+  keeps a photograph within the screen's height (its `img` gives `style="--ratio: 3 / 2"`).
 * `.pair`: a large figure with its words beside it (`<div class="pair"><figure>…</figure><div>…</div></div>`); the words stay in view.
 * `ui.pdf_figure(pdf, image, alt, …)`: a figure drawn from its PDF's first page by pdf.js, sharp at any
   density and zoom, its image standing in until then; the page loads `site/pdf-figure.js` as a module.
