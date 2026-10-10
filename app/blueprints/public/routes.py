@@ -89,8 +89,15 @@ def contact():
 
 @bp.get("/me")
 def me():
-    """The page about the person, the homepage's first block: the words are written in its template."""
+    """The page about the person, the homepage's first block: what he builds, for whoever is hiring.
+    The words are written in its template."""
     return render_template("me.html")
+
+
+@bp.get("/me/story")
+def me_story():
+    """Where he comes from: the personal pages behind /me, linked only from its foot."""
+    return render_template("me_story.html")
 
 
 @bp.get("/game")
