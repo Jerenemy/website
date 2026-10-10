@@ -26,7 +26,7 @@
 import { UI, MOTION } from './config.js';
 
 const pad2 = (n) => String(n).padStart(2, '0');
-const KIND = { research: 'Research', engineering: 'Engineering', product: 'Product', play: 'Play' };
+const KIND = { about: 'About', research: 'Research', engineering: 'Engineering', product: 'Product', play: 'Play' };
 const kindLabel = (k) => KIND[k] ?? (k ? k[0].toUpperCase() + k.slice(1) : '');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
