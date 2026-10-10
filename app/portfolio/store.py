@@ -11,7 +11,7 @@ from threading import Lock
 _STORE_LOCK = Lock()
 
 # What a work is, for the homepage's caption and the screen reader ("Title, Kind, line").
-KINDS = ("research", "engineering", "product", "play")
+KINDS = ("about", "research", "engineering", "product", "play")   # "about": the page about the person, not a work
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 

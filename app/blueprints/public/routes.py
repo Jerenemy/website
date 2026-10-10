@@ -87,6 +87,12 @@ def contact():
                            status=CONTACT_STATUS.get(request.args.get("status", ""), ""))
 
 
+@bp.get("/me")
+def me():
+    """The page about the person, the homepage's first block: the words are written in its template."""
+    return render_template("me.html")
+
+
 @bp.get("/game")
 def game():
     return render_template("game.html")

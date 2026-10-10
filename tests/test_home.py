@@ -153,8 +153,8 @@ class HomeTests(unittest.TestCase):
         html = self.client.get("/").text
         page = parse(html)
         self.assertIn("<title>Jeremy Zay</title>", html)
-        self.assertIn('<span class="sr">Posters, Research, </span><span class="line">Generative models that design molecules for mutant p53</span>', html)
-        self.assertIn(f'<span class="no">01 / {len(self.published()):02d}</span><span class="title">Posters</span>', html)
+        self.assertIn('<span class="sr">Me, About, </span><span class="line">A calm, non-technical alcove</span>', html)
+        self.assertIn(f'<span class="no">01 / {len(self.published()):02d}</span><span class="title">Me</span>', html)
         self.assertIn('aria-label="Jeremy Zay, home"', html)
         for element_id in ("stage", "masthead", "rail", "caption", "head", "cap-a", "cap-b", "detail", "cap-kind",
                            "cap-line", "cap-open", "announce", "cap-hint", "links", "leader", "dock", "tag", "tag-no", "tag-title"):
@@ -172,6 +172,16 @@ class HomeTests(unittest.TestCase):
         # The old homepage is gone from it.
         for old in ("ambient-fluid", "glightbox", "webgl-fluid", "site-header", "project-card"):
             self.assertNotIn(old, html)
+
+    def test_me_page_is_the_first_work_and_shows_its_photos(self):
+        html = self.client.get("/me").text
+        self.assertIn("<title>Me · Jeremy Zay</title>", html)
+        self.assertIn(f"01 / {len(self.published()):02d}", html)
+        self.assertIn("<span>About</span>", html)
+        for photo in ("me.jpeg", "me-little.jpeg", "me-drawing.jpeg"):
+            self.assertIn(f'src="/static/img/{photo}"', html)
+            self.assertTrue((ROOT / "app" / "static" / "img" / photo).is_file(), photo)
+        self.assertIn("Enjoy this calm, non-technical alcove of my website.", html)
 
     def test_meta_description_is_home_description_without_html(self):
         self.settings.write_text(json.dumps({"home_description": "I study <a href='/x'>p53</a> &amp; diffusion."}))

@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% import "_ui.html" as ui with context %}
+{#- The page about the person: the homepage's first block (the portfolio item "me", kind "about").
+    The words are Jeremy's own and live here, not in the portfolio store. The photos are
+    static/img/me*.jpeg; the year under each is the date in the photo's own file. #}
+{% block title %}Me · {{ frame.name }}{% endblock %}
+{% block description %}Jeremy Zay, in his own words: a childhood without screens, a Waldorf school, an Asteroids clone, Wesleyan, art and computer science.{% endblock %}
+{% block content %}
+  {{ ui.head("Me") }}
+
+  {% call ui.sect("01", "Portrait", wide=True) %}
+    <figure class="figure figure--plain">
+      <img src="{{ url_for('static', filename='img/me.jpeg') }}" alt="Jeremy Zay in a red graduation cap, looking down" width="1920" height="1280" decoding="async" fetchpriority="high">
+      <figcaption><span class="no">Fig 01</span><span class="t">2026</span></figcaption>
+    </figure>
+  {% endcall %}
+
+  {% call ui.sect("02", "Growing up") %}
+    <div class="prose">
+      <p class="lede">I come from an environment where technology was highly discouraged, if not banned. In a way it benefitted me; meant that instead of being addicted to video games as a child I was addicted to reading, legos, and strat-o-matic baseball cards. My dad even gave me his cards from the 80’s, and I treasured the mythical AAA base-runner Rickey Henderson. For a time I lost it and I’d make wishes at 4:44pm that I’d one day find the card. It’s lost now.</p>
+    </div>
+    <figure class="figure figure--plain">
+      <img src="{{ url_for('static', filename='img/me-little.jpeg') }}" alt="Jeremy as a child, grinning at the rail of a lookout tower above a forest" width="1600" height="1195" loading="lazy" decoding="async">
+      <figcaption><span class="no">Fig 02</span><span class="t">2011</span></figcaption>
+    </figure>
+    <div class="prose">
+      <p>At school we learned cursive, string games, and to identify skunk cabbage in the woods. We played capture the flag, but my friend and I hid the flag too well which kinda broke the game. We slept in a teepee and woke up at sunrise to milk the cows across the street. We snuck out and hid from our teacher chaperone under the piano in the Eurythmy room.</p>
+      <p>Phones were banned in high school, so was typing notes, and there were certainly no CS classes offered. Math sufficed. For my independent senior project I decided to teach myself to harness this magic, until it was demystified and materialized into an Asteroids clone built in Python. Before ChatGPT, this was an accomplishment.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("03", "Wesleyan", wide=True) %}
+    <div class="pair">
+      <figure class="figure figure--plain">
+        <img src="{{ url_for('static', filename='img/me-drawing.jpeg') }}" alt="Jeremy at a kitchen table, drawing a face in a sketchbook" width="1200" height="1600" loading="lazy" decoding="async">
+        <figcaption><span class="no">Fig 03</span><span class="t">2026</span></figcaption>
+      </figure>
+      <div>
+        <div class="prose">
+          <p>I decided I’d attend the college closest to Waldorf: Wesleyan. I didn’t want to choose between art and CS. I made an art instagram account with the bio “Aspiring starving artist”. It’s since been abandoned. I realized that CS is art too: “Every creative thought is art” said Beuys.</p>
+          <p>Enjoy this calm, non-technical alcove of my website.</p>
+        </div>
+      </div>
+    </div>
+  {% endcall %}
+{% endblock %}
