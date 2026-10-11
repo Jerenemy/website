@@ -71,6 +71,12 @@
             {{ admin.button("Cancel submission", quiet=True) }}
           </form>
         {% endif %}
+        {% if job.status != "applied" and not active %}
+          <form method="post" action="{{ url_for('jobbot.job_rerun', job_id=job.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            {{ admin.button("Rerun", quiet=True) }}
+          </form>
+        {% endif %}
         {% if job.status not in ("applied", "skipped") and not active %}
           <form method="post" action="{{ url_for('jobbot.job_skip', job_id=job.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
