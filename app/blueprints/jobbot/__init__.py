@@ -260,3 +260,10 @@ def job_edit(job_id):
 @admin_required
 def job_skip(job_id):
     return _action(job_id, "skip", {}, "Marked as skipped.")
+
+
+@bp.post("/<path:job_id>/rerun")
+@admin_required
+def job_rerun(job_id):
+    return _action(job_id, "rerun", {},
+                   "Rerun queued: the bot is filling the form again with its current code.", anchor="#chat")

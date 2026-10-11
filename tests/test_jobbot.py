@@ -158,6 +158,19 @@ class JobBotPageTests(unittest.TestCase):
         self.assertTrue(response.headers["Location"].endswith("/admin/jobs/url:abc123"))
         self.assertEqual(self.calls[-1][:3], ("POST", "http://bot.test/api/jobs/url%3Aabc123/submit", {"force": False}))
 
+    def test_rerun_button_queues_a_rerun(self):
+        self.login()
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, status="failed")})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn('action="/admin/jobs/url:abc123/rerun"', page)
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, status="applied")})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertNotIn("/rerun", page)
+        self.responses[("POST", "/api/jobs/url%3Aabc123/rerun")] = FakeResponse(202, {"edit": {"status": "queued"}})
+        response = self.client.post("/admin/jobs/url:abc123/rerun", data={"csrf_token": "csrf"})
+        self.assertTrue(response.headers["Location"].endswith("/admin/jobs/url:abc123#chat"))
+        self.assertEqual(self.calls[-1][:3], ("POST", "http://bot.test/api/jobs/url%3Aabc123/rerun", {}))
+
     def test_code_and_errors_are_relayed(self):
         self.login()
         self.responses[("POST", "/api/jobs/url%3Aabc123/code")] = FakeResponse(409, {"error": "this job is not waiting for a code"})
