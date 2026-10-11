@@ -39,7 +39,7 @@
                 <td data-label="Company" class="admin-table__lead">{{ job.company or "?" }}</td>
                 <td data-label="Role">{{ job.title or "?" }}</td>
                 <td data-label="Status">
-                  <span class="jobs__badge jobs__badge--{{ job.category }}">{% if sub.status %}{{ sub.status | jobbot_status }}{% else %}{{ job.status | jobbot_status }}{% endif %}</span>
+                  <span class="jobs__badge jobs__badge--{{ job.category }}">{% if job.category == "closed" %}Closed{% elif sub.status %}{{ sub.status | jobbot_status }}{% else %}{{ job.status | jobbot_status }}{% endif %}</span>
                   {% if job.missing_required %}<span class="jobs__badge jobs__badge--attention">{{ job.missing_required | length }} unanswered</span>{% endif %}
                 </td>
                 <td data-label="Last attempt">{{ job.last_attempt | jobbot_time }}</td>

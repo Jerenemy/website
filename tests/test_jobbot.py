@@ -87,6 +87,26 @@ class JobBotPageTests(unittest.TestCase):
         self.assertIn("Gamma", page)
         self.assertNotIn(">Acme<", page)
 
+    def test_closed_and_skipped_jobs_leave_needs_attention(self):
+        self.login()
+        failed = {"status": "failed", "problem": {"kind": "site"}}
+        broken = dict(JOB, id="j1", company="Broken", submission=failed)
+        closed = dict(JOB, id="j2", company="Shut", status="skipped", closed=True, submission=dict(failed, problem={"kind": "closed"}))
+        older = dict(JOB, id="j3", company="Older", submission=dict(failed, problem={"kind": "closed"}))
+        skipped = dict(JOB, id="j4", company="Skipped", status="skipped", submission=failed)
+        jobs = [broken, closed, older, skipped]
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": jobs, "last_pass": None})
+        page = self.client.get("/admin/jobs/?show=attention").get_data(as_text=True)
+        self.assertIn("Broken", page)
+        for name in ("Shut", "Older", "Skipped"):
+            self.assertNotIn(name, page)
+        page = self.client.get("/admin/jobs/?show=closed").get_data(as_text=True)
+        self.assertIn("Shut", page)
+        self.assertIn("Older", page)
+        self.assertNotIn("Broken", page)
+        self.assertNotIn("Skipped", page)
+        self.assertIn("jobs__badge--closed", page)
+
     def test_bot_down_shows_a_message(self):
         self.login()
         self.responses[("GET", "/api/jobs?limit=500")] = requests.ConnectionError("refused")
