@@ -17,7 +17,7 @@
 /* Under way. */
 .jobs__badge--active::before, .jobs__badge--queued::before, .jobs__badge--running::before { border-color: var(--ink-2); }
 /* Done. */
-.jobs__badge--applied, .jobs__badge--other, .jobs__badge--skipped, .jobs__badge--cancelled { color: var(--ink-3); }
+.jobs__badge--applied, .jobs__badge--other, .jobs__badge--closed, .jobs__badge--skipped, .jobs__badge--cancelled { color: var(--ink-3); }
 
 /* ---------------------------------------------------------------- notices
    A line to act on or to know: on a hairline, like the site's quotes. */

@@ -19,6 +19,7 @@ FILTERS = {
     "review": "Ready to review",
     "active": "In progress",
     "attention": "Needs attention",
+    "closed": "Closed",
     "applied": "Applied",
     "all": "All",
 }
@@ -74,6 +75,11 @@ def _category(job):
         return "applied"
     if sub.get("status") in ACTIVE or job.get("editing"):
         return "active"
+    # Nothing to fix: the posting no longer takes applications. (`problem` covers bots without `closed`.)
+    if job.get("closed") or (sub.get("problem") or {}).get("kind") == "closed":
+        return "closed"
+    if job["status"] == "skipped":  # skipped from the review page: out of the queue
+        return "other"
     if sub.get("status") in ("failed", "unconfirmed"):
         return "attention"
     if job["status"] == "dry_run_ok":
