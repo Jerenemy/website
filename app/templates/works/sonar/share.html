@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ page_title }} · Sonar</title>
+  <meta name="description" content="{{ description }}">
+  <meta name="theme-color" content="#0a0a0c">
+  <meta name="color-scheme" content="dark">
+  {# Safari's Smart App Banner: "Open" when Sonar is installed, "Get" when it isn't. #}
+  <meta name="apple-itunes-app" content="app-id={{ app_store_id }}, app-argument={{ page_url }}">
+
+  <meta property="og:site_name" content="Sonar">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ page_url }}">
+  <meta property="og:title" content="{{ page_title }}">
+  <meta property="og:description" content="{{ description }}">
+  <meta property="og:image" content="{{ image or url_for('static', filename='sonar/img/og.jpg', _external=True) }}">
+  <meta name="twitter:card" content="{{ 'summary' if image else 'summary_large_image' }}">
+  <meta name="twitter:title" content="{{ page_title }}">
+  <meta name="twitter:description" content="{{ description }}">
+  <meta name="twitter:image" content="{{ image or url_for('static', filename='sonar/img/og.jpg', _external=True) }}">
+  <link rel="canonical" href="{{ page_url }}">
+  <link rel="icon" href="{{ url_for('static', filename='sonar/img/app-icon.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='sonar/img/app-icon.png') }}">
+
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --surface: #1a1a1d;
+      --text: #ffffff;
+      --text-2: #94949e;
+      --text-3: rgba(255, 255, 255, 0.36);
+      --teal: #40dbbd;
+      --love: #ff4d66;
+      --hairline: rgba(255, 255, 255, 0.09);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); }
+    body {
+      font: 17px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .glow {
+      position: fixed; inset: 0 0 auto 0; height: 70vh; z-index: 0; pointer-events: none;
+      background: radial-gradient(120% 80% at 50% 0%, var(--tint, rgba(64, 219, 189, 0.14)), transparent 70%);
+    }
+    main {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 440px; margin: 0 auto;
+      padding: max(28px, env(safe-area-inset-top)) 20px 24px;
+      flex: 1;
+      display: flex; flex-direction: column;
+    }
+    .brand {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--text); text-decoration: none;
+      font: 600 17px/1 ui-rounded, -apple-system, BlinkMacSystemFont, sans-serif;
+      align-self: flex-start;
+    }
+    .brand__mark {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: radial-gradient(circle, var(--teal) 0 34%, transparent 36% 52%, rgba(64,219,189,.45) 54% 62%, transparent 64%);
+    }
+    .card { margin-top: 28px; }
+    .art {
+      width: min(240px, 64vw); height: auto; aspect-ratio: 1; border-radius: 16px; object-fit: cover; display: block;
+      background: var(--surface);
+      box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.8), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+    }
+    .art--small { width: 132px; height: auto; border-radius: 14px; }
+    .eyebrow { margin: 22px 0 4px; color: var(--text-2); font-size: 15px; }
+    h1 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+    .meta { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--text-2); font-size: 15px; }
+    .dots { display: inline-flex; gap: 4px; }
+    .dot { width: 11px; height: 11px; border-radius: 50%; background: rgba(255,255,255,.16); overflow: hidden; position: relative; }
+    .dot > i { position: absolute; inset: 0 auto 0 0; background: var(--teal); }
+    .heart { color: var(--love); font-size: 14px; line-height: 1; }
+    blockquote {
+      margin: 18px 0 0; padding: 0; font-size: 19px; line-height: 1.5; color: rgba(255,255,255,.92);
+      white-space: pre-line; overflow-wrap: anywhere;
+    }
+    .byline { display: flex; align-items: center; gap: 10px; margin-top: 18px; color: var(--text-2); font-size: 15px; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+      background: linear-gradient(135deg, #3d6a63, #26413d); color: #fff; font: 600 14px/1 ui-rounded, -apple-system, sans-serif;
+    }
+    .avatar--large { width: 96px; height: 96px; font-size: 40px; margin: 8px auto 0; }
+    .byline strong { color: var(--text); font-weight: 600; }
+    .center { text-align: center; }
+    .center .eyebrow { margin-top: 10px; }
+    .description { margin-top: 14px; color: var(--text-2); font-size: 15px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+    .actions { margin-top: auto; padding-top: 32px; display: grid; gap: 10px; }
+    .button {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 52px; border-radius: 999px; text-decoration: none;
+      font-weight: 600; font-size: 17px; transition: transform .15s ease, opacity .15s ease;
+    }
+    .button:active { transform: scale(0.97); opacity: .85; }
+    .button--primary { background: var(--teal); color: #000; }
+    .button--secondary { background: rgba(255,255,255,.1); color: var(--text); }
+    footer { margin-top: 20px; text-align: center; color: var(--text-3); font-size: 13px; }
+    footer a { color: var(--text-2); text-decoration: none; }
+    @media (min-width: 720px) { main { padding-top: 64px; } }
+    @media (prefers-reduced-motion: reduce) { .button { transition: none; } }
+  </style>
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+  <main>
+    <a class="brand" href="{{ url_for('public.sonar') }}"><span class="brand__mark" aria-hidden="true"></span>Sonar</a>
+
+    {% macro rating_dots(fills, loved=False) -%}
+      {% if fills %}
+        <span class="dots" role="img" aria-label="Rated {{ (fills | sum) | round(1) }} out of 5">
+          {% for fill in fills %}<span class="dot"><i style="width: {{ (fill * 100) | round | int }}%"></i></span>{% endfor %}
+        </span>
+      {% endif %}
+      {% if loved %}<span class="heart" role="img" aria-label="Loved">&#9829;</span>{% endif %}
+    {%- endmacro %}
+
+    <article class="card">
+      {% if kind == "review" %}
+        {% if episode and episode.artwork %}<img class="art" src="{{ episode.artwork }}" alt="" width="400" height="400">{% endif %}
+        {% if show %}<p class="eyebrow">{{ show }}</p>{% endif %}
+        <h1>{{ episode.title if episode else "A podcast episode" }}</h1>
+        {% if dots or review.is_loved %}<div class="meta">{{ rating_dots(dots, review.is_loved) }}</div>{% endif %}
+        {% if review.text %}<blockquote>{{ review.text }}</blockquote>{% endif %}
+        <div class="byline">
+          <span class="avatar" aria-hidden="true">{{ (review.username or "?")[:1] | upper }}</span>
+          <span><strong>@{{ review.username or "someone" }}</strong> on Sonar</span>
+        </div>
+
+      {% elif kind == "episode" %}
+        {% if episode.artwork %}<img class="art" src="{{ episode.artwork }}" alt="" width="400" height="400">{% endif %}
+        {% if show %}<p class="eyebrow">{{ show }}</p>{% endif %}
+        <h1>{{ episode.title }}</h1>
+        <div class="meta">
+          {% if average %}{{ rating_dots(dots) }}<span>{{ average }} on Sonar</span>{% else %}<span>Be the first to rate it on Sonar</span>{% endif %}
+        </div>
+
+      {% elif kind == "podcast" %}
+        {% if podcast.artwork %}<img class="art" src="{{ podcast.artwork }}" alt="" width="400" height="400">{% endif %}
+        {% if podcast.author %}<p class="eyebrow">{{ podcast.author }}</p>{% endif %}
+        <h1>{{ podcast.name }}</h1>
+        {% if podcast.description %}<p class="description">{{ podcast.description }}</p>{% endif %}
+
+      {% elif kind == "profile" %}
+        <div class="center">
+          <div class="avatar avatar--large" aria-hidden="true">{{ profile.username[:1] | upper }}</div>
+          <h1 style="margin-top: 18px">@{{ profile.username }}</h1>
+          <p class="eyebrow">{% if profile.logged_count %}{{ profile.logged_count }} episodes logged on Sonar{% else %}Listening on Sonar{% endif %}</p>
+        </div>
+
+      {% else %}
+        <img class="art art--small" src="{{ url_for('static', filename='sonar/img/app-icon.png') }}" alt="" width="132" height="132">
+        <h1 style="margin-top: 22px">{{ page_title }}</h1>
+        <p class="description">{{ description }}</p>
+      {% endif %}
+    </article>
+
+    <div class="actions">
+      <a class="button button--primary" href="{{ deep_link }}">Open in Sonar</a>
+      <a class="button button--secondary" href="{{ app_store_url }}">Get Sonar on the App Store</a>
+    </div>
+
+    <footer>Rate, review and remember the episodes you love · <a href="{{ url_for('public.sonar') }}">About Sonar</a></footer>
+  </main>
+</body>
+</html>

@@ -31,6 +31,14 @@ class Config:
     JOBBOT_API_URL = os.getenv("JOBBOT_API_URL", "http://127.0.0.1:5003")
     JOBBOT_API_TOKEN = os.getenv("JOBBOT_API_TOKEN")
 
+    # Sonar share pages (/sonar/r/..., see blueprints/sonar_share). All optional: without them
+    # the pages fall back to a generic "Open in Sonar" card. The Supabase anon key is the same
+    # public key the iOS app ships with; the Podcast Index pair comes from the Sonar app's Secrets.
+    SONAR_SUPABASE_URL = os.getenv("SONAR_SUPABASE_URL")
+    SONAR_SUPABASE_ANON_KEY = os.getenv("SONAR_SUPABASE_ANON_KEY")
+    PODCASTINDEX_API_KEY = os.getenv("PODCASTINDEX_API_KEY")
+    PODCASTINDEX_API_SECRET = os.getenv("PODCASTINDEX_API_SECRET")
+
     SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(32).hex())
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
     ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH")

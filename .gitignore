@@ -35,6 +35,9 @@
 !app/blueprints/jobbot/__init__.py
 !app/blueprints/clash_royale/
 !app/blueprints/clash_royale/__init__.py
+# Sonar share-link pages and the apple-app-site-association file
+!app/blueprints/sonar_share/
+!app/blueprints/sonar_share/*.py
 # templates: every folder ships whole (partials/, blog/, works/, admin/, ...)
 !app/templates/
 !app/templates/**
@@ -159,6 +162,7 @@ app/blog/*.pyc
 
 # Job application bot review pages (admin): their tests
 !tests/test_jobbot.py
+!tests/test_sonar_share.py
 
 # macOS folder metadata, wherever an allowlist above reaches
 .DS_Store
