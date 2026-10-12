@@ -125,6 +125,33 @@ class JobBotPageTests(unittest.TestCase):
         self.assertIn("/admin/jobs/url:abc123/screenshot", page)
         self.assertNotIn("Send code", page)
 
+    def test_detail_lists_the_jobs_emails_linked_to_gmail(self):
+        self.login()
+        emails = [
+            {"id": "e1", "direction": "received", "kind": "security_code", "subject": "Security code for Acme",
+             "sender": "no-reply@greenhouse-mail.io", "recipient": "me@example.com", "at": "2026-10-07T09:05:00+00:00",
+             "link": "https://mail.google.com/mail/u/me@gmail.com/#search/rfc822msgid%3Ax%40gh.io"},
+            {"id": "e2", "direction": "sent", "kind": "code_needed", "subject": "[getmeajob] Code needed <now>",
+             "sender": "me@gmail.com", "recipient": "alerts@example.com", "at": "2026-10-07T09:06:00+00:00", "link": ""},
+        ]
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, emails=emails)})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn("Emails (2)", page)
+        self.assertIn('href="https://mail.google.com/mail/u/me@gmail.com/#search/rfc822msgid%3Ax%40gh.io"', page)
+        self.assertIn(">Security code for Acme<span class=\"sr\">", page)
+        self.assertIn("[getmeajob] Code needed &lt;now&gt;", page)  # escaped, and no link without one
+        self.assertIn("Sent by the bot", page)
+        self.assertIn("no-reply@greenhouse-mail.io", page)
+        self.assertIn("alerts@example.com", page)
+        self.assertIn("Oct 07, 09:05 UTC", page)
+
+    def test_detail_without_emails_says_so(self):
+        self.login()
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": DETAIL})  # an older bot
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn("Emails (0)", page)
+        self.assertIn("No emails about this application yet", page)
+
     def test_detail_asks_for_a_code_and_offers_cancel(self):
         self.login()
         job = dict(DETAIL, submission={"status": "needs_code", "prompt": "Enter the 8-character code", "note": None,

@@ -105,3 +105,10 @@ li.jobs__error::before { content: ""; }
   .jobs__row--edited td:first-child, .jobs__row--error td:first-child { box-shadow: none; padding-left: 0; }
   .jobs__row--edited, .jobs__row--error { box-shadow: inset 1px 0 0 var(--ink); padding-left: var(--s2) !important; }
 }
+
+/* Emails about the application (alerts sent, codes read): subjects link to Gmail */
+.jobs__emails a { overflow-wrap: anywhere; text-decoration: underline; text-decoration-color: var(--ink-3, currentColor); text-underline-offset: 3px; }
+.jobs__emails a:hover, .jobs__emails a:focus-visible { text-decoration-color: currentColor; }
+.jobs__emails td.jobs__email-when { white-space: nowrap; }
+.jobs__email-kind { display: block; margin-top: var(--s1); }
+.jobs__emails td.jobs__email-who { color: var(--ink-2); overflow-wrap: anywhere; }

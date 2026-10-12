@@ -179,6 +179,34 @@
       </div>
     </div>
   {% endcall %}
+
+  {% set emails = job.emails or [] %}
+  {% call ui.sect("04", "Emails (%d)" % (emails | length), id="emails") %}
+    {% if emails %}
+      <div class="table admin-table jobs__emails">
+        <table>
+          <thead><tr><th>When</th><th>Email</th><th>About</th><th>From / to</th></tr></thead>
+          <tbody>
+            {% for email in emails %}
+              <tr>
+                <td data-label="When" class="jobs__email-when">{{ email.at | jobbot_time }}</td>
+                <td data-label="Email" class="admin-table__lead">
+                  {% if email.link %}
+                    <a href="{{ email.link }}" target="_blank" rel="noopener noreferrer">{{ email.subject }}<span class="sr"> (opens Gmail in a new tab)</span></a>
+                  {% else %}{{ email.subject }}{% endif %}
+                </td>
+                <td data-label="About"><span class="jobs__badge jobs__badge--{{ email.direction }}">{{ "Sent by the bot" if email.direction == "sent" else "Received" }}</span><span class="jobs__email-kind">{{ email.kind | jobbot_email_kind }}</span></td>
+                <td data-label="From / to" class="jobs__email-who">{{ email.sender if email.direction == "received" else email.recipient }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="note">No emails about this application yet. Alerts the bot sends and emails it reads for this job
+        (security codes, account verification) show up here, linked to Gmail.</p>
+    {% endif %}
+  {% endcall %}
 {% endblock %}
 {% block scripts %}
 <script>

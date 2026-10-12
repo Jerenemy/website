@@ -107,6 +107,22 @@ def jobbot_status(value):
     return STATUS_LABELS.get(value, str(value or "").replace("_", " "))
 
 
+EMAIL_KINDS = {
+    "code_needed": "Code needed",
+    "unconfirmed": "Check submission",
+    "not_submitted": "Not submitted",
+    "review_ready": "Ready to review",
+    "security_code": "Security code",
+    "account_verification": "Account verification",
+    "account_code": "Account code",
+}
+
+
+@bp.app_template_filter("jobbot_email_kind")
+def jobbot_email_kind(value):
+    return EMAIL_KINDS.get(value, str(value or "email").replace("_", " ").capitalize())
+
+
 @bp.app_template_filter("jobbot_time")
 def jobbot_time(value):
     if not value:
