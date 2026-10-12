@@ -278,6 +278,16 @@ class Card:
         initial = avatar_initial(username)
         self.text((x + size / 2, y + size / 2), initial, "semibold", size * 0.42, alpha(LABEL, 0.95), anchor="mm")
 
+    def photo(self, image, x, y, size):
+        """A round profile photo."""
+        d = s(size)
+        tile = _cover(image, d)
+        mask = Image.new("L", (d, d), 0)
+        ImageDraw.Draw(mask).ellipse((0, 0, d - 1, d - 1), fill=255)
+        self.image.paste(tile, (s(x), s(y)), mask)
+        self.draw = ImageDraw.Draw(self.image, "RGBA")
+        self.draw.ellipse((s(x), s(y), s(x) + d - 1, s(y) + d - 1), outline=alpha(LABEL, 0.08), width=max(1, S))
+
     def wordmark(self, right, y_center, size=30):
         """The mark and the lowercase wordmark, right-aligned at `right`."""
         word = "sonar"
@@ -430,6 +440,11 @@ def load_artwork(*urls):
 _render_state = threading.local()
 
 
+def mark_degraded():
+    """Keeps the image being rendered out of the long caches (a stand-in that may change soon)."""
+    _render_state.degraded = True
+
+
 # --- Cards ---------------------------------------------------------------------------------
 
 ART = 440
@@ -546,11 +561,15 @@ def podcast_card(podcast):
     return card
 
 
-def profile_card(profile):
+def profile_card(profile, avatar_url=None):
     card = Card()
     card.teal_wash()
     size = 168
-    card.avatar(profile.username, (W - size) / 2, 70, size)
+    photo = load_artwork(avatar_url) if avatar_url else None
+    if photo is not None:
+        card.photo(photo, (W - size) / 2, 70, size)
+    else:
+        card.avatar(profile.username, (W - size) / 2, 70, size)
     name = one_line(f"@{profile.username}", "bold", 56, W - 2 * PAD)
     card.text((W / 2, 318), name, "bold", 56, LABEL, anchor="ms")
     if profile.logged_count:
@@ -599,6 +618,59 @@ def list_card(sonar_list):
         card.text((COL_X, y), f"{sonar_list.item_count} {noun}", "semibold", 25, LABEL)
     row = card.footer(COL_X, W - PAD, DIVIDER_Y)
     _byline(card, sonar_list.username, row, suffix="")
+    return card
+
+
+def invite_card(page):
+    """"@name invited you to Sonar": their photo (or initial), the invitation, and a 2x2 of the
+    artwork they love or reviewed lately. `page` None is the generic invitation."""
+    username = page.username if page else None
+    art = []
+    for url in (page.artwork if page else [])[:6]:
+        if len(art) == 4:
+            break
+        image = load_artwork(url)
+        if image is not None:
+            art.append(image)
+
+    card = Card(glow=art[0] if art else None)
+    if not art:
+        card.teal_wash()
+    grid_x = W - PAD - ART
+    if len(art) >= 4:
+        gap = 12
+        half = (ART - gap) / 2
+        for index, image in enumerate(art[:4]):
+            card.artwork(image, grid_x + (index % 2) * (half + gap), ART_Y + (index // 2) * (half + gap), half, shadow=False)
+    elif art:
+        card.artwork(art[0], grid_x, ART_Y, ART)
+    else:
+        _brand_mark(card.draw, s(grid_x + ART / 2), s(ART_Y + ART / 2 - 10), s(300), TEAL)
+
+    col_w = grid_x - 56 - PAD
+    y = PAD + 8
+    size = 112
+    photo = load_artwork(page.avatar_url) if page and page.avatar_url else None
+    if photo is not None:
+        card.photo(photo, PAD, y, size)
+    elif username:
+        card.avatar(username, PAD, y, size)
+    else:
+        card.artwork(None, PAD, y, size, shadow=False)
+    y += size + 62
+    if username:
+        name = one_line(f"@{username}", "bold", 52, col_w)
+        card.text((PAD, y), name, "bold", 52, LABEL, anchor="ls")
+        y += 58
+        card.text((PAD, y), "invited you to Sonar", "semibold", 40, TEAL, anchor="ls")
+    else:
+        card.text((PAD, y), "You're invited", "bold", 52, LABEL, anchor="ls")
+        y += 58
+        card.text((PAD, y), "to Sonar", "semibold", 40, TEAL, anchor="ls")
+    y += 30
+    # Broken by hand: wrapped to the column, "love" would sit alone on the second line.
+    card.lines(PAD, y, ["Rate, review and remember", "the episodes you love"], "regular", 28, GRAY, 38)
+    card.footer(PAD, PAD + col_w, DIVIDER_Y)
     return card
 
 

@@ -166,6 +166,7 @@ app/blog/*.pyc
 # Job application bot review pages (admin): their tests
 !tests/test_jobbot.py
 !tests/test_sonar_share.py
+!tests/test_sonar_attribution.py
 
 # macOS folder metadata, wherever an allowlist above reaches
 .DS_Store

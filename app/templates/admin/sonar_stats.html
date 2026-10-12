@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "admin/_admin.html" as admin with context %}
+{% block title %}Sonar shares · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+{% block content %}
+  {{ ui.head("Sonar shares", where="Admin", line="Share-link page views and taps on Open in Sonar / App Store, by link kind and where it was shared from. Counts only; previews and crawlers are skipped.") }}
+  {{ admin.nav("sonar") }}
+
+  {% for period in periods %}
+  {% call ui.sect("%02d" % loop.index, "Last %d days" % period.days if period else "Unavailable", wide=True) %}
+    {% if period is none %}
+      <p>The stats store couldn't be read. Check that SONAR_STATS_DATABASE_PATH is writable.</p>
+    {% else %}
+    <div class="table admin-table">
+      <table>
+        <thead><tr><th>Kind</th><th>Source</th><th>Views</th><th>Open in Sonar</th><th>App Store</th><th>Click-through</th></tr></thead>
+        <tbody>
+          {% for row in period.rows %}
+          <tr>
+            <td data-label="Kind" class="admin-table__lead">{{ row.kind }}</td>
+            <td data-label="Source">{{ row.source }}</td>
+            <td data-label="Views">{{ row.views }}</td>
+            <td data-label="Open in Sonar">{{ row.app }}</td>
+            <td data-label="App Store">{{ row.appstore }}</td>
+            <td data-label="Click-through">{{ "%.1f%%" % (row.ctr * 100) if row.ctr is not none else "–" }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6">No share-link visits since {{ period.since }}.</td></tr>
+          {% endfor %}
+          {% if period.rows %}
+          <tr>
+            <td data-label="Kind" class="admin-table__lead"><strong>All</strong></td>
+            <td data-label="Source">since {{ period.since }}</td>
+            <td data-label="Views"><strong>{{ period.totals.views }}</strong></td>
+            <td data-label="Open in Sonar"><strong>{{ period.totals.app }}</strong></td>
+            <td data-label="App Store"><strong>{{ period.totals.appstore }}</strong></td>
+            <td data-label="Click-through"><strong>{{ "%.1f%%" % (period.totals.ctr * 100) if period.totals.ctr is not none else "–" }}</strong></td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  {% endcall %}
+  {% endfor %}
+  <p class="note">Sources: {{ sources | join(", ") }}, or unknown (no or unrecognised <code>?s=</code>). Days are UTC. Click-through is all taps over views.</p>
+{% endblock %}
