@@ -38,6 +38,11 @@ class Config:
     SONAR_SUPABASE_ANON_KEY = os.getenv("SONAR_SUPABASE_ANON_KEY")
     PODCASTINDEX_API_KEY = os.getenv("PODCASTINDEX_API_KEY")
     PODCASTINDEX_API_SECRET = os.getenv("PODCASTINDEX_API_SECRET")
+    # Share-link attribution counts (views and App Store / Open in Sonar taps per kind, source and
+    # day; no visitor data). The process must be able to write this file and its directory.
+    SONAR_STATS_DATABASE_PATH = os.getenv(
+        "SONAR_STATS_DATABASE_PATH", os.path.join(_project_root, "instance", "sonar_stats.sqlite3")
+    )
 
     SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(32).hex())
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
