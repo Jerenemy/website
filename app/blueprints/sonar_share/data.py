@@ -3,7 +3,8 @@
 import hashlib
 import re
 import time
-from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
 from typing import Optional
 
 import requests
@@ -49,6 +50,54 @@ class Review:
 class Profile:
     username: str
     logged_count: Optional[int] = None
+
+
+@dataclass
+class ListItem:
+    kind: str  # "episode" or "podcast"
+    podcast_id: str
+    episode_id: Optional[str] = None
+    note: Optional[str] = None
+    episode: Optional[Episode] = None
+    podcast: Optional[Podcast] = None
+
+    @property
+    def title(self) -> Optional[str]:
+        if self.kind == "episode":
+            return self.episode.title if self.episode else None
+        return self.podcast.name if self.podcast else None
+
+    @property
+    def subtitle(self) -> Optional[str]:
+        if self.kind == "episode":
+            show = self.episode.podcast if self.episode else None
+            return show.name if show else None
+        return self.podcast.author if self.podcast else None
+
+    @property
+    def artwork(self) -> Optional[str]:
+        if self.kind == "episode":
+            return self.episode.artwork if self.episode else None
+        return self.podcast.artwork if self.podcast else None
+
+    @property
+    def path(self) -> str:
+        if self.kind == "episode":
+            return f"/sonar/e/{self.podcast_id}/{self.episode_id}"
+        return f"/sonar/p/{self.podcast_id}"
+
+
+@dataclass
+class SonarList:
+    id: str
+    title: str
+    description: Optional[str] = None
+    username: Optional[str] = None
+    item_count: int = 0
+    items: list = field(default_factory=list)  # the first LIST_PREVIEW_ITEMS ListItems
+
+
+LIST_PREVIEW_ITEMS = 12
 
 
 def _cached(key, loader):
@@ -226,6 +275,82 @@ def profile(username: str) -> Optional[Profile]:
         return Profile(username=rows[0]["username"], logged_count=count)
 
     return _cached(("profile", username.lower()), load)
+
+
+def sonar_list(list_id: str) -> Optional[SonarList]:
+    """A public list with its first items, or None when it is private, missing or unreadable.
+
+    Only rows the anon key may read come back (RLS decides); ``is_public=eq.true`` is asked
+    for explicitly as well, so a private list never renders even if a policy is too wide.
+    """
+    if not UUID_RE.match(list_id or ""):
+        return None
+
+    def load():
+        response = _supabase(
+            "lists",
+            {"id": f"eq.{list_id}", "is_public": "eq.true", "select": "id,user_id,title,description", "limit": 1},
+        )
+        rows = response.json() if response is not None else []
+        if not rows:
+            return None
+        row = rows[0]
+        username = None
+        if row.get("user_id"):
+            profile_rows = _supabase("profiles", {"id": f"eq.{row['user_id']}", "select": "username", "limit": 1})
+            if profile_rows is not None and profile_rows.json():
+                username = profile_rows.json()[0].get("username")
+        items_response = _supabase(
+            "list_items",
+            {
+                "list_id": f"eq.{list_id}",
+                "select": "kind,podcast_id,episode_id,note",
+                "order": "position.asc,added_at.asc",
+                "limit": LIST_PREVIEW_ITEMS,
+            },
+            headers={"Prefer": "count=exact"},
+        )
+        item_rows = items_response.json() if items_response is not None else []
+        total = items_response.headers.get("Content-Range", "").split("/")[-1] if items_response is not None else ""
+        items = [
+            ListItem(
+                kind=item.get("kind"),
+                podcast_id=str(item.get("podcast_id") or ""),
+                episode_id=str(item["episode_id"]) if item.get("episode_id") else None,
+                note=(item.get("note") or "").strip() or None,
+            )
+            for item in item_rows
+            if item.get("kind") in ("episode", "podcast") and NUMERIC_RE.match(str(item.get("podcast_id") or ""))
+            and (item.get("kind") == "podcast" or NUMERIC_RE.match(str(item.get("episode_id") or "")))
+        ]
+        _resolve_items(items)
+        return SonarList(
+            id=list_id,
+            title=(row.get("title") or "").strip() or "A list",
+            description=(row.get("description") or "").strip() or None,
+            username=username,
+            item_count=int(total) if total.isdigit() else len(item_rows),
+            items=items,
+        )
+
+    return _cached(("list", list_id.lower()), load)
+
+
+def _resolve_items(items):
+    """Fills in titles and artwork from Podcast Index, a few lookups at a time."""
+    if not items:
+        return
+    app = current_app._get_current_object()
+
+    def resolve(item):
+        with app.app_context():
+            if item.kind == "episode":
+                item.episode = episode(item.episode_id, item.podcast_id)
+            else:
+                item.podcast = podcast(item.podcast_id)
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        list(pool.map(resolve, items))
 
 
 _TAG_RE = re.compile(r"<[^>]+>")
