@@ -90,6 +90,9 @@
 !app/static/sonar/*
 !app/static/sonar/img
 !app/static/sonar/img/*
+# Nunito (SIL OFL 1.1, licence beside it): the type in the generated share preview images
+!app/static/sonar/fonts
+!app/static/sonar/fonts/*
 # files
 !app/static/files
 !app/static/files/*
