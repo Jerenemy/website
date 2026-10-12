@@ -1,5 +1,6 @@
 """Read-only lookups for share pages, with a small in-process TTL cache."""
 
+import datetime as dt
 import hashlib
 import re
 import time
@@ -247,6 +248,11 @@ def review(log_id: str) -> Optional[Review]:
 
 def community_rating(episode_id: str):
     """(average on the 0...5 scale, number of ratings), or (None, 0) when nobody has rated it."""
+    return episode_rating(episode_id) or (None, 0)
+
+
+def episode_rating(episode_id: str):
+    """Like community_rating, but None when the lookup failed (so a badge can cache it briefly)."""
     if not NUMERIC_RE.match(episode_id or ""):
         return None, 0
 
@@ -258,7 +264,7 @@ def community_rating(episode_id: str):
         ratings = [row["rating"] for row in (response.json() if response is not None else []) if row.get("rating")]
         return (round(sum(ratings) / len(ratings) / 2, 1), len(ratings)) if ratings else (None, 0)
 
-    return _cached(("average", episode_id), load) or (None, 0)
+    return _cached(("average", episode_id), load)
 
 
 def community_average(episode_id: str) -> Optional[float]:
@@ -638,3 +644,374 @@ _SPACE_RE = re.compile(r"\s+")
 
 def _plain(html: str) -> str:
     return _SPACE_RE.sub(" ", _TAG_RE.sub(" ", html)).strip()
+
+
+# --- Creators: a show's ratings on Sonar ----------------------------------------------------
+#
+# Everything here comes from episode_logs, which the anon key may read (select using (true)).
+# Reads are bounded: at most CREATOR_MAX_ROWS logs per show. Past that, the totals still come
+# from PostgREST's exact count, and the averages from the most recent CREATOR_MAX_ROWS logs.
+
+CREATOR_MAX_ROWS = 5000
+CREATOR_TOP_EPISODES = 5
+CREATOR_TOP_REVIEWS = 4
+SEARCH_RESULTS = 6
+
+APPLE_PODCASTS_RE = re.compile(
+    r"^(?:https?://)?(?:podcasts|itunes)\.apple\.com/(?:[^?#]*/)?id([0-9]{1,15})(?:[/?#].*)?\Z", re.IGNORECASE
+)
+SONAR_LINK_RE = re.compile(
+    r"^(?:(?:https?://)?(?:www\.)?jeremyzay\.com)?/sonar/(?:creators/)?(?:p|e)/([0-9]{1,20})(?:/[0-9]{1,20})?/?(?:[?#].*)?\Z"
+    r"|^sonar://(?:podcast|episode)/([0-9]{1,20})(?:/[0-9]{1,20})?\Z",
+    re.IGNORECASE,
+)
+
+
+@dataclass
+class EpisodeStat:
+    episode_id: str
+    average: float  # 0...5
+    count: int
+    episode: Optional[Episode] = None
+
+
+@dataclass
+class CreatorStats:
+    podcast_id: str
+    logs: int = 0           # logged episodes (not bare listen-later saves)
+    ratings: int = 0
+    average: Optional[float] = None  # 0...5
+    reviews: int = 0        # logs with written words
+    top_episodes: list = field(default_factory=list)  # EpisodeStats, best first
+    top_reviews: list = field(default_factory=list)   # Reviews
+    sampled: bool = False   # more logs than CREATOR_MAX_ROWS: averages come from the newest ones
+
+
+def _average(points):
+    """Average of 1...10 ratings on the 0...5 scale, one decimal."""
+    return round(sum(points) / len(points) / 2, 1) if points else None
+
+
+def podcast_rating(podcast_id: str):
+    """(average on the 0...5 scale, number of ratings) across a show's episodes; (None, 0) when
+    nobody has rated it; None when the lookup failed."""
+    if not NUMERIC_RE.match(podcast_id or ""):
+        return None, 0
+
+    def load():
+        response = _supabase(
+            "episode_logs",
+            {"podcast_id": f"eq.{podcast_id}", "rating": "gt.0", "select": "rating",
+             "order": "created_at.desc", "limit": CREATOR_MAX_ROWS},
+            headers={"Prefer": "count=exact"},
+        )
+        rows = _rows(response) or []
+        ratings = [row["rating"] for row in rows if isinstance(row.get("rating"), int) and 0 < row["rating"] <= 10]
+        count = _total(response)
+        return (_average(ratings), max(count or 0, len(ratings))) if ratings else (None, 0)
+
+    return _cached(("podcast_rating", podcast_id), load)
+
+
+def summarize_show(rows, top=CREATOR_TOP_EPISODES):
+    """(ratings, average, reviews, top EpisodeStats) from a show's log rows. Pure, for tests.
+
+    Episodes rank by average, then by how many people rated them; an episode needs two ratings
+    to rank while any episode has two (one 5-star log shouldn't top a show's chart)."""
+    per_episode = {}
+    ratings, reviews = [], 0
+    for row in rows or []:
+        rating = row.get("rating")
+        if (row.get("review") or "").strip():
+            reviews += 1
+        if not isinstance(rating, int) or not 0 < rating <= 10:
+            continue
+        ratings.append(rating)
+        episode_id = str(row.get("episode_id") or "")
+        if NUMERIC_RE.match(episode_id):
+            per_episode.setdefault(episode_id, []).append(rating)
+    stats = [EpisodeStat(episode_id=k, average=_average(v), count=len(v)) for k, v in per_episode.items()]
+    floor = 2 if any(stat.count >= 2 for stat in stats) else 1
+    ranked = sorted((stat for stat in stats if stat.count >= floor), key=lambda st: (-st.average, -st.count, st.episode_id))
+    return len(ratings), _average(ratings), reviews, ranked[:top]
+
+
+def creator_stats(podcast_id: str) -> Optional[CreatorStats]:
+    """A show's Sonar numbers for its creator page, or None when the lookup failed."""
+    if not NUMERIC_RE.match(podcast_id or ""):
+        return None
+
+    def load():
+        response = _supabase(
+            "episode_logs",
+            {"podcast_id": f"eq.{podcast_id}", "or": LOGGED_FILTER, "select": "episode_id,rating,review",
+             "order": "created_at.desc", "limit": CREATOR_MAX_ROWS},
+            headers={"Prefer": "count=exact"},
+        )
+        rows = _rows(response) or []
+        logs = _total(response)
+        logs = max(logs or 0, len(rows))
+        ratings, average, reviews, top = summarize_show(rows)
+        review_rows = _rows(_optional("episode_logs", {
+            "podcast_id": f"eq.{podcast_id}",
+            "and": "(review.not.is.null,review.neq.)",
+            "select": REVIEW_COLUMNS,
+            "order": "review_like_count.desc.nullslast,created_at.desc",
+            "limit": CREATOR_TOP_REVIEWS * 2,
+        }))
+        top_reviews = [item for item in _reviews(review_rows, resolve=False) if item.text][:CREATOR_TOP_REVIEWS]
+        wanted = list(dict.fromkeys([stat.episode_id for stat in top] + [r.episode_id for r in top_reviews if r.episode_id]))
+        resolved = dict(zip(wanted, _parallel([(lambda e=e: episode(e, podcast_id)) for e in wanted])))
+        for stat in top:
+            stat.episode = resolved.get(stat.episode_id)
+        for item in top_reviews:
+            item.episode = resolved.get(item.episode_id)
+        return CreatorStats(podcast_id=podcast_id, logs=logs, ratings=ratings, average=average, reviews=reviews,
+                            top_episodes=top, top_reviews=top_reviews, sampled=len(rows) < logs)
+
+    return _cached(("creator", podcast_id), load)
+
+
+def podcast_id_from_apple(apple_id: str) -> Optional[str]:
+    """The Podcast Index feed id for an Apple Podcasts id, or None."""
+    if not NUMERIC_RE.match(apple_id or ""):
+        return None
+
+    def load():
+        feed = (_podcast_index("podcasts/byitunesid", {"id": apple_id}) or {}).get("feed")
+        feed_id = str((feed or {}).get("id") or "") if isinstance(feed, dict) else ""
+        return feed_id if NUMERIC_RE.match(feed_id) else None
+
+    return _cached(("itunes", apple_id), load)
+
+
+def search_podcasts(term: str) -> Optional[list]:
+    """Up to SEARCH_RESULTS shows matching `term` on Podcast Index; None when search isn't available."""
+    term = " ".join((term or "").split())[:100]
+    if not term:
+        return []
+
+    def load():
+        result = _podcast_index("search/byterm", {"q": term, "max": SEARCH_RESULTS})
+        if result is None:
+            return None
+        shows = []
+        for feed in result.get("feeds") or []:
+            feed_id = str(feed.get("id") or "")
+            if NUMERIC_RE.match(feed_id) and feed.get("title"):
+                shows.append(Podcast(id=feed_id, name=feed["title"].strip(),
+                                     author=(feed.get("author") or feed.get("ownerName") or "").strip(),
+                                     artwork=_artwork(feed)))
+        return shows[:SEARCH_RESULTS]
+
+    return _cached(("search", term.lower()), load)
+
+
+def resolve_show(query: str):
+    """What a podcaster typed into the creators form: ("id", podcast id), ("search", term) or
+    ("apple", None) for an Apple link Podcast Index doesn't know. Never fetches a URL it's given."""
+    text = (query or "").strip()
+    if NUMERIC_RE.match(text):
+        return "id", text
+    match = SONAR_LINK_RE.match(text)
+    if match:
+        return "id", match.group(1) or match.group(2)
+    match = APPLE_PODCASTS_RE.match(text)
+    if match:
+        found = podcast_id_from_apple(match.group(1))
+        return ("id", found) if found else ("apple", None)
+    return "search", text
+
+
+# --- Recaps: a listener's month or year ----------------------------------------------------
+#
+# Computed from that user's episode_logs (anon-readable). A log's day is its logged_date (the
+# day the user picked; "yyyy-MM-dd", or a legacy short date), else its created_at day.
+
+RECAP_FIRST_YEAR = 2024
+RECAP_MAX_ROWS = 3000
+RECAP_TOP_PODCASTS = 5
+PERIOD_RE = re.compile(r"^([0-9]{4})(?:-([0-9]{2}))?\Z")
+MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+          "November", "December")
+
+
+@dataclass
+class Period:
+    key: str        # "2025" or "2025-10"
+    start: dt.date  # inclusive
+    end: dt.date    # exclusive
+    month: Optional[int] = None
+
+    @property
+    def label(self) -> str:
+        return f"{MONTHS[self.month - 1]} {self.start.year}" if self.month else str(self.start.year)
+
+    @property
+    def noun(self) -> str:
+        return "month" if self.month else "year"
+
+
+def parse_period(value: str, today=None) -> Optional[Period]:
+    """A recap period ("YYYY" or "YYYY-MM"), or None when it's malformed, before 2024 or in the future."""
+    match = PERIOD_RE.match(value or "")
+    if not match:
+        return None
+    year = int(match.group(1))
+    month = int(match.group(2)) if match.group(2) else None
+    today = today or dt.datetime.now(dt.timezone.utc).date()
+    if year < RECAP_FIRST_YEAR or (month is not None and not 1 <= month <= 12):
+        return None
+    if month:
+        start = dt.date(year, month, 1)
+        end = dt.date(year + (month == 12), month % 12 + 1, 1)
+    else:
+        start, end = dt.date(year, 1, 1), dt.date(year + 1, 1, 1)
+    # Up to a day early, so someone ahead of UTC can share their new month at midnight.
+    if start > today + dt.timedelta(days=1):
+        return None
+    return Period(key=value, start=start, end=end, month=month)
+
+
+_SHORT_DATE_RE = re.compile(r"^([0-9]{1,2})[/.]([0-9]{1,2})[/.]([0-9]{2,4})\Z")
+
+
+def log_day(row):
+    """The calendar day a log row counts on, or None."""
+    for value in (row.get("logged_date"), row.get("created_at")):
+        text = (value or "").strip() if isinstance(value, str) else ""
+        if not text:
+            continue
+        try:
+            return dt.date.fromisoformat(text[:10])
+        except ValueError:
+            pass
+        match = _SHORT_DATE_RE.match(text)
+        if match:  # legacy short dates; ambiguous slashes read as US M/d, as the app does
+            first, second, year = (int(part) for part in match.groups())
+            year += 2000 if year < 100 else 0
+            month, day = (first, second) if "/" in text else (second, first)
+            try:
+                return dt.date(year, month, day)
+            except ValueError:
+                pass
+    return None
+
+
+def _is_logged(row):
+    """Mirrors LOGGED_FILTER: anything but a bare listen-later save."""
+    return (not row.get("listen_later") or row.get("is_listened") or (row.get("rating") or 0) > 0
+            or row.get("is_loved") or row.get("review") is not None)
+
+
+@dataclass
+class TopPodcast:
+    podcast_id: str
+    count: int
+    podcast: Optional[Podcast] = None
+
+    @property
+    def path(self) -> str:
+        return f"/sonar/p/{self.podcast_id}"
+
+
+@dataclass
+class Recap:
+    username: str
+    period: Period
+    episodes: int = 0          # distinct episodes logged
+    reviews: int = 0
+    loved: int = 0
+    ratings: int = 0
+    average: Optional[float] = None  # 0...5
+    days: int = 0               # days with at least one log
+    longest_streak: int = 0     # consecutive days with a log
+    top_podcasts: list = field(default_factory=list)  # TopPodcasts
+    best: Optional[Review] = None  # the highest-rated log
+    avatar_url: Optional[str] = None
+    truncated: bool = False
+
+    @property
+    def empty(self) -> bool:
+        return self.episodes == 0
+
+
+def summarize_recap(rows, period: Period, username="", top=RECAP_TOP_PODCASTS) -> Recap:
+    """The recap numbers for the rows that fall in `period`. Pure, for tests."""
+    seen, days, per_podcast = set(), set(), {}
+    recap = Recap(username=username, period=period)
+    ratings, best, best_key = [], None, None
+    for row in rows or []:
+        day = log_day(row)
+        if day is None or not period.start <= day < period.end or not _is_logged(row):
+            continue
+        episode_id = str(row.get("episode_id") or "")
+        podcast_id = str(row.get("podcast_id") or "")
+        days.add(day)
+        if episode_id in seen:  # a relisten: counts once
+            continue
+        seen.add(episode_id)
+        if NUMERIC_RE.match(podcast_id):
+            first = per_podcast.setdefault(podcast_id, [0, day])
+            first[0] += 1
+        rating = row.get("rating") if isinstance(row.get("rating"), int) and 0 < row["rating"] <= 10 else None
+        if rating:
+            ratings.append(rating)
+            key = (rating, bool(row.get("is_loved")), bool((row.get("review") or "").strip()), day)
+            if best_key is None or key > best_key:
+                best_key, best = key, row
+        if (row.get("review") or "").strip():
+            recap.reviews += 1
+        if row.get("is_loved"):
+            recap.loved += 1
+    recap.episodes = len(seen)
+    recap.ratings = len(ratings)
+    recap.average = _average(ratings)
+    recap.days = len(days)
+    streak = longest = 0
+    previous = None
+    for day in sorted(days):
+        streak = streak + 1 if previous is not None and day - previous == dt.timedelta(days=1) else 1
+        longest = max(longest, streak)
+        previous = day
+    recap.longest_streak = longest
+    ranked = sorted(per_podcast.items(), key=lambda item: (-item[1][0], item[1][1], item[0]))
+    recap.top_podcasts = [TopPodcast(podcast_id=pid, count=count) for pid, (count, _) in ranked[:top]]
+    if best is not None:
+        recap.best = _review_from_row(best, {})
+        recap.best.username = username or None
+    return recap
+
+
+def recap(username: str, period: Period) -> Optional[Recap]:
+    """A user's recap for `period`, or None for an unknown user (or a failed lookup)."""
+    base = profile(username)
+    if base is None or not base.id or not UUID_RE.match(str(base.id)):
+        return None
+
+    def load():
+        start, end = period.start.isoformat(), period.end.isoformat()
+        # Rows whose logged_date or created_at falls in the period; log_day() then decides.
+        # (A log backdated into the period is found by logged_date, a legacy-dated one by created_at.)
+        rows = _rows(_supabase("episode_logs", {
+            "user_id": f"eq.{base.id}",
+            "or": f"(and(logged_date.gte.{start},logged_date.lt.{end}),and(created_at.gte.{start},created_at.lt.{end}))",
+            "select": REVIEW_COLUMNS + ",logged_date,listen_later,is_listened",
+            "order": "created_at.asc",
+            "limit": RECAP_MAX_ROWS,
+        })) or []
+        result = summarize_recap(rows, period, base.username)
+        result.truncated = len(rows) >= RECAP_MAX_ROWS
+        jobs = [(lambda pid=top.podcast_id: podcast(pid)) for top in result.top_podcasts]
+        if result.best is not None:
+            jobs.append(lambda: episode(result.best.episode_id or "", result.best.podcast_id or ""))
+        jobs.append(lambda: avatar_url(base.id))
+        resolved = _parallel(jobs)
+        for top, show in zip(result.top_podcasts, resolved):
+            top.podcast = show
+        if result.best is not None:
+            result.best.episode = resolved[len(result.top_podcasts)]
+        result.avatar_url = resolved[-1]
+        return result
+
+    return _cached(("recap", username.lower(), period.key), load)
