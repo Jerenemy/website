@@ -9,7 +9,11 @@ def debug_mail():
     if not current_app.debug:
         abort(404)
 
-    cfg = current_app.config
+    return _mail_config_summary(current_app.config)
+
+
+def _mail_config_summary(cfg):
+    """The mail settings, with the username and sender reduced to whether they are set."""
     return {
         "MAIL_SERVER": cfg.get("MAIL_SERVER"),
         "MAIL_PORT": cfg.get("MAIL_PORT"),
@@ -53,13 +57,7 @@ def api_contact():
     if not default_sender or not recipient or not cfg.get("MAIL_SERVER"):
         current_app.logger.error(
             "Mail config missing required values",
-            extra={
-                "MAIL_SERVER": cfg.get("MAIL_SERVER"),
-                "MAIL_PORT": cfg.get("MAIL_PORT"),
-                "MAIL_USE_TLS": cfg.get("MAIL_USE_TLS"),
-                "MAIL_USERNAME_present": bool(cfg.get("MAIL_USERNAME")),
-                "MAIL_DEFAULT_SENDER_present": bool(cfg.get("MAIL_DEFAULT_SENDER")),
-            },
+            extra=_mail_config_summary(cfg),
         )
         return reply({"error": "Email service not configured"}, 500)
 
