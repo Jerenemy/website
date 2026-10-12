@@ -11,6 +11,9 @@ TEAM_ID = "9A9HR6WT4K"
 BUNDLE_ID = "com.jeremyzay.Sonar"
 APP_STORE_ID = "6761410303"
 APP_STORE_URL = f"https://apps.apple.com/app/id{APP_STORE_ID}"
+# The origin Sonar's invite links use. The app only accepts links on this host, so the invite the
+# page copies for a fresh install is always built here, never from the request.
+SHARE_ORIGIN = "https://jeremyzay.com"
 SHARE_PATHS = ("/sonar/r/*", "/sonar/e/*", "/sonar/p/*", "/sonar/u/*", "/sonar/l/*", "/sonar/i/*")
 
 # A share path and the app link it stands for. /sonar/go rebuilds the app link from these (never
@@ -243,6 +246,11 @@ def shared_profile(username):
     )
 
 
+def invite_url(username):
+    """The canonical invite link the app parses: https://jeremyzay.com/sonar/i/<username>."""
+    return f"{SHARE_ORIGIN}/sonar/i/{username}"
+
+
 @bp.get("/sonar/i/<username>")
 def invite(username):
     """An invite from a Sonar user. An unknown or malformed name still gets a friendly invite."""
@@ -272,6 +280,9 @@ def invite(username):
         page=page,
         inviter=name,
         avatar=_avatar(name),
+        # "Get Sonar" copies this so the app can offer to paste it on first launch (the invite
+        # link itself can't survive an App Store install). Canonical: no ?s=.
+        invite_copy_url=invite_url(name),
     )
 
 

@@ -11,7 +11,7 @@ from unittest import mock
 from PIL import Image
 
 from app import create_app
-from app.blueprints.sonar_share import data, og
+from app.blueprints.sonar_share import data, og, routes
 
 LOG_ID = "d351c000-0000-4000-8003-000000000000"
 LIST_ID = "0b6f1c2e-4a5d-4e8f-9a1b-2c3d4e5f6a7b"
@@ -91,7 +91,7 @@ class SonarShareTests(unittest.TestCase):
 
     def _button(self, html, label):
         """The href of a call-to-action button, unescaped."""
-        match = re.search(r'<a class="button[^"]*" href="([^"]+)">' + re.escape(label) + "</a>", html)
+        match = re.search(r'<a class="button[^"]*" href="([^"]+)"[^>]*>' + re.escape(label) + "</a>", html)
         return html_lib.unescape(match.group(1)) if match else None
 
     def _open_in_sonar(self, html, label="Open in Sonar"):
@@ -545,6 +545,38 @@ class SonarShareTests(unittest.TestCase):
         self.assertNotIn("Open in Sonar", html)
         self.assertIn("/sonar/og/brand.png", html)
         get.assert_not_called()
+
+    def test_invite_page_copies_the_canonical_invite_before_the_app_store(self):
+        with mock.patch.object(data, "profile_page", return_value=_sample_page()):
+            html = self.client.get("/sonar/i/maya.listens?s=story").get_data(as_text=True)
+        # The button carries the canonical invite (production host, no ?s=), and still links
+        # straight to the App Store through /sonar/go, so it works without JavaScript.
+        self.assertIn('data-copy-invite="https://jeremyzay.com/sonar/i/maya.listens"', html)
+        self.assertNotIn('data-copy-invite="https://jeremyzay.com/sonar/i/maya.listens?', html)
+        self.assertEqual(self._open_in_sonar(html, "Get Sonar on the App Store"), "https://apps.apple.com/app/id6761410303")
+        button = re.search(r'<a class="button button--primary" href="([^"]+)" data-copy-invite=', html)
+        self.assertIsNotNone(button)
+        self.assertTrue(button.group(1).startswith("/sonar/go?"))
+        # The copy script and its quiet note, which stays hidden until the script shows it.
+        self.assertIn("navigator.clipboard.writeText", html)
+        self.assertIn('document.execCommand("copy")', html)
+        self.assertIn("<p class=\"copy-note\" id=\"copy-note\" hidden>We'll copy your invite so Sonar can find it after you install.</p>", html)
+
+    def test_invite_page_copies_nothing_without_a_known_inviter(self):
+        with mock.patch.object(data, "profile_page", return_value=None):
+            html = self.client.get("/sonar/i/nobody_here").get_data(as_text=True)
+        self.assertNotIn("data-copy-invite", html)
+        self.assertNotIn("navigator.clipboard", html)
+        self.assertNotIn('id="copy-note"', html)
+
+    def test_other_share_pages_copy_nothing(self):
+        with mock.patch.object(data, "profile_page", return_value=_sample_page()):
+            html = self.client.get("/sonar/u/maya.listens").get_data(as_text=True)
+        self.assertNotIn("data-copy-invite", html)
+        self.assertNotIn("navigator.clipboard", html)
+
+    def test_invite_url_is_canonical(self):
+        self.assertEqual(routes.invite_url("maya.listens"), "https://jeremyzay.com/sonar/i/maya.listens")
 
     def test_source_parameter_never_changes_routing_or_canonical(self):
         review = _sample_review()

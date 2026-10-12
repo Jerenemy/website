@@ -256,7 +256,8 @@
 
     <div class="actions">
       {% if kind == "invite" %}
-        <a class="button button--primary" href="{{ store_href }}">Get Sonar on the App Store</a>
+        <a class="button button--primary" href="{{ store_href }}"{% if invite_copy_url %} data-copy-invite="{{ invite_copy_url }}"{% endif %}>Get Sonar on the App Store</a>
+        {% if invite_copy_url %}<p class="copy-note" id="copy-note" hidden>We'll copy your invite so Sonar can find it after you install.</p>{% endif %}
         {% if app_href %}<a class="button button--secondary" href="{{ app_href }}">Already have it? Open in Sonar</a>{% endif %}
       {% else %}
         {% if app_href %}<a class="button button--primary" href="{{ app_href }}">Open in Sonar</a>{% endif %}
@@ -264,6 +265,54 @@
       {% endif %}
     </div>
 
+{% if invite_copy_url %}
+    <script>
+      // An invite link can't survive an App Store install, so "Get Sonar" copies it first and
+      // Sonar offers to paste it on first launch. Without JavaScript the button is a plain link
+      // to the App Store (and the note stays hidden). Nothing else is read or sent.
+      (function () {
+        var link = document.querySelector("[data-copy-invite]");
+        if (!link) return;
+        var note = document.getElementById("copy-note");
+        if (note) note.hidden = false;
+
+        function copyWithTextarea(text) {
+          var area = document.createElement("textarea");
+          area.value = text;
+          area.setAttribute("readonly", "");
+          area.style.position = "fixed";
+          area.style.top = "0";
+          area.style.opacity = "0";
+          document.body.appendChild(area);
+          area.select();
+          area.setSelectionRange(0, text.length);
+          try { document.execCommand("copy"); } catch (e) {}
+          document.body.removeChild(area);
+        }
+
+        link.addEventListener("click", function (event) {
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          var text = link.getAttribute("data-copy-invite");
+          var href = link.href;
+          var left = false;
+          function leave() {
+            if (left) return;
+            left = true;
+            window.location.href = href;
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            event.preventDefault();
+            var copied;
+            try { copied = navigator.clipboard.writeText(text); } catch (e) { copied = Promise.reject(e); }
+            copied.then(leave, function () { copyWithTextarea(text); leave(); });
+            setTimeout(leave, 600); // never hold anyone up on a slow clipboard
+          } else {
+            copyWithTextarea(text); // then the link goes on to the App Store as usual
+          }
+        });
+      })();
+    </script>
+    {% endif %}
     <footer>Rate, review and remember the episodes you love · <a href="{{ url_for('public.sonar') }}">About Sonar</a></footer>
   </main>
 </body>
