@@ -26,6 +26,8 @@
   <meta name="twitter:description" content="{{ description }}">
   <meta name="twitter:image" content="{{ og_image }}">
   <link rel="canonical" href="{{ page_url }}">
+  {% if noindex %}<meta name="robots" content="noindex">{% endif %}
+  {% if json_ld %}<script type="application/ld+json">{{ json_ld | tojson }}</script>{% endif %}
   <link rel="icon" href="{{ url_for('static', filename='sonar/img/app-icon.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='sonar/img/app-icon.png') }}">
 
@@ -124,6 +126,52 @@
     .item__note { font-size: 14px; color: var(--text-3); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .more { margin: 14px 0 0; color: var(--text-2); font-size: 15px; }
 
+    .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+    .avatar--photo { background: var(--card); overflow: hidden; }
+
+    /* Profile and invite sections. */
+    .stats { display: flex; justify-content: center; gap: 28px; margin: 18px 0 0; padding: 0; list-style: none; }
+    .stats li { display: flex; flex-direction: column; align-items: center; min-width: 64px; }
+    .stats strong { font: 700 20px/1.2 var(--rounded); font-variant-numeric: tabular-nums; }
+    .stats span { color: var(--text-2); font-size: 13px; }
+    .section { margin-top: 34px; }
+    .section h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+    .favorites { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .favorites a { display: block; text-decoration: none; }
+    .favorites img, .favorites .ph {
+      width: 100%; aspect-ratio: 1; height: auto; border-radius: 10px; object-fit: cover; display: block;
+      background: var(--card); box-shadow: 0 0 0 0.5px var(--hairline);
+    }
+    .favorites span { display: block; margin-top: 6px; font-size: 12px; line-height: 1.3; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .reviews { list-style: none; margin: 0; padding: 0; border-top: 0.5px solid var(--hairline); }
+    .reviews li { border-bottom: 0.5px solid var(--hairline); }
+    .rv { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; text-decoration: none; }
+    .rv > img, .rv > .ph {
+      flex: none; width: 56px; height: 56px; border-radius: 8px; object-fit: cover; background: var(--card);
+      box-shadow: 0 0 0 0.5px var(--hairline);
+    }
+    .rv .avatar { margin-top: 2px; }
+    .rv__text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .rv__title { font-size: 16px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .rv__sub { font-size: 14px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rv__body { font-size: 15px; line-height: 1.45; color: rgba(243, 245, 247, 0.86); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+    .rv .dots { gap: 3px; margin-top: 2px; }
+    .rv .dot { width: 9px; height: 9px; }
+    .rv__meta { display: flex; align-items: center; gap: 8px; }
+    .rv__meta .heart { width: 12px; height: 12px; }
+    .social { display: flex; gap: 16px; margin-top: 16px; color: var(--text-2); font-size: 14px; }
+    .social strong { color: var(--label); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .lists { list-style: none; margin: 0; padding: 0; border-top: 0.5px solid var(--hairline); }
+    .lists li { border-bottom: 0.5px solid var(--hairline); }
+    .lists a { display: flex; justify-content: space-between; gap: 12px; padding: 13px 0; text-decoration: none; font-weight: 600; }
+    .lists a span:last-child { flex: none; color: var(--text-2); font-weight: 400; font-size: 15px; }
+    .invite-head { text-align: center; }
+    .invite-head h1 { margin-top: 18px; }
+    .invite-head .lede { margin: 8px 0 0; color: var(--teal); font: 600 20px/1.3 var(--rounded); }
+    .pitch { margin: 18px 0 0; padding: 0; list-style: none; color: var(--text-2); font-size: 15px; display: grid; gap: 8px; }
+    .pitch li { display: flex; gap: 10px; align-items: baseline; }
+    .pitch li::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--teal); transform: translateY(-2px); }
+
     .actions { margin-top: auto; padding-top: 32px; display: grid; gap: 10px; }
     .button {
       display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -160,8 +208,61 @@
       {% if loved %}<svg class="heart" viewBox="0 0 24 22" role="img" aria-label="Loved"><path fill="currentColor" d="M12 21.6 10.3 20C4.2 14.5.2 10.9.2 6.5.2 2.9 3 .2 6.6.2c2 0 4 .9 5.4 2.4C13.4 1.1 15.4.2 17.4.2c3.6 0 6.4 2.7 6.4 6.3 0 4.4-4 8-10.1 13.5L12 21.6Z"/></svg>{% endif %}
     {%- endmacro %}
 
-    {% macro avatar_tag(info, classes="") -%}
-      <span class="avatar {{ classes }}" aria-hidden="true" style="--a1: {{ info.top }}; --a2: {{ info.bottom }}">{{ info.initial }}</span>
+    {% macro avatar_tag(info, classes="", photo=None) -%}
+      {% if photo %}<span class="avatar avatar--photo {{ classes }}" aria-hidden="true"><img src="{{ photo }}" alt="" referrerpolicy="no-referrer"></span>
+      {%- else %}<span class="avatar {{ classes }}" aria-hidden="true" style="--a1: {{ info.top }}; --a2: {{ info.bottom }}">{{ info.initial }}</span>{% endif %}
+    {%- endmacro %}
+
+    {#- One review in a list: the episode's art (or the reviewer, on an episode page), title, dots, words. -#}
+    {% macro review_row(item, by_person=False) -%}
+      <li>
+        <a class="rv" href="{{ item.path }}">
+          {% if by_person %}{{ avatar_tag(avatar_for(item.username)) }}
+          {% elif item.episode and item.episode.artwork %}<img src="{{ item.episode.artwork }}" alt="" width="56" height="56" loading="lazy" decoding="async">
+          {% else %}<span class="ph" aria-hidden="true"></span>{% endif %}
+          <span class="rv__text">
+            {% if by_person %}<span class="rv__title">@{{ item.username or "someone" }}</span>
+            {% else %}<span class="rv__title">{{ item.episode.title if item.episode else "A podcast episode" }}</span>
+            {% if item.episode and item.episode.podcast %}<span class="rv__sub">{{ item.episode.podcast.name }}</span>{% endif %}{% endif %}
+            {% if item.rating or item.is_loved %}<span class="rv__meta">{{ rating_dots(dots_for(item.rating), item.is_loved) }}</span>{% endif %}
+            {% if item.text %}<span class="rv__body">{{ item.text }}</span>{% endif %}
+          </span>
+        </a>
+      </li>
+    {%- endmacro %}
+
+    {#- The sections of a profile the public key can read; each hides when it can't. -#}
+    {% macro profile_sections(page, invite=False) -%}
+      {% if page.favorites %}
+        <section class="section" aria-labelledby="fav-heading">
+          <h2 id="fav-heading">{{ "@" ~ page.username ~ "'s favorites" if invite else "Favorites" }}</h2>
+          <ul class="favorites">
+            {% for entry in page.favorites %}
+              <li><a href="{{ entry.path }}">
+                {% if entry.artwork %}<img src="{{ entry.artwork }}" alt="" width="96" height="96" loading="lazy" decoding="async">{% else %}<span class="ph" aria-hidden="true"></span>{% endif %}
+                <span>{{ entry.title or ("An episode" if entry.kind == "episode" else "A podcast") }}</span>
+              </a></li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+      {% if page.recent_reviews %}
+        {% set shown = page.recent_reviews[:3] if invite else page.recent_reviews %}
+        <section class="section" aria-labelledby="recent-heading">
+          <h2 id="recent-heading">{{ "Lately on @" ~ page.username ~ "'s headphones" if invite else "Recent reviews" }}</h2>
+          <ul class="reviews">{% for item in shown %}{{ review_row(item) }}{% endfor %}</ul>
+        </section>
+      {% endif %}
+      {% if page.lists and not invite %}
+        <section class="section" aria-labelledby="lists-heading">
+          <h2 id="lists-heading">Lists</h2>
+          <ul class="lists">
+            {% for entry in page.lists %}
+              <li><a href="{{ entry.path }}"><span>{{ entry.title }}</span>{% if entry.item_count is not none %}<span>{{ entry.item_count }}</span>{% endif %}</a></li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
     {%- endmacro %}
 
     <article class="card">
@@ -175,14 +276,32 @@
           {{ avatar_tag(avatar) }}
           <span><strong>@{{ review.username or "someone" }}</strong> on Sonar</span>
         </div>
+        {% if review.like_count or review.reply_count %}
+          <p class="social">
+            {% if review.like_count %}<span><strong>{{ review.like_count }}</strong> {{ "like" if review.like_count == 1 else "likes" }}</span>{% endif %}
+            {% if review.reply_count %}<span><strong>{{ review.reply_count }}</strong> {{ "reply" if review.reply_count == 1 else "replies" }}</span>{% endif %}
+          </p>
+        {% endif %}
+        {% if more %}
+          <section class="section" aria-labelledby="more-heading">
+            <h2 id="more-heading">More from @{{ review.username }}</h2>
+            <ul class="reviews">{% for item in more %}{{ review_row(item) }}{% endfor %}</ul>
+          </section>
+        {% endif %}
 
       {% elif kind == "episode" %}
         {% if episode.artwork %}<img class="art" src="{{ episode.artwork }}" alt="" width="400" height="400">{% endif %}
         {% if show %}<p class="eyebrow">{{ show }}</p>{% endif %}
         <h1>{{ episode.title }}</h1>
         <div class="meta">
-          {% if average %}{{ rating_dots(dots) }}<span>{{ average }} on Sonar</span>{% else %}<span>Be the first to rate it on Sonar</span>{% endif %}
+          {% if average %}{{ rating_dots(dots) }}<span><strong>{{ average }}</strong> on Sonar{% if rating_count %} · {{ rating_count }} {{ "rating" if rating_count == 1 else "ratings" }}{% endif %}</span>{% else %}<span>Be the first to rate it on Sonar</span>{% endif %}
         </div>
+        {% if reviews %}
+          <section class="section" aria-labelledby="reviews-heading">
+            <h2 id="reviews-heading">What listeners say</h2>
+            <ul class="reviews">{% for item in reviews %}{{ review_row(item, by_person=True) }}{% endfor %}</ul>
+          </section>
+        {% endif %}
 
       {% elif kind == "podcast" %}
         {% if podcast.artwork %}<img class="art" src="{{ podcast.artwork }}" alt="" width="400" height="400">{% endif %}
@@ -192,10 +311,37 @@
 
       {% elif kind == "profile" %}
         <div class="center">
-          {{ avatar_tag(avatar, "avatar--large") }}
+          {{ avatar_tag(avatar, "avatar--large", page.avatar_url) }}
           <h1 style="margin-top: 18px">@{{ profile.username }}</h1>
-          <p class="eyebrow">{% if profile.logged_count %}{{ profile.logged_count }} episodes logged on Sonar{% else %}Listening on Sonar{% endif %}</p>
+          {% if page.followers is not none or page.following is not none %}
+            <ul class="stats">
+              {% if profile.logged_count is not none %}<li><strong>{{ "{:,}".format(profile.logged_count) }}</strong><span>logged</span></li>{% endif %}
+              {% if page.followers is not none %}<li><strong>{{ "{:,}".format(page.followers) }}</strong><span>{{ "follower" if page.followers == 1 else "followers" }}</span></li>{% endif %}
+              {% if page.following is not none %}<li><strong>{{ "{:,}".format(page.following) }}</strong><span>following</span></li>{% endif %}
+            </ul>
+          {% else %}
+            <p class="eyebrow">{% if profile.logged_count %}{{ profile.logged_count }} episodes logged on Sonar{% else %}Listening on Sonar{% endif %}</p>
+          {% endif %}
         </div>
+        {{ profile_sections(page) }}
+
+      {% elif kind == "invite" %}
+        <div class="invite-head">
+          {% if inviter %}
+            {{ avatar_tag(avatar, "avatar--large", page.avatar_url) }}
+            <h1>@{{ inviter }}</h1>
+            <p class="lede">invited you to Sonar</p>
+          {% else %}
+            <img class="art art--small" style="margin: 8px auto 0" src="{{ url_for('static', filename='sonar/img/app-icon.png') }}" alt="" width="132" height="132">
+            <h1>You're invited to Sonar</h1>
+          {% endif %}
+        </div>
+        <ul class="pitch">
+          <li>Rate and review every episode you listen to</li>
+          <li>See what friends are listening to and loving</li>
+          <li>Keep a diary of everything you've heard</li>
+        </ul>
+        {% if page %}{{ profile_sections(page, invite=True) }}{% endif %}
 
       {% elif kind == "list" %}
         <div class="byline byline--top">
@@ -231,8 +377,13 @@
     </article>
 
     <div class="actions">
-      <a class="button button--primary" href="{{ deep_link }}">Open in Sonar</a>
-      <a class="button button--secondary" href="{{ app_store_url }}">Get Sonar on the App Store</a>
+      {% if kind == "invite" %}
+        <a class="button button--primary" href="{{ store_href }}">Get Sonar on the App Store</a>
+        {% if app_href %}<a class="button button--secondary" href="{{ app_href }}">Already have it? Open in Sonar</a>{% endif %}
+      {% else %}
+        {% if app_href %}<a class="button button--primary" href="{{ app_href }}">Open in Sonar</a>{% endif %}
+        <a class="button {{ 'button--secondary' if app_href else 'button--primary' }}" href="{{ store_href }}">Get Sonar on the App Store</a>
+      {% endif %}
     </div>
 
     <footer>Rate, review and remember the episodes you love · <a href="{{ url_for('public.sonar') }}">About Sonar</a></footer>
