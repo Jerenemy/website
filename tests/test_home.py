@@ -173,11 +173,16 @@ class HomeTests(unittest.TestCase):
         for old in ("ambient-fluid", "glightbox", "webgl-fluid", "site-header", "project-card"):
             self.assertNotIn(old, html)
 
-    def test_me_page_is_the_first_work_and_shows_its_photos(self):
+    def test_me_page_is_the_first_work_and_links_its_story(self):
         html = self.client.get("/me").text
-        self.assertIn("<title>Me · Jeremy Zay</title>", html)
+        self.assertIn("<title>About · Jeremy Zay</title>", html)
         self.assertIn(f"01 / {len(self.published()):02d}", html)
         self.assertIn("<span>About</span>", html)
+        self.assertIn('href="/me/story"', html)
+
+    def test_me_story_shows_its_photos(self):
+        html = self.client.get("/me/story").text
+        self.assertIn("<title>Background · Jeremy Zay</title>", html)
         for photo in ("me.jpeg", "me-little.jpeg", "me-drawing.jpeg"):
             self.assertIn(f'src="/static/img/{photo}"', html)
             self.assertTrue((ROOT / "app" / "static" / "img" / photo).is_file(), photo)
