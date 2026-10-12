@@ -1,0 +1,309 @@
+<!doctype html>
+{% from "works/sonar/_share_macros.html" import rating_dots, avatar_tag %}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ page_title }} · Sonar</title>
+  <meta name="description" content="{{ description }}">
+  <meta name="theme-color" content="#0C1014">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:site_name" content="Sonar">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ page_url }}">
+  <meta property="og:title" content="{{ page_title }}">
+  <meta property="og:description" content="{{ description }}">
+  <meta property="og:image" content="{{ og_image }}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="{{ og_width }}">
+  <meta property="og:image:height" content="{{ og_height }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ page_title }}">
+  <meta name="twitter:description" content="{{ description }}">
+  <meta name="twitter:image" content="{{ og_image }}">
+  <link rel="canonical" href="{{ page_url }}">
+  {% if kind != "show" and kind != "landing" or query %}<meta name="robots" content="noindex">{% endif %}
+  <link rel="icon" href="{{ url_for('static', filename='sonar/img/app-icon.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='sonar/img/app-icon.png') }}">
+  {% include "works/sonar/_share_styles.html" %}
+  <style>
+    main.wide { max-width: 600px; }
+    .hero h1 { font-size: clamp(28px, 7vw, 38px); margin-top: 6px; }
+    .hero .eyebrow { margin-top: 30px; color: var(--teal); font-weight: 600; }
+    .lede { margin: 12px 0 0; color: var(--text-2); font-size: 17px; }
+    .find { margin-top: 30px; }
+    .find label { display: block; margin-bottom: 8px; font-weight: 600; }
+    .find__row { display: flex; gap: 8px; }
+    .find input {
+      flex: 1; min-width: 0; height: 48px; padding: 0 16px; border-radius: 14px; border: 0;
+      background: var(--card); color: var(--label); font: inherit; font-size: 16px;
+      box-shadow: inset 0 0 0 1px var(--hairline);
+    }
+    .find input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+    .find button, .copy {
+      flex: none; border: 0; cursor: pointer; font: inherit; font-weight: 600;
+      border-radius: 999px; background: var(--teal); color: #000;
+    }
+    .find button { height: 48px; padding: 0 20px; }
+    .hint { margin: 8px 0 0; color: var(--text-3); font-size: 14px; }
+    .notice { margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--card); color: var(--text-2); font-size: 15px; }
+    .steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 14px; }
+    .steps li { counter-increment: step; display: flex; gap: 12px; color: var(--text-2); font-size: 15px; }
+    .steps li::before {
+      content: counter(step); flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+      background: rgba(47, 203, 189, 0.16); color: var(--teal); font: 700 14px/1 var(--rounded);
+    }
+    .steps strong { color: var(--label); font-weight: 600; }
+    .examples { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .examples .on-light { padding: 10px; border-radius: 12px; background: #fff; display: inline-flex; }
+    .examples svg, .preview img { display: block; max-width: 100%; height: auto; }
+
+    .show-head { display: flex; gap: 18px; align-items: center; margin-top: 26px; }
+    .show-head img, .show-head .ph { flex: none; width: 112px; height: 112px; border-radius: 14px; object-fit: cover; background: var(--card); box-shadow: 0 18px 40px -16px rgba(0,0,0,.8), 0 0 0 0.5px var(--hairline); }
+    .show-head .eyebrow { margin: 0 0 2px; }
+    .show-head h1 { font-size: 24px; }
+    .numbers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 22px 0 0; padding: 0; list-style: none; }
+    .numbers li { padding: 12px 14px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 0.5px var(--hairline); }
+    .numbers strong { display: block; font: 700 26px/1.1 var(--rounded); font-variant-numeric: tabular-nums; }
+    .numbers span { color: var(--text-2); font-size: 13px; }
+    .theme-pick { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--card); margin-bottom: 12px; }
+    .theme-pick label { padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--text-2); cursor: pointer; }
+    .theme-pick input { position: absolute; opacity: 0; pointer-events: none; }
+    .theme-pick input:checked + span { color: var(--label); }
+    .theme-pick label:has(input:checked) { background: var(--chrome); }
+    .theme-pick input:focus-visible + span { outline: 2px solid var(--teal); outline-offset: 4px; border-radius: 4px; }
+    .preview { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 18px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 0.5px var(--hairline); }
+    .preview[data-theme="light"] { background: #fff; }
+    .snips { display: grid; gap: 10px; margin-top: 12px; }
+    .snip { border-radius: 14px; background: var(--card); box-shadow: inset 0 0 0 0.5px var(--hairline); overflow: hidden; }
+    .snip__head { display: flex; justify-content: space-between; align-items: center; padding: 8px 8px 0 14px; color: var(--text-2); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .snip pre { margin: 0; padding: 8px 14px 14px; overflow-x: auto; }
+    .snip code { font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace; color: rgba(243,245,247,.9); white-space: pre-wrap; word-break: break-all; }
+    .copy { padding: 6px 14px; font-size: 14px; }
+    .copy--quiet { background: var(--chrome); color: var(--label); }
+    .copy[data-done] { background: var(--chrome); color: var(--teal); }
+    .eps { list-style: none; margin: 0; padding: 0; border-top: 0.5px solid var(--hairline); }
+    .eps li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--hairline); }
+    .eps a { display: flex; gap: 12px; align-items: center; min-width: 0; flex: 1; text-decoration: none; }
+    .eps img, .eps .ph { flex: none; width: 52px; height: 52px; border-radius: 8px; object-fit: cover; background: var(--card); box-shadow: 0 0 0 0.5px var(--hairline); }
+    .eps .rv__meta { color: var(--text-2); font-size: 14px; white-space: nowrap; }
+    .eps .dots { gap: 3px; }
+    .eps .dot { width: 9px; height: 9px; }
+    .eps .copy { padding: 6px 12px; font-size: 13px; }
+    .graphic img { width: 100%; height: auto; border-radius: 14px; display: block; box-shadow: 0 0 0 0.5px var(--hairline); }
+    .graphic p { margin: 10px 0 0; color: var(--text-2); font-size: 14px; }
+    .sampled { margin: 10px 0 0; color: var(--text-3); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+  <main class="wide">
+    {% include "works/sonar/_share_brand.html" %}
+
+    {% macro find_form() -%}
+      <form class="find" action="{{ url_for('sonar_share.creators') }}" method="get" role="search">
+        <label for="q">Find your show</label>
+        <div class="find__row">
+          <input id="q" name="q" type="search" value="{{ query or '' }}" maxlength="300" autocomplete="off" enterkeyhint="search"
+                 placeholder="Show name or Apple Podcasts link">
+          <button type="submit">Find</button>
+        </div>
+        <p class="hint">Paste your Apple Podcasts link, a Sonar link to your show, or its Podcast Index id, or just type its name.</p>
+      </form>
+      {% if message %}<p class="notice" role="status">{{ message }}</p>{% endif %}
+      {% if results %}
+        <section class="section" aria-labelledby="results-heading">
+          <h2 id="results-heading">Shows</h2>
+          <ul class="eps">
+            {% for show in results %}
+              <li><a href="{{ url_for('sonar_share.creator', podcast_id=show.id) }}">
+                {% if show.artwork %}<img src="{{ show.artwork }}" alt="" width="52" height="52" loading="lazy" decoding="async" referrerpolicy="no-referrer">{% else %}<span class="ph" aria-hidden="true"></span>{% endif %}
+                <span class="item__text"><span class="item__title">{{ show.name }}</span>{% if show.author %}<span class="item__sub">{{ show.author }}</span>{% endif %}</span>
+              </a></li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+    {%- endmacro %}
+
+    {% if kind == "landing" %}
+      <header class="hero">
+        <p class="eyebrow">Sonar for podcasters</p>
+        <h1>Show listeners what they think of your show</h1>
+        <p class="lede">Sonar is where listeners rate, review and remember the episodes they love. Put your show's live rating on your site, in your show notes and in your newsletter, and every tap sends a listener to rate you.</p>
+      </header>
+      {{ find_form() }}
+      <section class="section" aria-labelledby="how-heading">
+        <h2 id="how-heading">How it works</h2>
+        <ol class="steps">
+          <li><span><strong>Find your show</strong> above. No sign-up, no account: every show on Podcast Index has a page.</span></li>
+          <li><span><strong>Copy a badge</strong> for the show or for a single episode, as HTML, Markdown or a plain link.</span></li>
+          <li><span><strong>Paste it anywhere.</strong> The badge updates itself as ratings come in, and tapping it opens your show in Sonar.</span></li>
+        </ol>
+      </section>
+      <section class="section" aria-labelledby="looks-heading">
+        <h2 id="looks-heading">What it looks like</h2>
+        <div class="examples">
+          {{ example_dark }}
+          <span class="on-light">{{ example_light }}</span>
+          {{ example_empty }}
+        </div>
+      </section>
+
+    {% elif kind == "unknown" %}
+      <header class="hero">
+        <p class="eyebrow">Sonar for podcasters</p>
+        <h1>We couldn't find that show</h1>
+        <p class="lede">Check the id, or search for the show by name.</p>
+      </header>
+      {{ find_form() }}
+
+    {% else %}
+      <div class="show-head">
+        {% if podcast.artwork %}<img src="{{ podcast.artwork }}" alt="" width="112" height="112" referrerpolicy="no-referrer">{% else %}<span class="ph" aria-hidden="true"></span>{% endif %}
+        <div>
+          {% if podcast.author %}<p class="eyebrow">{{ podcast.author }}</p>{% endif %}
+          <h1>{{ podcast.name }}</h1>
+          <div class="meta">
+            {% if average %}{{ rating_dots(average_dots) }}<span><strong>{{ "%.1f" % average }}</strong> · {{ "{:,}".format(count) }} {{ "rating" if count == 1 else "ratings" }}</span>
+            {% else %}<span>No ratings on Sonar yet</span>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if stats %}
+        <ul class="numbers">
+          <li><strong>{{ "{:,}".format(stats.logs) }}</strong><span>{{ "log" if stats.logs == 1 else "logs" }}</span></li>
+          <li><strong>{{ "{:,}".format(count or stats.ratings) }}</strong><span>{{ "rating" if (count or stats.ratings) == 1 else "ratings" }}</span></li>
+          <li><strong>{{ "{:,}".format(stats.reviews) }}</strong><span>{{ "review" if stats.reviews == 1 else "reviews" }}</span></li>
+        </ul>
+        {% if stats.sampled %}<p class="sampled">Averages use the most recent {{ "{:,}".format(stats.ratings) }} ratings.</p>{% endif %}
+      {% endif %}
+
+      <section class="section" aria-labelledby="badge-heading">
+        <h2 id="badge-heading">Your badge</h2>
+        <div class="theme-pick" role="radiogroup" aria-label="Badge theme">
+          <label><input type="radio" name="theme" value="dark" checked><span>Dark</span></label>
+          <label><input type="radio" name="theme" value="light"><span>Light</span></label>
+        </div>
+        {% for theme in ("dark", "light") %}
+          <div class="theme-block" data-theme="{{ theme }}" {% if theme == "light" %}hidden{% endif %}>
+            <div class="preview" data-theme="{{ theme }}">
+              <a href="{{ show_href }}"><img src="{{ badge_path }}{{ '?theme=light' if theme == 'light' else '' }}" alt="{{ podcast.name }} on Sonar" width="230" height="28"></a>
+            </div>
+            <div class="snips">
+              {% for key, label in (("html", "HTML"), ("markdown", "Markdown"), ("link", "Link")) %}
+                <div class="snip">
+                  <div class="snip__head"><span>{{ label }}</span><button class="copy copy--quiet" type="button" data-copy-from="snip-{{ theme }}-{{ key }}">Copy</button></div>
+                  <pre><code id="snip-{{ theme }}-{{ key }}">{{ snippets[theme][key] }}</code></pre>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </section>
+
+      {% if episodes %}
+        <section class="section" aria-labelledby="eps-heading">
+          <h2 id="eps-heading">Top-rated episodes</h2>
+          <ul class="eps">
+            {% for row in episodes %}
+              {% set ep = row.stat.episode %}
+              <li>
+                <a href="{{ row.path }}?s=creator">
+                  {% if ep and ep.artwork %}<img src="{{ ep.artwork }}" alt="" width="52" height="52" loading="lazy" decoding="async" referrerpolicy="no-referrer">{% else %}<span class="ph" aria-hidden="true"></span>{% endif %}
+                  <span class="rv__text">
+                    <span class="rv__title">{{ ep.title if ep else "An episode" }}</span>
+                    <span class="rv__meta">{{ rating_dots(dots_for(row.stat.average * 2)) }}<span>{{ "%.1f" % row.stat.average }} · {{ row.stat.count }} {{ "rating" if row.stat.count == 1 else "ratings" }}</span></span>
+                  </span>
+                </a>
+                <button class="copy copy--quiet" type="button" data-dark="{{ row.snippets.dark.html }}" data-light="{{ row.snippets.light.html }}"
+                        aria-label="Copy the badge for {{ ep.title if ep else 'this episode' }}">Copy badge</button>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      {% if stats and stats.top_reviews %}
+        <section class="section" aria-labelledby="reviews-heading">
+          <h2 id="reviews-heading">What listeners say</h2>
+          <ul class="reviews">
+            {% for item in stats.top_reviews %}
+              <li><a class="rv" href="{{ item.path }}">
+                {{ avatar_tag(avatar_for(item.username)) }}
+                <span class="rv__text">
+                  <span class="rv__title">@{{ item.username or "someone" }}</span>
+                  {% if item.episode %}<span class="rv__sub">{{ item.episode.title }}</span>{% endif %}
+                  {% if item.rating or item.is_loved %}<span class="rv__meta">{{ rating_dots(dots_for(item.rating), item.is_loved) }}</span>{% endif %}
+                  <span class="rv__body">{{ item.text }}</span>
+                </span>
+              </a></li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      <section class="section graphic" aria-labelledby="graphic-heading">
+        <h2 id="graphic-heading">Share graphic</h2>
+        <a href="{{ og_image }}"><img src="{{ og_image }}" alt="{{ podcast.name }}, rated on Sonar" width="1200" height="630" loading="lazy"></a>
+        <p>A 1200×630 image for social posts. Open it, then save or share it.</p>
+      </section>
+
+      <div class="actions">
+        <a class="button button--primary" href="{{ app_href }}">Open in Sonar</a>
+        <a class="button button--secondary" href="{{ show_href }}">See the public page</a>
+      </div>
+    {% endif %}
+
+    {% if kind != "show" %}
+      <div class="actions">
+        <a class="button button--secondary" href="{{ url_for('sonar_share.go', to='appstore', k='creator', s=source) }}">Get Sonar on the App Store</a>
+      </div>
+    {% endif %}
+    <footer>Rate, review and remember the episodes you love · <a href="{{ url_for('public.sonar') }}">About Sonar</a></footer>
+  </main>
+  <script>
+    (function () {
+      var theme = "dark";
+      document.addEventListener("change", function (event) {
+        if (event.target.name !== "theme") return;
+        theme = event.target.value;
+        document.querySelectorAll(".theme-block").forEach(function (block) {
+          block.hidden = block.getAttribute("data-theme") !== theme;
+        });
+      });
+      document.addEventListener("click", function (event) {
+        var button = event.target.closest("button.copy");
+        if (!button) return;
+        var source = button.getAttribute("data-copy-from");
+        var text = source ? document.getElementById(source).textContent : button.getAttribute("data-" + theme);
+        var done = function () {
+          var label = button.textContent;
+          button.setAttribute("data-done", "");
+          button.textContent = "Copied";
+          setTimeout(function () { button.removeAttribute("data-done"); button.textContent = label; }, 1600);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(done, function () { fallback(text) && done(); });
+        } else if (fallback(text)) {
+          done();
+        }
+      });
+      function fallback(text) {
+        var area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+        var ok = false;
+        try { ok = document.execCommand("copy"); } catch (e) {}
+        document.body.removeChild(area);
+        return ok;
+      }
+    })();
+  </script>
+</body>
+</html>

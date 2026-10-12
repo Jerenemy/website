@@ -1,8 +1,10 @@
 import re
+from datetime import datetime, timezone
 
 from flask import abort, jsonify, make_response, redirect, render_template, request, url_for
+from markupsafe import Markup
 
-from . import attribution, bp, data, og
+from . import attribution, badge, bp, data, og
 from ..admin.routes import _csrf_token, admin_required
 
 TEAM_ID = "9A9HR6WT4K"
@@ -20,6 +22,7 @@ _SHARE_TARGETS = (
     ("profile", re.compile(r"^/sonar/u/([A-Za-z0-9_.]{1,30})$"), "sonar://user/{0}"),
     ("list", re.compile(r"^/sonar/l/([0-9a-fA-F-]{36})$"), "sonar://list/{0}"),
     ("invite", re.compile(r"^/sonar/i/([A-Za-z0-9_.]{1,30})$"), "sonar://invite/{0}"),
+    ("recap", re.compile(r"^/sonar/u/([A-Za-z0-9_.]{1,30})/recap/([0-9]{4}(?:-[0-9]{2})?)$"), "sonar://recap/{0}/{1}"),
 )
 
 
@@ -52,7 +55,7 @@ def apple_app_site_association():
     return response
 
 
-def _render(kind, *, track, title, description, og_image, deep_link, status=200, json_ld=None, **context):
+def _render(kind, *, track, title, description, og_image, deep_link, status=200, json_ld=None, noindex=None, **context):
     """Renders a share page. `kind` picks the template branch, `track` is the link's kind for the
     attribution counts (a "missing" page still counts as the review/list/... it was shared as).
     The page URL, canonical link and app-argument never carry ?s=."""
@@ -77,7 +80,7 @@ def _render(kind, *, track, title, description, og_image, deep_link, status=200,
         json_ld=json_ld,
         dots_for=_dots,
         avatar_for=_avatar,
-        noindex=kind == "missing",
+        noindex=kind == "missing" if noindex is None else noindex,
         **context,
     )
     if attribution.should_count(request):
@@ -313,6 +316,182 @@ def shared_list(list_id):
     )
 
 
+# --- Recaps ------------------------------------------------------------------------------
+
+@bp.get("/sonar/u/<username>/recap/<period>")
+def shared_recap(username, period):
+    """A listener's month (YYYY-MM) or year (YYYY). A malformed, pre-2024 or future period is a 404."""
+    parsed = data.parse_period(period)
+    if parsed is None or not data.USERNAME_RE.match(username or ""):
+        abort(404)
+    item = data.recap(username, parsed)
+    og_image = _og_url("sonar_share.og_recap", username=username, period=period)
+    if item is None:
+        return _render(
+            "missing",
+            track="recap",
+            title=f"@{username}'s {parsed.label} on Sonar",
+            description="Open it in Sonar, the app for rating and reviewing podcast episodes.",
+            og_image=og_image,
+            deep_link=f"sonar://recap/{username}/{period}",
+            status=404,
+        )
+    name = item.username
+    return _render(
+        "recap",
+        track="recap",
+        title=f"@{name}'s {parsed.label} on Sonar",
+        description=_recap_description(item),
+        og_image=og_image,
+        deep_link=f"sonar://recap/{name}/{period}",
+        noindex=item.empty,
+        recap=item,
+        avatar=_avatar(name),
+        dots=_dots(item.best.rating) if item.best else [],
+        average_dots=_dots(round(item.average * 2)) if item.average else [],
+    )
+
+
+def _recap_description(item):
+    when = item.period.label
+    if item.empty:
+        return f"@{item.username} hasn't logged anything in {when} yet. Rate, review and remember the episodes you love on Sonar."
+    noun = "episode" if item.episodes == 1 else "episodes"
+    text = f"@{item.username}'s {when} on Sonar: {item.episodes:,} {noun} logged"
+    extras = []
+    if item.reviews:
+        extras.append(f"{item.reviews:,} {'review' if item.reviews == 1 else 'reviews'}")
+    if item.loved:
+        extras.append(f"{item.loved:,} loved")
+    text += (", " + ", ".join(extras) if extras else "") + "."
+    top = next((t.podcast.name for t in item.top_podcasts if t.podcast), None)
+    if top:
+        text += f" Top show: {top}."
+    return _clip(text, 200)
+
+
+# --- Creators ------------------------------------------------------------------------------
+
+def _creator_page(status=200, **context):
+    source = attribution.normalize_source(request.args.get("s"))
+    html = render_template(
+        "works/sonar/creators.html",
+        page_url=request.base_url,
+        app_store_url=APP_STORE_URL,
+        app_store_id=APP_STORE_ID,
+        og_width=og.W,
+        og_height=og.H,
+        source=source,
+        dots_for=_dots,
+        avatar_for=_avatar,
+        **context,
+    )
+    if status == 200 and attribution.should_count(request):
+        attribution.record_view("creator", source)
+    response = make_response(html, status)
+    response.headers["Cache-Control"] = "private, max-age=300"
+    return response
+
+
+@bp.get("/sonar/creators")
+def creators():
+    """For podcasters: what Sonar is, and a box to find their show's badge.
+
+    ?q= takes a Podcast Index id, a Sonar link, an Apple Podcasts link (resolved through Podcast
+    Index; the link itself is never fetched) or a show's name."""
+    query = (request.args.get("q") or "").strip()[:300]
+    results, message = None, None
+    if query:
+        how, value = data.resolve_show(query)
+        if how == "id":
+            return redirect(url_for("sonar_share.creator", podcast_id=value), code=303)
+        if how == "apple":
+            message = "We couldn't match that Apple Podcasts link to a show. Try the show's name instead."
+        else:
+            results = data.search_podcasts(value)
+            if results is None:
+                message = "Search isn't available right now. Paste your show's Podcast Index id or its Sonar link instead."
+            elif not results:
+                message = f"No shows found for “{_clip(value, 60)}”."
+    return _creator_page(
+        kind="landing",
+        page_title="Sonar for podcasters",
+        description="Show listeners what they think of your podcast: a live “Rated on Sonar” badge for your site and show notes.",
+        og_image=_og_brand(),
+        query=query,
+        results=results,
+        message=message,
+        # Our own SVG, every piece of text escaped by badge.svg: safe to inline.
+        example_dark=Markup(badge.svg(*badge.rating_text(4.6, 128), theme="dark")),
+        example_light=Markup(badge.svg(*badge.rating_text(4.6, 128), theme="light")),
+        example_empty=Markup(badge.svg(*badge.rating_text(None, 0), theme="dark")),
+    )
+
+
+@bp.get("/sonar/creators/p/<podcast_id>")
+def creator(podcast_id):
+    show = data.podcast(podcast_id) if data.NUMERIC_RE.match(podcast_id) else None
+    if show is None:
+        return _creator_page(
+            kind="unknown",
+            status=404,
+            page_title="Show not found",
+            description="We couldn't find that show on Podcast Index.",
+            og_image=_og_brand(),
+            query=podcast_id if data.NUMERIC_RE.match(podcast_id) else "",
+            results=None,
+            message=None,
+        )
+    stats = data.creator_stats(podcast_id)
+    rating = data.podcast_rating(podcast_id) or (None, 0)
+    average, count = rating
+    show_link = url_for("sonar_share.shared_podcast", podcast_id=podcast_id, s="creator", _external=True)
+    badge_url = url_for("sonar_share.badge_podcast", podcast_id=podcast_id, _external=True)
+    snippets = _snippets(show_link, badge_url, f"{show.name} on Sonar")
+    episodes = []
+    for stat in (stats.top_episodes if stats else []):
+        link = url_for("sonar_share.shared_episode", podcast_id=podcast_id, episode_id=stat.episode_id, s="creator",
+                       _external=True)
+        image = url_for("sonar_share.badge_episode", podcast_id=podcast_id, episode_id=stat.episode_id, _external=True)
+        title = stat.episode.title if stat.episode else "An episode"
+        episodes.append({"stat": stat, "path": f"/sonar/e/{podcast_id}/{stat.episode_id}",
+                         "snippets": _snippets(link, image, f"{title} on Sonar"),
+                         "badge": url_for("sonar_share.badge_episode", podcast_id=podcast_id, episode_id=stat.episode_id)})
+    rated = f"Rated {average:.1f}/5 from {count:,} {'rating' if count == 1 else 'ratings'} on Sonar" if average else "Rate it on Sonar"
+    return _creator_page(
+        kind="show",
+        page_title=f"{show.name} on Sonar",
+        description=_clip(f"{show.name}: {rated}. Embed the live rating badge on your site and in your show notes.", 200),
+        og_image=_og_url("sonar_share.og_creator", podcast_id=podcast_id),
+        podcast=show,
+        stats=stats,
+        average=average,
+        count=count,
+        average_dots=_dots(round(average * 2)) if average else [],
+        snippets=snippets,
+        episodes=episodes,
+        badge_path=url_for("sonar_share.badge_podcast", podcast_id=podcast_id),
+        app_href=url_for("sonar_share.go", to="app", k="creator", s="creator", u=f"/sonar/p/{podcast_id}"),
+        show_href=f"/sonar/p/{podcast_id}?s=creator",
+    )
+
+
+def _snippets(link, image, alt):
+    """Embed code for a badge, per theme: HTML, Markdown and the plain link."""
+    out = {}
+    for theme in badge.THEMES:
+        src = image + ("?theme=light" if theme == "light" else "")
+        html = (f'<a href="{_attr(link)}"><img src="{_attr(src)}" alt="{_attr(alt)}" '
+                f'width="{badge.WIDTH}" height="{badge.HEIGHT}"></a>')
+        markdown_alt = alt.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+        out[theme] = {"html": html, "markdown": f"[![{markdown_alt}]({src})]({link})", "link": link}
+    return out
+
+
+def _attr(value):
+    return (value.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
+
+
 # --- Attribution ---------------------------------------------------------------------------
 
 @bp.get("/sonar/go")
@@ -333,7 +512,11 @@ def go():
         destination = parsed[1]
     else:
         destination = APP_STORE_URL
-    kind = parsed[0] if parsed else attribution.normalize_kind(request.args.get("k"))
+    requested = attribution.normalize_kind(request.args.get("k"))
+    if requested in attribution.PAGE_KINDS:
+        kind = requested
+    else:
+        kind = parsed[0] if parsed else requested
     if attribution.should_count(request):
         attribution.record_click(kind, request.args.get("s"), target)
     response = redirect(destination, code=302)
@@ -557,6 +740,79 @@ def og_list(list_id):
         return og.list_card(item) if item else None
 
     return _png(("l", list_id.lower()), build)
+
+
+@bp.get("/sonar/og/u/<username>/recap/<period>.png")
+def og_recap(username, period):
+    parsed = data.parse_period(period)
+    if parsed is None or not data.USERNAME_RE.match(username):
+        abort(404)
+
+    def build():
+        item = data.recap(username, parsed)
+        if item is not None and parsed.end > _utc_today():
+            og.mark_degraded()  # a period still running: its numbers change, keep it briefly
+        return og.recap_card(item) if item else None
+
+    return _png(("recap", username.lower(), period), build)
+
+
+@bp.get("/sonar/og/creator/p/<podcast_id>.png")
+def og_creator(podcast_id):
+    if not data.NUMERIC_RE.match(podcast_id):
+        abort(404)
+
+    def build():
+        show = data.podcast(podcast_id)
+        if show is None:
+            return None
+        rating = data.podcast_rating(podcast_id)
+        if rating is None:
+            og.mark_degraded()
+        average, count = rating or (None, 0)
+        return og.creator_card(show, average, count)
+
+    return _png(("creator", podcast_id), build)
+
+
+def _utc_today():
+    return datetime.now(timezone.utc).date()
+
+
+# --- Badges --------------------------------------------------------------------------------
+
+BADGE_CACHE = "public, max-age=3600"
+BADGE_CACHE_SHORT = "public, max-age=300"
+
+
+def _badge(rating):
+    """An SVG badge response. `rating` is (average, count), or None when the lookup failed.
+    Fetches of the badge aren't page views; only taps through it are (?s=creator)."""
+    average, count = rating or (None, 0)
+    value, description = badge.rating_text(average, count)
+    response = make_response(badge.svg(value, description, request.args.get("theme")))
+    response.headers["Content-Type"] = "image/svg+xml; charset=utf-8"
+    response.headers["Cache-Control"] = BADGE_CACHE if rating is not None else BADGE_CACHE_SHORT
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Robots-Tag"] = "noindex"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'"
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.add_etag()
+    return response.make_conditional(request)
+
+
+@bp.get("/sonar/badge/p/<podcast_id>.svg")
+def badge_podcast(podcast_id):
+    if not data.NUMERIC_RE.match(podcast_id):
+        abort(404)
+    return _badge(data.podcast_rating(podcast_id))
+
+
+@bp.get("/sonar/badge/e/<podcast_id>/<episode_id>.svg")
+def badge_episode(podcast_id, episode_id):
+    if not (data.NUMERIC_RE.match(podcast_id) and data.NUMERIC_RE.match(episode_id)):
+        abort(404)
+    return _badge(data.episode_rating(episode_id))
 
 
 def _avatar(username):
