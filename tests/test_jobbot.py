@@ -145,6 +145,14 @@ class JobBotPageTests(unittest.TestCase):
         self.assertIn("alerts@example.com", page)
         self.assertIn("Oct 07, 09:05 UTC", page)
 
+    def test_company_email_kinds_have_labels(self):
+        from app.blueprints.jobbot import jobbot_email_kind
+
+        self.assertEqual(jobbot_email_kind("confirmation"), "Application received")
+        self.assertEqual(jobbot_email_kind("rejection"), "Rejection")
+        self.assertEqual(jobbot_email_kind("company"), "From the company")
+        self.assertEqual(jobbot_email_kind("something_new"), "Something new")
+
     def test_detail_without_emails_says_so(self):
         self.login()
         self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": DETAIL})  # an older bot
