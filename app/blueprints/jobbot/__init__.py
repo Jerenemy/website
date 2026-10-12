@@ -19,6 +19,7 @@ FILTERS = {
     "review": "Ready to review",
     "active": "In progress",
     "attention": "Needs attention",
+    "blocked": "Apply yourself",
     "closed": "Closed",
     "applied": "Applied",
     "all": "All",
@@ -78,12 +79,17 @@ def _category(job):
     # Nothing to fix: the posting no longer takes applications. (`problem` covers bots without `closed`.)
     if job.get("closed") or (sub.get("problem") or {}).get("kind") == "closed":
         return "closed"
+    # The site stops the bot for good (captcha, spam flag): the bot never retries it; apply on the site.
+    if job.get("blocked") or job["status"] == "blocked":
+        return "blocked"
     if job["status"] == "skipped":  # skipped from the review page: out of the queue
         return "other"
     if sub.get("status") in ("failed", "unconfirmed"):
         return "attention"
     if job["status"] == "dry_run_ok":
         return "review"
+    if job["status"] == "failed":  # the dry run itself failed: fix it in the chat or rerun
+        return "attention"
     return "other"
 
 
@@ -93,6 +99,7 @@ STATUS_LABELS = {
     "failed": "Failed",
     "skipped": "Skipped",
     "unsupported": "Unsupported site",
+    "blocked": "Apply yourself",
     "seen": "Not tried yet",
     "queued": "Queued",
     "running": "Submitting",
