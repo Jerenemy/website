@@ -270,18 +270,17 @@ class Card:
         vertical = Image.linear_gradient("L").resize((d, d))
         gradient = ImageChops.add(vertical, vertical.transpose(Image.Transpose.ROTATE_90), scale=2.0)
         tile = Image.composite(Image.new("RGB", (d, d), bottom), Image.new("RGB", (d, d), top), gradient)
-        mask = Image.new("L", (d, d), 0)
-        ImageDraw.Draw(mask).ellipse((0, 0, d - 1, d - 1), fill=255)
-        self.image.paste(tile, (s(x), s(y)), mask)
-        self.draw = ImageDraw.Draw(self.image, "RGBA")
-        self.draw.ellipse((s(x), s(y), s(x) + d - 1, s(y) + d - 1), outline=alpha(LABEL, 0.08), width=max(1, S))
+        self._paste_round(tile, x, y)
         initial = avatar_initial(username)
         self.text((x + size / 2, y + size / 2), initial, "semibold", size * 0.42, alpha(LABEL, 0.95), anchor="mm")
 
     def photo(self, image, x, y, size):
         """A round profile photo."""
-        d = s(size)
-        tile = _cover(image, d)
+        self._paste_round(_cover(image, s(size)), x, y)
+
+    def _paste_round(self, tile, x, y):
+        """Paste a square tile (already at pixel scale) as a circle with a faint outline."""
+        d = tile.width
         mask = Image.new("L", (d, d), 0)
         ImageDraw.Draw(mask).ellipse((0, 0, d - 1, d - 1), fill=255)
         self.image.paste(tile, (s(x), s(y)), mask)
