@@ -115,6 +115,13 @@ EMAIL_KINDS = {
     "security_code": "Security code",
     "account_verification": "Account verification",
     "account_code": "Account code",
+    # emails from the company, filed by the bot's inbox scan
+    "confirmation": "Application received",
+    "rejection": "Rejection",
+    "interview": "Interview",
+    "assessment": "Assessment",
+    "offer": "Offer",
+    "company": "From the company",
 }
 
 
