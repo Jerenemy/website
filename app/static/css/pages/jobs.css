@@ -84,8 +84,13 @@ li.jobs__error { display: list-item; }
 li.jobs__error::before { content: ""; }
 .jobs__row--edited td:first-child, .jobs__row--error td:first-child { box-shadow: inset 1px 0 0 var(--ink); padding-left: var(--s2); }
 .jobs__row--edited td.jobs__answer { color: var(--ink); }
-.admin-table td.jobs__from, .admin-table th.jobs__from { width: 1%; white-space: nowrap; text-align: right; padding-right: 0; }
-.jobs__source { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+/* The source can be one long token (profile:files.resume_document): capped and broken anywhere, so it
+   never takes the width the question and answer need. They keep a floor; past it the table scrolls. */
+.admin-table td.jobs__from, .admin-table th.jobs__from { width: 1%; text-align: right; padding-right: 0; }
+.admin-table th.jobs__from { white-space: nowrap; }
+.jobs__answers td:first-child { min-width: 12ch; }
+.jobs__answers td.jobs__answer { min-width: 16ch; }
+.jobs__source { display: inline-block; width: max-content; max-width: 16ch; overflow-wrap: anywhere; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
 .jobs__source--edit, .jobs__source--fallback, .jobs__source--error { color: var(--ink); }
 .jobs__source--llm { color: var(--ink-2); }
 
@@ -95,6 +100,8 @@ li.jobs__error::before { content: ""; }
 }
 @media (max-width: 640px) {
   .admin-table td.jobs__from { width: auto; text-align: left; }
+  .jobs__answers td:first-child, .jobs__answers td.jobs__answer { min-width: 0; }
+  .jobs__source { max-width: none; }
   .jobs__row--edited td:first-child, .jobs__row--error td:first-child { box-shadow: none; padding-left: 0; }
   .jobs__row--edited, .jobs__row--error { box-shadow: inset 1px 0 0 var(--ink); padding-left: var(--s2) !important; }
 }
