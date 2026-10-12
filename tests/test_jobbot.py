@@ -107,6 +107,24 @@ class JobBotPageTests(unittest.TestCase):
         self.assertNotIn("Skipped", page)
         self.assertIn("jobs__badge--closed", page)
 
+    def test_blocked_jobs_are_listed_to_apply_yourself(self):
+        self.login()
+        blocked = dict(JOB, id="j1", company="Captcha", status="blocked", blocked=True)
+        flagged = dict(JOB, id="j2", company="Spam", blocked=True,
+                       submission={"status": "unconfirmed", "problem": {"kind": "blocked"}})
+        failed = dict(JOB, id="j3", company="Fixable", status="failed")
+        jobs = [blocked, flagged, failed]
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": jobs, "last_pass": None})
+        page = self.client.get("/admin/jobs/?show=blocked").get_data(as_text=True)
+        self.assertIn("Captcha", page)
+        self.assertIn("Spam", page)
+        self.assertIn("Apply yourself", page)
+        self.assertNotIn("Fixable", page)
+        page = self.client.get("/admin/jobs/?show=attention").get_data(as_text=True)
+        self.assertIn("Fixable", page)  # a failed dry run needs a look
+        self.assertNotIn("Captcha", page)
+        self.assertNotIn("Spam", page)
+
     def test_bot_down_shows_a_message(self):
         self.login()
         self.responses[("GET", "/api/jobs?limit=500")] = requests.ConnectionError("refused")
