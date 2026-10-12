@@ -1,4 +1,5 @@
 <!doctype html>
+{% from "works/sonar/_share_macros.html" import rating_dots, avatar_tag %}
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -31,187 +32,13 @@
   <link rel="icon" href="{{ url_for('static', filename='sonar/img/app-icon.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='sonar/img/app-icon.png') }}">
 
-  <style>
-    /* Sea-glass palette: mirrors SonarPalette in the app (Color+Extensions.swift / DESIGN.md). */
-    :root {
-      --bg: #0C1014;
-      --card: #161B21;
-      --chrome: #1F262E;
-      --label: #F3F5F7;
-      --text-2: #98A2AD;
-      --text-3: rgba(243, 245, 247, 0.38);
-      --hairline: rgba(243, 245, 247, 0.08);
-      --teal: #2FCBBD;
-      --love: #FF5C7A;
-      --rounded: ui-rounded, "SF Pro Rounded", "Nunito", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; background: var(--bg); color: var(--label); }
-    body {
-      font: 17px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      min-height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-    }
-    .glow {
-      position: fixed; inset: 0 0 auto 0; height: 70vh; z-index: 0; pointer-events: none;
-      background: radial-gradient(120% 80% at 50% 0%, rgba(47, 203, 189, 0.12), transparent 70%);
-    }
-    main {
-      position: relative; z-index: 1;
-      width: 100%; max-width: 440px; margin: 0 auto;
-      padding: max(28px, env(safe-area-inset-top)) 20px 24px;
-      flex: 1;
-      display: flex; flex-direction: column;
-    }
-    a { color: inherit; }
-
-    /* The wordmark: the ping mark, then lowercase "sonar" with a teal full stop. */
-    .brand {
-      display: inline-flex; align-items: center; gap: 7px;
-      color: var(--label); text-decoration: none; align-self: flex-start;
-      font: 600 20px/1 var(--rounded);
-    }
-    .brand svg { width: 19px; height: 19px; display: block; }
-    .brand b { font-weight: inherit; color: var(--teal); }
-
-    .card { margin-top: 28px; }
-    .art {
-      width: min(240px, 64vw); height: auto; aspect-ratio: 1; border-radius: 16px; object-fit: cover; display: block;
-      background: var(--card);
-      box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.8), 0 0 0 0.5px var(--hairline);
-    }
-    .art--small { width: 132px; border-radius: 14px; }
-    .eyebrow { margin: 22px 0 4px; color: var(--text-2); font-size: 15px; }
-    h1 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
-    .meta { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--text-2); font-size: 15px; }
-    .meta strong { color: var(--label); font-weight: 600; font-variant-numeric: tabular-nums; }
-    .dots { display: inline-flex; gap: 4px; }
-    .dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(243, 245, 247, 0.16); overflow: hidden; position: relative; }
-    .dot > i { position: absolute; inset: 0 auto 0 0; background: var(--teal); }
-    .heart { width: 15px; height: 15px; color: var(--love); display: block; }
-    blockquote {
-      margin: 18px 0 0; padding: 0; font-size: 19px; line-height: 1.5; color: rgba(243, 245, 247, 0.92);
-      white-space: pre-line; overflow-wrap: anywhere;
-    }
-    .byline { display: flex; align-items: center; gap: 10px; margin-top: 18px; color: var(--text-2); font-size: 15px; }
-    .byline--top { margin: 0 0 8px; }
-    .avatar {
-      flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
-      background: linear-gradient(135deg, var(--a1, #4d7a74), var(--a2, #2b4743));
-      box-shadow: inset 0 0 0 0.5px var(--hairline);
-      color: rgba(243, 245, 247, 0.95); font: 600 14px/1 var(--rounded);
-    }
-    .avatar--small { width: 24px; height: 24px; font-size: 11px; }
-    .avatar--large { width: 96px; height: 96px; font-size: 40px; margin: 8px auto 0; }
-    .byline strong { color: var(--label); font-weight: 600; }
-    .center { text-align: center; }
-    .center .eyebrow { margin-top: 10px; }
-    .description { margin-top: 14px; color: var(--text-2); font-size: 15px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-
-    /* List entries: artwork, title, show, note. No boxes; content sits on the canvas. */
-    .count { margin: 12px 0 0; color: var(--text-2); font-size: 15px; }
-    .items { list-style: none; margin: 22px 0 0; padding: 0; border-top: 0.5px solid var(--hairline); }
-    .items li { border-bottom: 0.5px solid var(--hairline); }
-    .item { display: flex; gap: 14px; align-items: center; padding: 12px 0; text-decoration: none; }
-    .item img, .item .ph {
-      flex: none; width: 56px; height: 56px; border-radius: 8px; object-fit: cover; background: var(--card);
-      box-shadow: 0 0 0 0.5px var(--hairline);
-    }
-    .item__text { min-width: 0; display: flex; flex-direction: column; }
-    .item__title { font-size: 16px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .item__sub { font-size: 14px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .item__note { font-size: 14px; color: var(--text-3); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .more { margin: 14px 0 0; color: var(--text-2); font-size: 15px; }
-
-    .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
-    .avatar--photo { background: var(--card); overflow: hidden; }
-
-    /* Profile and invite sections. */
-    .stats { display: flex; justify-content: center; gap: 28px; margin: 18px 0 0; padding: 0; list-style: none; }
-    .stats li { display: flex; flex-direction: column; align-items: center; min-width: 64px; }
-    .stats strong { font: 700 20px/1.2 var(--rounded); font-variant-numeric: tabular-nums; }
-    .stats span { color: var(--text-2); font-size: 13px; }
-    .section { margin-top: 34px; }
-    .section h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
-    .favorites { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0; padding: 0; list-style: none; }
-    .favorites a { display: block; text-decoration: none; }
-    .favorites img, .favorites .ph {
-      width: 100%; aspect-ratio: 1; height: auto; border-radius: 10px; object-fit: cover; display: block;
-      background: var(--card); box-shadow: 0 0 0 0.5px var(--hairline);
-    }
-    .favorites span { display: block; margin-top: 6px; font-size: 12px; line-height: 1.3; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .reviews { list-style: none; margin: 0; padding: 0; border-top: 0.5px solid var(--hairline); }
-    .reviews li { border-bottom: 0.5px solid var(--hairline); }
-    .rv { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; text-decoration: none; }
-    .rv > img, .rv > .ph {
-      flex: none; width: 56px; height: 56px; border-radius: 8px; object-fit: cover; background: var(--card);
-      box-shadow: 0 0 0 0.5px var(--hairline);
-    }
-    .rv .avatar { margin-top: 2px; }
-    .rv__text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-    .rv__title { font-size: 16px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .rv__sub { font-size: 14px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rv__body { font-size: 15px; line-height: 1.45; color: rgba(243, 245, 247, 0.86); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-    .rv .dots { gap: 3px; margin-top: 2px; }
-    .rv .dot { width: 9px; height: 9px; }
-    .rv__meta { display: flex; align-items: center; gap: 8px; }
-    .rv__meta .heart { width: 12px; height: 12px; }
-    .social { display: flex; gap: 16px; margin-top: 16px; color: var(--text-2); font-size: 14px; }
-    .social strong { color: var(--label); font-weight: 600; font-variant-numeric: tabular-nums; }
-    .lists { list-style: none; margin: 0; padding: 0; border-top: 0.5px solid var(--hairline); }
-    .lists li { border-bottom: 0.5px solid var(--hairline); }
-    .lists a { display: flex; justify-content: space-between; gap: 12px; padding: 13px 0; text-decoration: none; font-weight: 600; }
-    .lists a span:last-child { flex: none; color: var(--text-2); font-weight: 400; font-size: 15px; }
-    .invite-head { text-align: center; }
-    .invite-head h1 { margin-top: 18px; }
-    .invite-head .lede { margin: 8px 0 0; color: var(--teal); font: 600 20px/1.3 var(--rounded); }
-    .pitch { margin: 18px 0 0; padding: 0; list-style: none; color: var(--text-2); font-size: 15px; display: grid; gap: 8px; }
-    .pitch li { display: flex; gap: 10px; align-items: baseline; }
-    .pitch li::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--teal); transform: translateY(-2px); }
-
-    .actions { margin-top: auto; padding-top: 32px; display: grid; gap: 10px; }
-    .button {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      min-height: 52px; border-radius: 999px; text-decoration: none;
-      font-weight: 600; font-size: 17px; transition: transform .15s ease, opacity .15s ease;
-    }
-    .button:active { transform: scale(0.97); opacity: .85; }
-    .button--primary { background: var(--teal); color: #000; }
-    .button--secondary { background: var(--chrome); color: var(--label); }
-    footer { margin-top: 20px; text-align: center; color: var(--text-3); font-size: 13px; }
-    footer a { color: var(--text-2); text-decoration: none; }
-    @media (min-width: 720px) { main { padding-top: 64px; } }
-    @media (prefers-reduced-motion: reduce) { .button { transition: none; } }
-  </style>
+  {% include "works/sonar/_share_styles.html" %}
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
   <main>
-    <a class="brand" href="{{ url_for('public.sonar') }}" aria-label="Sonar">
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <circle cx="50" cy="50" r="40.8" fill="none" stroke="#2FCBBD" stroke-opacity=".45" stroke-width="4.7"/>
-        <circle cx="50" cy="50" r="25.6" fill="none" stroke="#2FCBBD" stroke-width="6.25"/>
-        <circle cx="50" cy="50" r="11.5" fill="#2FCBBD"/>
-      </svg>
-      <span>sonar<b>.</b></span>
-    </a>
+    {% include "works/sonar/_share_brand.html" %}
 
-    {% macro rating_dots(fills, loved=False) -%}
-      {% if fills %}
-        <span class="dots" role="img" aria-label="Rated {{ (fills | sum) | round(1) }} out of 5">
-          {% for fill in fills %}<span class="dot"><i style="width: {{ (fill * 100) | round | int }}%"></i></span>{% endfor %}
-        </span>
-      {% endif %}
-      {% if loved %}<svg class="heart" viewBox="0 0 24 22" role="img" aria-label="Loved"><path fill="currentColor" d="M12 21.6 10.3 20C4.2 14.5.2 10.9.2 6.5.2 2.9 3 .2 6.6.2c2 0 4 .9 5.4 2.4C13.4 1.1 15.4.2 17.4.2c3.6 0 6.4 2.7 6.4 6.3 0 4.4-4 8-10.1 13.5L12 21.6Z"/></svg>{% endif %}
-    {%- endmacro %}
-
-    {% macro avatar_tag(info, classes="", photo=None) -%}
-      {% if photo %}<span class="avatar avatar--photo {{ classes }}" aria-hidden="true"><img src="{{ photo }}" alt="" referrerpolicy="no-referrer"></span>
-      {%- else %}<span class="avatar {{ classes }}" aria-hidden="true" style="--a1: {{ info.top }}; --a2: {{ info.bottom }}">{{ info.initial }}</span>{% endif %}
-    {%- endmacro %}
 
     {#- One review in a list: the episode's art (or the reviewer, on an episode page), title, dots, words. -#}
     {% macro review_row(item, by_person=False) -%}
@@ -342,6 +169,57 @@
           <li>Keep a diary of everything you've heard</li>
         </ul>
         {% if page %}{{ profile_sections(page, invite=True) }}{% endif %}
+
+      {% elif kind == "recap" %}
+        <div class="recap__who">
+          {{ avatar_tag(avatar, "avatar--small", recap.avatar_url) }}
+          <span><strong>@{{ recap.username }}</strong>'s {{ recap.period.noun }} in podcasts</span>
+        </div>
+        <h1 class="recap__period">{{ recap.period.label }}</h1>
+        <p class="recap__lede">on Sonar</p>
+        {% if recap.empty %}
+          <p class="empty-note"><strong>Nothing logged yet</strong>@{{ recap.username }} hasn't logged an episode in {{ recap.period.label }}. Check back soon.</p>
+        {% else %}
+          <ul class="tiles">
+            <li class="tile tile--hero"><strong>{{ "{:,}".format(recap.episodes) }}</strong><span>{{ "episode" if recap.episodes == 1 else "episodes" }} logged</span></li>
+            <li class="tile"><strong>{{ "{:,}".format(recap.reviews) }}</strong><span>{{ "review" if recap.reviews == 1 else "reviews" }} written</span></li>
+            <li class="tile"><strong>{{ "{:,}".format(recap.loved) }}</strong><span>loved</span></li>
+            {% if recap.average %}<li class="tile"><strong>{{ "%.1f" % recap.average }}</strong><span>average rating</span>{{ rating_dots(average_dots) }}</li>{% endif %}
+            {% if recap.longest_streak > 1 %}<li class="tile"><strong>{{ recap.longest_streak }}</strong><span>day streak</span></li>
+            {% else %}<li class="tile"><strong>{{ recap.days }}</strong><span>{{ "day" if recap.days == 1 else "days" }} listening</span></li>{% endif %}
+          </ul>
+          {% if recap.top_podcasts %}
+            <section class="section" aria-labelledby="top-heading">
+              <h2 id="top-heading">Top shows</h2>
+              <ol class="ranks">
+                {% for top in recap.top_podcasts %}
+                  <li><a href="{{ top.path }}">
+                    {% if top.podcast and top.podcast.artwork %}<img src="{{ top.podcast.artwork }}" alt="" width="52" height="52" loading="lazy" decoding="async">{% else %}<span class="ph" aria-hidden="true"></span>{% endif %}
+                    <span class="item__text">
+                      <span class="item__title">{{ top.podcast.name if top.podcast else "A podcast" }}</span>
+                      <span class="item__sub">{{ top.count }} {{ "episode" if top.count == 1 else "episodes" }}</span>
+                    </span>
+                  </a></li>
+                {% endfor %}
+              </ol>
+            </section>
+          {% endif %}
+          {% if recap.best %}
+            {% set best = recap.best %}
+            <section class="section" aria-labelledby="best-heading">
+              <h2 id="best-heading">Highest rated</h2>
+              <a class="best" href="{{ best.path }}">
+                {% if best.episode and best.episode.artwork %}<img src="{{ best.episode.artwork }}" alt="" width="88" height="88" loading="lazy" decoding="async">{% else %}<span class="ph" aria-hidden="true"></span>{% endif %}
+                <span class="rv__text">
+                  <span class="rv__title">{{ best.episode.title if best.episode else "A podcast episode" }}</span>
+                  {% if best.episode and best.episode.podcast %}<span class="rv__sub">{{ best.episode.podcast.name }}</span>{% endif %}
+                  <span class="rv__meta">{{ rating_dots(dots, best.is_loved) }}</span>
+                  {% if best.text %}<span class="rv__body">{{ best.text }}</span>{% endif %}
+                </span>
+              </a>
+            </section>
+          {% endif %}
+        {% endif %}
 
       {% elif kind == "list" %}
         <div class="byline byline--top">

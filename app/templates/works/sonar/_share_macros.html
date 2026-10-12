@@ -1,0 +1,14 @@
+{#- Shared by share.html and creators.html. -#}
+    {% macro rating_dots(fills, loved=False) -%}
+      {% if fills %}
+        <span class="dots" role="img" aria-label="Rated {{ (fills | sum) | round(1) }} out of 5">
+          {% for fill in fills %}<span class="dot"><i style="width: {{ (fill * 100) | round | int }}%"></i></span>{% endfor %}
+        </span>
+      {% endif %}
+      {% if loved %}<svg class="heart" viewBox="0 0 24 22" role="img" aria-label="Loved"><path fill="currentColor" d="M12 21.6 10.3 20C4.2 14.5.2 10.9.2 6.5.2 2.9 3 .2 6.6.2c2 0 4 .9 5.4 2.4C13.4 1.1 15.4.2 17.4.2c3.6 0 6.4 2.7 6.4 6.3 0 4.4-4 8-10.1 13.5L12 21.6Z"/></svg>{% endif %}
+    {%- endmacro %}
+
+    {% macro avatar_tag(info, classes="", photo=None) -%}
+      {% if photo %}<span class="avatar avatar--photo {{ classes }}" aria-hidden="true"><img src="{{ photo }}" alt="" referrerpolicy="no-referrer"></span>
+      {%- else %}<span class="avatar {{ classes }}" aria-hidden="true" style="--a1: {{ info.top }}; --a2: {{ info.bottom }}">{{ info.initial }}</span>{% endif %}
+    {%- endmacro %}

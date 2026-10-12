@@ -19,7 +19,10 @@ from pathlib import Path
 from flask import current_app
 
 SOURCES = ("review", "episode", "podcast", "profile", "list", "invite", "story", "recap", "creator")
-KINDS = ("review", "episode", "podcast", "profile", "list", "invite")
+KINDS = ("review", "episode", "podcast", "profile", "list", "invite", "recap", "creator")
+# Pages that aren't app links themselves: their taps on "Open in Sonar" are counted under the
+# page's own kind (sent as k=), not under the kind of the share path they open.
+PAGE_KINDS = ("creator",)
 TARGETS = ("app", "appstore")
 UNKNOWN = "unknown"
 

@@ -674,6 +674,102 @@ def invite_card(page):
     return card
 
 
+def _art_grid(card, images, x, y, size=ART):
+    """Four artworks as a 2x2 grid, one as a single tile, none as the brand mark."""
+    if len(images) >= 4:
+        gap = 12
+        half = (size - gap) / 2
+        for index, image in enumerate(images[:4]):
+            card.artwork(image, x + (index % 2) * (half + gap), y + (index // 2) * (half + gap), half, shadow=False)
+    elif images:
+        card.artwork(images[0], x, y, size)
+    else:
+        _brand_mark(card.draw, s(x + size / 2), s(y + size / 2 - 10), s(size * 0.68), TEAL)
+
+
+def _stat_row(card, x, y, stats, width):
+    """Big numbers over small labels, side by side. `stats` is [(number, label)]."""
+    if not stats:
+        return
+    column = width / len(stats)
+    for index, (number, label) in enumerate(stats):
+        left = x + index * column
+        card.text((left, y), one_line(number, "bold", 58, column - 16), "bold", 58, LABEL, anchor="ls")
+        card.text((left, y + 38), one_line(label, "regular", 24, column - 16), "regular", 24, GRAY, anchor="ls")
+
+
+def recap_card(recap):
+    """A listener's month or year: who, when, three big numbers and their top shows' artwork."""
+    art = []
+    for top in recap.top_podcasts:
+        if len(art) == 4:
+            break
+        image = load_artwork(top.podcast.artwork) if top.podcast and top.podcast.artwork else None
+        if image is not None:
+            art.append(image)
+    card = Card(glow=art[0] if art else None)
+    if not art:
+        card.teal_wash()
+    grid_x = W - PAD - ART
+    _art_grid(card, art, grid_x, ART_Y)
+
+    col_w = grid_x - 56 - PAD
+    y = PAD + 8
+    photo = load_artwork(recap.avatar_url) if recap.avatar_url else None
+    if photo is not None:
+        card.photo(photo, PAD, y, 44)
+    else:
+        card.avatar(recap.username, PAD, y, 44)
+    name = one_line(f"@{recap.username}", "semibold", 26, col_w - 58)
+    card.text((PAD + 58, y + 22), name, "semibold", 26, LABEL, anchor="lm")
+    y += 44 + 112
+    card.text((PAD, y), one_line(recap.period.label, "bold", 76, col_w), "bold", 76, LABEL, anchor="ls")
+    y += 54
+    card.text((PAD, y), "on Sonar", "semibold", 36, TEAL, anchor="ls")
+    y += 118
+    if recap.empty:
+        card.text((PAD, y - 30), "Nothing logged yet", "regular", 28, GRAY, anchor="ls")
+    else:
+        stats = [(f"{recap.episodes:,}", "episode" if recap.episodes == 1 else "episodes")]
+        if recap.reviews:
+            stats.append((f"{recap.reviews:,}", "review" if recap.reviews == 1 else "reviews"))
+        if recap.loved:
+            stats.append((f"{recap.loved:,}", "loved"))
+        elif recap.longest_streak > 1:
+            stats.append((f"{recap.longest_streak}", "day streak"))
+        _stat_row(card, PAD, y, stats[:3], col_w)
+    card.footer(PAD, PAD + col_w, DIVIDER_Y)
+    return card
+
+
+def creator_card(podcast, average, count):
+    """"Rated on Sonar": a show's artwork with its Sonar average, for its creator to post."""
+    art = load_artwork(podcast.artwork)
+    card = Card(glow=art)
+    card.artwork(art, PAD, ART_Y, ART)
+    y = PAD + 8
+    card.text((COL_X, y), "Rated on Sonar", "semibold", 26, TEAL)
+    y += 42
+    y = card.lines(COL_X, y, wrap(podcast.name, "bold", 46, COL_W, 2), "bold", 46, LABEL, 56)
+    if podcast.author:
+        y += 6
+        card.text((COL_X, y), one_line(podcast.author, "regular", 26, COL_W), "regular", 26, GRAY)
+        y += 34
+    y += 44
+    if average and count:
+        number = f"{average:.1f}"
+        card.text((COL_X, y + 50), number, "bold", 96, LABEL, anchor="ls")
+        end = COL_X + card.text_width(number, "bold", 96) + 22
+        card.dots(end, y + 8, average, 26)
+        noun = "rating" if count == 1 else "ratings"
+        card.text((end, y + 50), f"{count:,} {noun}", "regular", 26, GRAY, anchor="ls")
+    else:
+        card.text((COL_X, y + 30), "Be the first to rate it", "semibold", 34, LABEL, anchor="ls")
+    row = card.footer(COL_X, W - PAD, DIVIDER_Y)
+    card.text((COL_X, row), "Rate it on Sonar", "regular", 24, GRAY, anchor="lm")
+    return card
+
+
 # --- Cache and response --------------------------------------------------------------------
 
 _memory = OrderedDict()
