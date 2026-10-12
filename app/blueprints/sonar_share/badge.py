@@ -1,6 +1,8 @@
 """Rating badges for podcasters to embed: a compact, shields-style SVG.
 
-    [ (( sonar. | ★ 4.3 · 128 ratings ]
+    [ (( sonar. | ● 4.3 · 128 ratings ]
+
+The teal dot is Sonar's rating mark (the app's dense "● 4.5" form); ratings are five dots, never stars.
 
 Fixed size (WIDTH x HEIGHT) so an embed never reflows, in the sea-glass palette: dark by
 default, ``theme="light"`` for light pages. Every piece of text is XML-escaped, and the SVG has
@@ -44,7 +46,7 @@ def rating_text(average, count):
     if not average or not count:
         return "Rate it on Sonar", "Rate it on Sonar"
     noun = "rating" if count == 1 else "ratings"
-    return (f"★ {average:.1f} · {compact(count)} {noun}",
+    return (f"● {average:.1f} · {compact(count)} {noun}",
             f"Rated {average:.1f} out of 5 from {count:,} {noun} on Sonar")
 
 
@@ -52,9 +54,9 @@ def svg(value, description, theme="dark"):
     """The badge. `value` and `description` are plain text; they are escaped here."""
     colors = THEMES[theme_name(theme)]
     value_x = SPLIT + (WIDTH - SPLIT) / 2
-    star = value.startswith("★ ")
-    if star:
-        value_body = (f'<tspan fill="{colors["accent"]}">★</tspan> {escape(value[2:])}')
+    rated = value.startswith("● ")
+    if rated:
+        value_body = (f'<tspan fill="{colors["accent"]}">●</tspan> {escape(value[2:])}')
     else:
         value_body = escape(value)
     title = escape(description)

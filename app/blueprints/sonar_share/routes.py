@@ -98,7 +98,7 @@ def _dots(rating_points):
     return [max(0.0, min(1.0, (rating_points - level * 2) / 2)) for level in range(5)]
 
 
-def _stars_text(rating_points):
+def _rating_text(rating_points):
     if not rating_points:
         return None
     value = rating_points / 2
@@ -124,14 +124,14 @@ def shared_review(log_id):
     who = f"@{item.username}" if item.username else "Someone"
     episode_title = episode.title if episode else "a podcast episode"
     show = episode.podcast.name if episode and episode.podcast else None
-    stars = _stars_text(item.rating)
+    rating = _rating_text(item.rating)
     headline = f"{who} on {episode_title}"
-    summary = item.text or (f"Rated {stars}" if stars else "Logged this episode on Sonar.")
+    summary = item.text or (f"Rated {rating}" if rating else "Logged this episode on Sonar.")
     return _render(
         "review",
         track="review",
         title=headline,
-        description=_clip(f"{stars} · {summary}" if stars and item.text else summary, 200),
+        description=_clip(f"{rating} · {summary}" if rating and item.text else summary, 200),
         og_image=og_image,
         deep_link=deep_link,
         json_ld=_review_ld(item),

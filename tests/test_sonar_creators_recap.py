@@ -102,7 +102,7 @@ class BadgeTests(_Base):
         root = self._parse(response)
         self.assertEqual((root.get("width"), root.get("height")), (str(badge.WIDTH), str(badge.HEIGHT)))
         text = "".join(root.itertext())
-        self.assertIn("★ 4.3 · 128 ratings", text)
+        self.assertIn("● 4.3 · 128 ratings", text)
         self.assertIn("Rated 4.3 out of 5 from 128 ratings on Sonar", root.find(f"{SVG}title").text)
         self.assertNotIn(b"<script", response.data)
         self.assertNotIn(b"href", response.data)
@@ -118,7 +118,7 @@ class BadgeTests(_Base):
         with mock.patch.object(data, "podcast_rating", return_value=(None, 0)):
             root = self._parse(self.client.get("/sonar/badge/p/387129.svg"))
         self.assertIn("Rate it on Sonar", "".join(root.itertext()))
-        self.assertNotIn("★", "".join(root.itertext()))
+        self.assertNotIn("●", "".join(root.itertext()))
 
     def test_light_and_dark_themes(self):
         with mock.patch.object(data, "podcast_rating", return_value=(4.3, 128)):
@@ -132,15 +132,15 @@ class BadgeTests(_Base):
         ET.fromstring(light)
 
     def test_text_is_escaped(self):
-        hostile = '<script>alert("x")</script> & ]]> ★'
-        markup = badge.svg("★ " + hostile, hostile, theme="light")
+        hostile = '<script>alert("x")</script> & ]]> ●'
+        markup = badge.svg("● " + hostile, hostile, theme="light")
         root = ET.fromstring(markup)  # still well-formed XML
         self.assertNotIn("<script>", markup)
         self.assertIn(hostile, root.find(f"{SVG}title").text)
         self.assertIn(hostile, root.get("aria-label"))
 
     def test_counts_are_compact(self):
-        self.assertEqual(badge.rating_text(4.25, 1)[0], "★ 4.2 · 1 rating")
+        self.assertEqual(badge.rating_text(4.25, 1)[0], "● 4.2 · 1 rating")
         self.assertEqual(badge.compact(1234), "1,234")
         self.assertEqual(badge.compact(12345), "12.3k")
         self.assertEqual(badge.compact(120000), "120k")

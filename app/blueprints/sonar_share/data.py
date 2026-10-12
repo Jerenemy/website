@@ -717,7 +717,7 @@ def summarize_show(rows, top=CREATOR_TOP_EPISODES):
     """(ratings, average, reviews, top EpisodeStats) from a show's log rows. Pure, for tests.
 
     Episodes rank by average, then by how many people rated them; an episode needs two ratings
-    to rank while any episode has two (one 5-star log shouldn't top a show's chart)."""
+    to rank while any episode has two (one five-dot log shouldn't top a show's chart)."""
     per_episode = {}
     ratings, reviews = [], 0
     for row in rows or []:
