@@ -112,3 +112,110 @@ li.jobs__error::before { content: ""; }
 .jobs__emails td.jobs__email-when { white-space: nowrap; }
 .jobs__email-kind { display: block; margin-top: var(--s1); }
 .jobs__emails td.jobs__email-who { color: var(--ink-2); overflow-wrap: anywhere; }
+
+/* ---------------------------------------------------------------- where you stand
+   The tracker: four numbers you can click, the emails to sort, then every sent application by
+   stage. Still grey and ink: what is good news or needs you is in ink, what is over is quiet. */
+.jobs__board {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3);
+  margin: var(--s4) 0 var(--s6);
+}
+.jobs__tile {
+  display: flex; flex-direction: column; gap: 4px; padding: var(--s3) 0 0;
+  border-top: 1px solid var(--rule); color: var(--ink-2);
+  transition: border-color var(--t-mid) var(--ease), color var(--t-mid) var(--ease);
+}
+.jobs__tile:hover, .jobs__tile:focus-visible { border-top-color: var(--ink-3); color: var(--ink); }
+.jobs__tile[aria-current="page"] { border-top-color: var(--ink); color: var(--ink); }
+.jobs__tile-n { color: var(--ink); font-size: calc(var(--small-size) * 2.6); line-height: 1; font-variant-numeric: tabular-nums; }
+.jobs__tile--rejected .jobs__tile-n { color: var(--ink-3); }
+.jobs__tile-name { font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jobs__tile-hint { color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+
+/* Stages as badges: good news filled in ink, waiting hollow, rejected quiet. */
+.jobs__badge--stage-offer, .jobs__badge--stage-interviewing { color: var(--ink); }
+.jobs__badge--stage-offer::before, .jobs__badge--stage-interviewing::before { background: var(--ink); border-color: var(--ink); }
+.jobs__badge--stage-waiting::before { border-color: var(--ink-2); }
+.jobs__badge--stage-rejected { color: var(--ink-3); }
+.jobs__by-you { display: block; margin-top: 2px; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); }
+.jobs__unsorted { display: block; margin-top: 2px; color: var(--ink); font-size: var(--label-size); line-height: var(--label-lead); text-decoration: underline; text-underline-offset: 3px; }
+
+/* The emails to sort: each on a hairline, its choices as plain buttons in a row. */
+.jobs__sort { margin-bottom: var(--s6); padding-left: var(--s3); border-left: 1px solid var(--ink); scroll-margin-top: var(--s5); }
+.jobs__sort-head .label { flex: none; white-space: nowrap; }
+.jobs__sort-head { display: flex; gap: var(--s2); align-items: baseline; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); max-width: var(--measure); }
+.jobs__sort-list { margin: var(--s3) 0 0; padding: 0; list-style: none; }
+.jobs__sort-item { padding: var(--s3) 0; border-top: 1px solid var(--rule); }
+.jobs__sort-what { display: flex; gap: var(--s2); align-items: baseline; }
+.jobs__sort-when { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); }
+.jobs__sort-subject { margin-top: 4px; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jobs__sort-subject a, .jobs__latest a, .jobs__standing a { text-decoration: underline; text-decoration-color: var(--ink-3); text-underline-offset: 3px; overflow-wrap: anywhere; }
+.jobs__sort-subject a:hover, .jobs__latest a:hover, .jobs__standing a:hover { text-decoration-color: currentColor; }
+.jobs__sort-from { margin-top: 2px; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jobs__sort-choices { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s2); }
+.jobs__sort-choices form { margin: 0; }
+.jobs__choice {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px;
+  padding: var(--s1) var(--s2); background: none; border: 1px solid var(--hair); cursor: pointer;
+  color: var(--ink); font: inherit; text-align: left;
+  transition: border-color var(--t-mid) var(--ease), background-color var(--t-mid) var(--ease);
+}
+.jobs__choice:hover, .jobs__choice:focus-visible { border-color: var(--ink); }
+.jobs__choice-title { font-size: var(--small-size); line-height: var(--small-lead); }
+.jobs__choice-meta { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jobs__choice--none { border-style: dashed; color: var(--ink-2); }
+
+/* The tracker's table: a stage's heading row, then its applications. */
+.jobs__filters + .table { margin-top: var(--s3); }
+.jobs__tracker .jobs__group th {
+  padding-top: var(--s4); color: var(--ink); border-top: 1px solid var(--ink-3);
+  font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase;
+}
+.jobs__tracker .jobs__row--rejected td { color: var(--ink-3); }
+.jobs__latest { min-width: 22ch; }
+.jobs__latest-kind { display: block; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jobs__tracker th, .jobs__tracker td.jobs__when { white-space: nowrap; }
+.jobs__tracker td.jobs__change { white-space: nowrap; }
+/* The menu is the stage: good news in ink, rejected quiet. */
+.jobs__stage-form--offer select, .jobs__stage-form--interviewing select { color: var(--ink); border-bottom-color: var(--ink-2); }
+.jobs__stage-form--rejected select { color: var(--ink-3); }
+.jobs__stage-form { display: flex; gap: var(--s2); align-items: baseline; margin: 0; }
+.jobs__stage-form select {
+  padding: 4px var(--s3) 4px 0; background-color: transparent; border: 0; border-bottom: 1px solid var(--hair);
+  color: var(--ink-2); font: inherit; font-size: var(--small-size); cursor: pointer; -webkit-appearance: none; appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--ink-3) 50%) right 6px center / 5px 5px no-repeat,
+    linear-gradient(-45deg, transparent 50%, var(--ink-3) 50%) right 1px center / 5px 5px no-repeat;
+  transition: border-color var(--t-mid) var(--ease), color var(--t-mid) var(--ease);
+}
+.jobs__stage-form select:hover, .jobs__stage-form select:focus-visible { border-bottom-color: var(--ink); color: var(--ink); }
+.jobs__stage-form select option { background: var(--surface); color: var(--ink); }
+
+/* A job's own page: where it stands, above the bot's status. */
+.jobs__standing { margin-bottom: var(--s5); padding-left: var(--s3); border-left: 1px solid var(--ink); }
+.jobs__standing-now { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: baseline; }
+.jobs__standing-now .jobs__by-you { display: inline; margin: 0; }
+.jobs__standing .jobs__note { margin-top: var(--s1); }
+.jobs__standing .jobs__stage-form { margin-top: var(--s2); }
+.jobs__stage-form--manual { margin-bottom: var(--s4); }
+.jobs__email-why { display: block; margin-top: 2px; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+.jobs__email-fix { margin: var(--s1) 0 0; }
+.jobs__email-fix button {
+  padding: 0; background: none; border: 0; cursor: pointer; color: var(--ink-3); font: inherit;
+  font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase;
+  text-decoration: underline; text-underline-offset: 3px; transition: color var(--t-mid) var(--ease);
+}
+.jobs__email-fix button:hover, .jobs__email-fix button:focus-visible { color: var(--ink); }
+
+@media (max-width: 760px) {
+  .jobs__board { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4) var(--s3); }
+}
+@media (max-width: 640px) {
+  .jobs__latest { min-width: 0; }
+  .jobs__tracker .jobs__group th { display: block; }
+  .jobs__choice { width: 100%; }
+  .jobs__sort-choices form { flex: 1 1 100%; }
+}
+.jobs__showing { color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+.jobs__showing a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.jobs__showing + .table { margin-top: var(--s2); }

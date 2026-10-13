@@ -7,11 +7,32 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/jobs.css') }}">
 {% endblock %}
+
+{#- Where an application stands, as the menu that changes it: saves when you pick (a button without
+    JavaScript). Under it, whether you set it and any emails that may be about it. -#}
+{% macro stage_form(job, next) -%}
+<form class="jobs__stage-form jobs__stage-form--{{ job.stage.key }}" method="post" action="{{ url_for('jobbot.job_stage', job_id=job.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="next" value="{{ next }}">
+  <label class="sr" for="stage-{{ job.id }}">Where {{ job.company }} stands</label>
+  <select name="stage" id="stage-{{ job.id }}" data-autosubmit>
+    {% for key, (label, hint) in stages.items() %}
+      <option value="{{ key }}"{% if job.stage.key == key %} selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+    {% if job.stage.source == "you" %}<option value="auto">Go by their emails</option>{% endif %}
+  </select>
+  <noscript><button class="open open--quiet" type="submit"><span>Save</span></button></noscript>
+</form>
+{%- if job.stage.source == "you" %}<span class="jobs__by-you" title="You set this; the company's emails no longer change it">set by you</span>{% endif %}
+{%- if job.stage.unsorted %}<a class="jobs__unsorted" href="#sort">{{ job.stage.unsorted }} email{{ "" if job.stage.unsorted == 1 else "s" }} to sort</a>{% endif %}
+{%- endmacro %}
+
 {% block content %}
+  {% set here = request.full_path.rstrip('?') %}
   {{ ui.head("Applications", where="Admin", line=("Last bot pass " ~ (last_pass | jobbot_time) ~ ".") if last_pass and not error else None) }}
   {{ admin.nav("jobs") }}
 
-  {% call ui.sect("01", filters.get(show, "Applications"), wide=True) %}
+  {% call ui.sect("01", "Where you stand", id="tracker", wide=True) %}
     {% include "admin/_flash.html" %}
     {% if error %}
       <p class="jobs__notice jobs__notice--error">{{ error }}</p>
@@ -23,34 +44,137 @@
         </a>
       {% endfor %}
 
-      <nav class="jobs__filters" aria-label="Filter applications">
-        {% for key, label in filters.items() %}
-          <a href="{{ url_for('jobbot.job_list', show=key) }}"{% if key == show %} aria-current="page"{% endif %}>{{ label }} <span class="jobs__count">{{ counts.get(key, 0) }}</span></a>
+      {#- The four stages, as numbers you can click. -#}
+      <nav class="jobs__board" aria-label="Applications by stage">
+        {% for key, (label, hint) in stages.items() %}
+          <a class="jobs__tile jobs__tile--{{ key }}" href="{{ url_for('jobbot.job_list', stage=key, show=show) }}#tracker"{% if stage == key %} aria-current="page"{% endif %}>
+            <span class="jobs__tile-n">{{ stage_counts.get(key, 0) }}</span>
+            <span class="jobs__tile-name">{{ label }}</span>
+            <span class="jobs__tile-hint">{{ hint }}</span>
+          </a>
         {% endfor %}
       </nav>
 
-      <div class="table admin-table">
+      {#- Emails the bot could not place for sure: you say which application each is about. -#}
+      {% if unsorted %}
+        <div class="jobs__sort" id="sort">
+          <p class="jobs__sort-head"><span class="label">To sort</span>
+            <span>{{ unsorted | length }} email{{ "" if unsorted | length == 1 else "s" }} could be about more than one application. Pick the right one; until then {{ "it doesn't" if unsorted | length == 1 else "they don't" }} change any stage.</span></p>
+          <ol class="jobs__sort-list">
+            {% for email in unsorted %}
+              <li class="jobs__sort-item">
+                <p class="jobs__sort-what">
+                  <span class="jobs__badge jobs__badge--kind-{{ email.kind }}">{{ email.kind | jobbot_email_kind }}</span>
+                  <span class="jobs__sort-when">{{ email.at | jobbot_date }}</span>
+                </p>
+                <p class="jobs__sort-subject">
+                  {% if email.link %}<a href="{{ email.link }}" target="_blank" rel="noopener noreferrer">{{ email.subject | jobbot_subject }}<span class="sr"> (opens Gmail in a new tab)</span></a>{% else %}{{ email.subject | jobbot_subject }}{% endif %}
+                </p>
+                <p class="jobs__sort-from">{{ email.sender }}{% if email.why %} · {{ email.why }}{% endif %}</p>
+                <div class="jobs__sort-choices" role="group" aria-label="Which application is this email about?">
+                  {% for job in email.candidates %}
+                    <form method="post" action="{{ url_for('jobbot.email_assign') }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <input type="hidden" name="next" value="{{ here }}#tracker">
+                      <input type="hidden" name="message_id" value="{{ email.message_id }}">
+                      <input type="hidden" name="job_id" value="{{ job.id }}">
+                      <button class="jobs__choice" type="submit"><span class="jobs__choice-title">{{ job.title }}</span><span class="jobs__choice-meta">{{ job.company }} · applied {{ job.applied_at | jobbot_date }}</span></button>
+                    </form>
+                  {% endfor %}
+                  <form method="post" action="{{ url_for('jobbot.email_assign') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="next" value="{{ here }}#tracker">
+                    <input type="hidden" name="message_id" value="{{ email.message_id }}">
+                    <button class="jobs__choice jobs__choice--none" type="submit"><span class="jobs__choice-title">None of these</span><span class="jobs__choice-meta">Not about an application</span></button>
+                  </form>
+                </div>
+              </li>
+            {% endfor %}
+          </ol>
+        </div>
+      {% endif %}
+
+      <p class="jobs__showing">
+        {% if stage == "all" %}All {{ stage_counts.values() | sum }} sent applications, newest news first in each stage.
+        {% else %}Showing {{ stages[stage][0] | lower }} only. <a href="{{ url_for('jobbot.job_list', show=show) }}#tracker">Show all {{ stage_counts.values() | sum }}</a>{% endif %}
+      </p>
+
+      <div class="table admin-table jobs__tracker">
         <table>
-          <thead><tr><th>Company</th><th>Role</th><th>Status</th><th>Last attempt</th><th><span class="sr">Review</span></th></tr></thead>
+          <thead><tr><th>Company</th><th>Role</th><th>Where it stands</th><th>Latest from them</th><th>Applied</th><th><span class="sr">Open</span></th></tr></thead>
           <tbody>
-            {% for job in jobs %}
-              {% set sub = job.submission or {} %}
-              <tr>
+            {% set ns = namespace(group=None) %}
+            {% for job in tracked %}
+              {% set st = job.stage %}
+              {% set last = st.latest or st.email %}
+              {% if stage == "all" and st.key != ns.group %}
+                {% set ns.group = st.key %}
+                <tr class="jobs__group"><th colspan="6" scope="colgroup">{{ st.label }} <span class="jobs__count">{{ stage_counts.get(st.key, 0) }}</span></th></tr>
+              {% endif %}
+              <tr class="jobs__row--{{ st.key }}">
                 <td data-label="Company" class="admin-table__lead">{{ job.company or "?" }}</td>
                 <td data-label="Role">{{ job.title or "?" }}</td>
-                <td data-label="Status">
-                  <span class="jobs__badge jobs__badge--{{ job.category }}">{% if job.category == "closed" %}Closed{% elif job.category == "blocked" %}Apply yourself{% elif sub.status %}{{ sub.status | jobbot_status }}{% else %}{{ job.status | jobbot_status }}{% endif %}</span>
-                  {% if job.missing_required %}<span class="jobs__badge jobs__badge--attention">{{ job.missing_required | length }} unanswered</span>{% endif %}
+                <td data-label="Where it stands" class="jobs__change">{{ stage_form(job, here ~ "#tracker") }}</td>
+                <td data-label="Latest from them" class="jobs__latest">
+                  {% if last %}
+                    <span class="jobs__latest-kind">{{ last.kind | jobbot_email_kind }} · {{ last.at | jobbot_date }}</span>
+                    {% if last.link %}<a href="{{ last.link }}" target="_blank" rel="noopener noreferrer">{{ last.subject | jobbot_subject }}<span class="sr"> (opens Gmail in a new tab)</span></a>{% else %}{{ last.subject | jobbot_subject }}{% endif %}
+                  {% elif st.source == "you" %}
+                    <span class="note">You marked it {{ st.since | jobbot_date }}</span>
+                  {% else %}
+                    <span class="note">Nothing yet</span>
+                  {% endif %}
                 </td>
-                <td data-label="Last attempt">{{ job.last_attempt | jobbot_time }}</td>
-                <td class="admin-table__actions"><a class="open open--quiet" href="{{ url_for('jobbot.job_detail', job_id=job.id) }}"><span>Review</span>{{ ui.arrow() }}</a></td>
+                <td data-label="Applied" class="jobs__when">{{ (job.applied_at or job.last_attempt) | jobbot_date }}</td>
+                <td class="admin-table__actions"><a class="open open--quiet" href="{{ url_for('jobbot.job_detail', job_id=job.id) }}"><span>Open</span>{{ ui.arrow() }}</a></td>
               </tr>
             {% else %}
-              <tr><td colspan="5">Nothing here yet.</td></tr>
+              <tr><td colspan="6">{% if stage == "all" %}No applications sent yet. Once the bot submits one, it shows up here and moves along as the company writes back.{% else %}None right now.{% endif %}</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
     {% endif %}
   {% endcall %}
+
+  {% if not error %}
+  {% call ui.sect("02", "Bot queue", id="queue", wide=True) %}
+    <nav class="jobs__filters" aria-label="Filter the bot's queue">
+      {% for key, label in filters.items() %}
+        <a href="{{ url_for('jobbot.job_list', show=key, stage=None if stage == 'all' else stage) }}#queue"{% if key == show %} aria-current="page"{% endif %}>{{ label }} <span class="jobs__count">{{ counts.get(key, 0) }}</span></a>
+      {% endfor %}
+    </nav>
+
+    <div class="table admin-table">
+      <table>
+        <thead><tr><th>Company</th><th>Role</th><th>Status</th><th>Last attempt</th><th><span class="sr">Review</span></th></tr></thead>
+        <tbody>
+          {% for job in jobs %}
+            {% set sub = job.submission or {} %}
+            <tr>
+              <td data-label="Company" class="admin-table__lead">{{ job.company or "?" }}</td>
+              <td data-label="Role">{{ job.title or "?" }}</td>
+              <td data-label="Status">
+                <span class="jobs__badge jobs__badge--{{ job.category }}">{% if job.category == "closed" %}Closed{% elif job.category == "blocked" %}Apply yourself{% elif sub.status %}{{ sub.status | jobbot_status }}{% else %}{{ job.status | jobbot_status }}{% endif %}</span>
+                {% if job.missing_required %}<span class="jobs__badge jobs__badge--attention">{{ job.missing_required | length }} unanswered</span>{% endif %}
+              </td>
+              <td data-label="Last attempt">{{ job.last_attempt | jobbot_time }}</td>
+              <td class="admin-table__actions"><a class="open open--quiet" href="{{ url_for('jobbot.job_detail', job_id=job.id) }}"><span>Review</span>{{ ui.arrow() }}</a></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5">Nothing here right now.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endcall %}
+  {% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+  // A stage menu saves as soon as you pick (the form's button is there without JavaScript).
+  document.querySelectorAll("select[data-autosubmit]").forEach((select) => {
+    select.addEventListener("change", () => select.form.requestSubmit ? select.form.requestSubmit() : select.form.submit());
+  });
+</script>
 {% endblock %}

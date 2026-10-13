@@ -4,6 +4,7 @@ The bot runs `getmeajob serve`, a private API on localhost. These admin-only vie
 server with a shared token, so the browser never talks to the bot directly and its screenshots
 (which show your phone number and address) are never in /static.
 """
+import re
 from datetime import datetime
 from urllib.parse import quote
 
@@ -15,14 +16,22 @@ from ..admin.routes import _csrf_token, _validate_csrf, admin_required
 bp = Blueprint("jobbot", __name__, url_prefix="/admin/jobs")
 
 ACTIVE = ("queued", "running", "needs_code")
+# The bot's queue: dry runs to review and what went wrong. Sent applications live in the tracker.
 FILTERS = {
     "review": "Ready to review",
     "active": "In progress",
     "attention": "Needs attention",
     "blocked": "Apply yourself",
     "closed": "Closed",
-    "applied": "Applied",
     "all": "All",
+}
+# Where a sent application stands, as the bot works it out from the company's emails (or you set it).
+# In the order the tracker lists them: the ones that need you first.
+STAGES = {
+    "offer": ("Offer", "Offers in hand"),
+    "interviewing": ("Moving forward", "Interviews and assessments"),
+    "waiting": ("Waiting to hear back", "Applied, no answer yet"),
+    "rejected": ("Rejected", "Not moving forward"),
 }
 
 
@@ -179,25 +188,71 @@ def private_response(response):
     return response
 
 
+def _stage(job):
+    """Where a sent application stands. A bot that predates the tracker sends no `stage`: an applied job is
+    then waiting to hear back."""
+    if "stage" in job:
+        return job["stage"]
+    if job["category"] != "applied":
+        return None
+    return {"key": "waiting", "label": STAGES["waiting"][0], "source": "applied", "since": job.get("last_attempt"),
+            "email": None, "latest": None, "unsorted": 0}
+
+
+def _latest(job):
+    stage = job["stage"] or {}
+    return stage.get("since") or job.get("applied_at") or job.get("last_attempt") or ""
+
+
+@bp.app_template_filter("jobbot_subject")
+def jobbot_subject(value):
+    """An email subject without the "[External]" tag the university's mail gateway puts on outside mail."""
+    return re.sub(r"^\s*(\[external\]\s*)+", "", str(value or ""), flags=re.I) or "(no subject)"
+
+
+@bp.app_template_filter("jobbot_date")
+def jobbot_date(value):
+    if not value:
+        return ""
+    try:
+        return datetime.fromisoformat(value).strftime("%b %d").replace(" 0", " ")
+    except ValueError:
+        return value
+
+
 @bp.get("/")
 @admin_required
 def job_list():
     show = request.args.get("show", "review")
     if show not in FILTERS:
         show = "review"
+    stage = request.args.get("stage", "all")
+    if stage not in STAGES:
+        stage = "all"
+    context = dict(filters=FILTERS, stages=STAGES, show=show, stage=stage, csrf_token=_csrf_token())
     try:
         data = _api("GET", "/api/jobs?limit=500").json()
     except JobBotError as error:
-        return render_template("admin/jobs.html", error=error.message, jobs=[], counts={}, filters=FILTERS,
-                               show=show, waiting=[], csrf_token=_csrf_token()), 503
+        return render_template("admin/jobs.html", error=error.message, jobs=[], counts={}, waiting=[], tracked=[],
+                               stage_counts={}, unsorted=[], **context), 503
     jobs = data.get("jobs", [])
     for job in jobs:
         job["category"] = _category(job)
-    counts = {key: sum(1 for job in jobs if key == "all" or job["category"] == key) for key in FILTERS}
+        job["stage"] = _stage(job)
+    queue = [job for job in jobs if not job["stage"]]  # a sent application (or one you track) is in the tracker
+    counts = {key: sum(1 for job in queue if key == "all" or job["category"] == key) for key in FILTERS}
     waiting = [job for job in jobs if (job.get("submission") or {}).get("status") == "needs_code"]
-    shown = [job for job in jobs if show == "all" or job["category"] == show]
-    return render_template("admin/jobs.html", error=None, jobs=shown, counts=counts, filters=FILTERS, show=show,
-                           waiting=waiting, last_pass=data.get("last_pass"), csrf_token=_csrf_token())
+    shown = [job for job in queue if show == "all" or job["category"] == show]
+    tracked = [job for job in jobs if job["stage"]]
+    stage_counts = {key: sum(1 for job in tracked if job["stage"]["key"] == key) for key in STAGES}
+    order = list(STAGES)
+    tracked.sort(key=_latest, reverse=True)  # newest news first within each stage
+    tracked.sort(key=lambda job: order.index(job["stage"]["key"]) if job["stage"]["key"] in order else len(order))
+    if stage != "all":
+        tracked = [job for job in tracked if job["stage"]["key"] == stage]
+    return render_template("admin/jobs.html", error=None, jobs=shown, counts=counts, waiting=waiting,
+                           tracked=tracked, stage_counts=stage_counts, unsorted=data.get("unsorted") or [],
+                           last_pass=data.get("last_pass"), **context)
 
 
 @bp.get("/<path:job_id>")
@@ -218,7 +273,8 @@ def job_detail(job_id):
     can_chat = job["status"] in ("dry_run_ok", "failed") and bool(job.get("fields")) and not busy
     last_done = next((e for e in reversed(edits) if e.get("status") == "done"), None)
     edited = {(c.get("label"), c.get("education_index")) for c in (last_done or {}).get("changes") or []}
-    return render_template("admin/job_detail.html", job=job, sub=sub, active=busy, editing=editing,
+    job["stage"] = _stage(dict(job, category=_category(job)))
+    return render_template("admin/job_detail.html", job=job, sub=sub, active=busy, editing=editing, stages=STAGES,
                            can_submit=can_submit, can_chat=can_chat, edits=edits, edited=edited,
                            signature=_signature(job), needs_force=sub.get("status") == "unconfirmed",
                            csrf_token=_csrf_token())
@@ -257,6 +313,47 @@ def _action(job_id, action, payload, success, anchor=""):
         except JobBotError as error:
             flash(error.message, "error")
     return redirect(url_for("jobbot.job_detail", job_id=job_id) + anchor)
+
+
+def _back(default):
+    """Where a form on the list or a job's page sends you back to: its `next`, if it is one of these pages."""
+    target = request.form.get("next") or ""
+    if target.startswith(url_for("jobbot.job_list")) and "//" not in target and "\\" not in target:
+        return target
+    return default
+
+
+@bp.post("/emails/assign")
+@admin_required
+def email_assign():
+    back = _back(url_for("jobbot.job_list") + "#tracker")
+    if not _validate_csrf(request.form.get("csrf_token")):
+        flash("Invalid or missing CSRF token.", "error")
+        return redirect(back)
+    job_id = request.form.get("job_id") or None
+    try:
+        _api("POST", "/api/emails/assign", {"message_id": request.form.get("message_id", ""), "job_id": job_id})
+        flash("Email filed." if job_id else "Email set aside: it is not about these applications.", "success")
+    except JobBotError as error:
+        flash(error.message, "error")
+    return redirect(back)
+
+
+@bp.post("/<path:job_id>/stage")
+@admin_required
+def job_stage(job_id):
+    back = _back(url_for("jobbot.job_detail", job_id=job_id) + "#job-status")
+    if not _validate_csrf(request.form.get("csrf_token")):
+        flash("Invalid or missing CSRF token.", "error")
+        return redirect(back)
+    value = request.form.get("stage", "")
+    try:
+        _api("POST", _job_path(job_id, "/stage"), {"stage": value})
+        label = STAGES[value][0] if value in STAGES else None
+        flash(f"Marked {label}." if label else "Following the company's emails again.", "success")
+    except JobBotError as error:
+        flash(error.message, "error")
+    return redirect(back)
 
 
 @bp.post("/<path:job_id>/submit")
