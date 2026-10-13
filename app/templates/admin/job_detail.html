@@ -29,6 +29,38 @@
         <div><dt>Updated</dt><dd>{{ sub.updated_at | jobbot_time }}</dd></div>
         {% endif %}
       </dl>
+      {% set st = job.stage %}
+      {% if st %}
+        <div class="jobs__standing">
+          <p class="jobs__standing-now"><span class="label">Where it stands</span>
+            <span class="jobs__badge jobs__badge--stage-{{ st.key }}">{{ st.label }}</span>
+            {% if st.source == "you" %}<span class="jobs__by-you">set by you</span>{% endif %}</p>
+          <p class="jobs__note">
+            {% if st.source == "you" %}You marked it {{ st.since | jobbot_date }}; the company's emails no longer change it.
+            {% elif st.email %}From {% if st.email.link %}<a href="{{ st.email.link }}" target="_blank" rel="noopener noreferrer">{{ st.email.subject | jobbot_subject }}<span class="sr"> (opens Gmail in a new tab)</span></a>{% else %}"{{ st.email.subject | jobbot_subject }}"{% endif %}, {{ st.email.at | jobbot_date }}.
+            {% else %}Applied {{ (job.applied_at or job.last_attempt) | jobbot_date }}; no answer from {{ job.company or "the company" }} yet.{% endif %}
+            {% if st.unsorted %}<a href="{{ url_for('jobbot.job_list') }}#sort">{{ st.unsorted }} email{{ "" if st.unsorted == 1 else "s" }} may be about this application: sort {{ "it" if st.unsorted == 1 else "them" }}</a>.{% endif %}
+          </p>
+          <form class="jobs__stage-form" method="post" action="{{ url_for('jobbot.job_stage', job_id=job.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label class="label" for="stage">Change it</label>
+            <select name="stage" id="stage" data-autosubmit>
+              {% for key, (label, hint) in stages.items() %}
+                <option value="{{ key }}"{% if st.key == key %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+              {% if st.source == "you" %}<option value="auto">Go by their emails</option>{% endif %}
+            </select>
+            <noscript><button class="open open--quiet" type="submit"><span>Save</span></button></noscript>
+          </form>
+        </div>
+      {% elif job.status in ("blocked", "skipped") or job.closed %}
+        <form class="jobs__stage-form jobs__stage-form--manual" method="post" action="{{ url_for('jobbot.job_stage', job_id=job.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="stage" value="waiting">
+          <span class="note">Applied to this one yourself?</span>
+          <button class="open open--quiet" type="submit"><span>Track it</span>{{ ui.arrow() }}</button>
+        </form>
+      {% endif %}
       {% if job.note %}<p class="jobs__note">{{ job.note }}</p>{% endif %}
       {% if sub.note %}<p class="jobs__note">{{ sub.note }}</p>{% endif %}
 
@@ -195,8 +227,23 @@
                     <a href="{{ email.link }}" target="_blank" rel="noopener noreferrer">{{ email.subject }}<span class="sr"> (opens Gmail in a new tab)</span></a>
                   {% else %}{{ email.subject }}{% endif %}
                 </td>
-                <td data-label="About"><span class="jobs__badge jobs__badge--{{ email.direction }}">{{ "Sent by the bot" if email.direction == "sent" else "Received" }}</span><span class="jobs__email-kind">{{ email.kind | jobbot_email_kind }}</span></td>
-                <td data-label="From / to" class="jobs__email-who">{{ email.sender if email.direction == "received" else email.recipient }}</td>
+                <td data-label="About"><span class="jobs__badge jobs__badge--{{ email.direction }}">{{ "Sent by the bot" if email.direction == "sent" else "Received" }}</span><span class="jobs__email-kind">{{ email.kind | jobbot_email_kind }}</span>
+                  {% if email.match == "guess" %}<span class="jobs__email-why">Might be about another application: {{ email.why }}</span>
+                  {% elif email.why %}<span class="jobs__email-why">Filed here because {{ email.why }}</span>{% endif %}</td>
+                <td data-label="From / to" class="jobs__email-who">{{ email.sender if email.direction == "received" else email.recipient }}
+                  {% if email.match in ("sure", "guess", "you") and email.message_id %}
+                    <form class="jobs__email-fix" method="post" action="{{ url_for('jobbot.email_assign') }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <input type="hidden" name="next" value="{{ url_for('jobbot.job_detail', job_id=job.id) }}#emails">
+                      <input type="hidden" name="message_id" value="{{ email.message_id }}">
+                      {% if email.match == "guess" %}
+                        <input type="hidden" name="job_id" value="{{ job.id }}">
+                        <button type="submit">It's about this one</button>
+                      {% else %}
+                        <button type="submit">Not about this application</button>
+                      {% endif %}
+                    </form>
+                  {% endif %}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -210,6 +257,12 @@
   {% endcall %}
 {% endblock %}
 {% block scripts %}
+<script>
+  // The stage menu saves as soon as you pick (its button is there without JavaScript).
+  document.querySelectorAll("select[data-autosubmit]").forEach((select) => {
+    select.addEventListener("change", () => select.form.requestSubmit ? select.form.requestSubmit() : select.form.submit());
+  });
+</script>
 <script>
   (function () {
     const box = document.getElementById("job-status");

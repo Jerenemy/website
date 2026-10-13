@@ -79,13 +79,117 @@ class JobBotPageTests(unittest.TestCase):
         self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": [JOB, waiting, applied], "last_pass": None})
         page = self.client.get("/admin/jobs/").get_data(as_text=True)
         self.assertIn("Acme", page)
-        self.assertNotIn("Gamma", page)  # applied jobs are on their own tab
         self.assertIn("Beta is waiting for an emailed verification code", page)
         self.assertIn('/admin/jobs/url:abc123"', page)
         self.assertEqual(self.calls[0][3], {"Authorization": "Bearer tok"})
-        page = self.client.get("/admin/jobs/?show=applied").get_data(as_text=True)
-        self.assertIn("Gamma", page)
-        self.assertNotIn(">Acme<", page)
+        tracker, queue = page.split('id="queue"')
+        self.assertIn("Gamma", tracker)  # a sent application is in the tracker, not the bot's queue
+        self.assertNotIn("Gamma", queue)
+        self.assertIn("Waiting to hear back", tracker)  # an older bot sends no stage: applied means waiting
+        self.assertNotIn(">Acme<", tracker)
+
+    def stage(self, key, label, source="email", email=None, unsorted=0, since="2026-10-12T10:00:00+00:00"):
+        return {"key": key, "label": label, "source": source, "since": since, "email": email, "unsorted": unsorted,
+                "auto": key}
+
+    def tracker_jobs(self):
+        email = {"kind": "rejection", "subject": "Your application to Delta", "at": "2026-10-13T13:20:00+00:00",
+                 "link": "https://mail.google.com/mail/u/me@gmail.com/#search/rfc822msgid%3Ar%40x"}
+        return [
+            dict(JOB, id="w1", company="Waits", status="applied", applied_at="2026-10-11T08:00:00+00:00",
+                 stage=self.stage("waiting", "Waiting to hear back", source="applied")),
+            dict(JOB, id="r1", company="Delta", status="applied",
+                 stage=self.stage("rejected", "Rejected", email=email, since=email["at"])),
+            dict(JOB, id="i1", company="Forward", status="applied",
+                 stage=self.stage("interviewing", "Moving forward", source="you", unsorted=1)),
+            dict(JOB, id="q1", company="Queued"),  # a dry run: the bot's queue, not the tracker
+        ]
+
+    def test_tracker_lists_sent_applications_by_stage(self):
+        self.login()
+        unsorted = [{"message_id": "<m@x>", "kind": "rejection", "subject": "Regarding your application",
+                     "sender": "avav@myworkday.com", "at": "2026-10-13T13:20:00+00:00", "why": "you applied to 2 jobs",
+                     "link": "", "candidates": [
+                         {"id": "i1", "company": "Forward", "title": "Software Engineer", "applied_at": "2026-10-11T08:00:00+00:00"},
+                         {"id": "w1", "company": "Forward", "title": "Associate Software Engineer", "applied_at": "2026-10-13T05:00:00+00:00"}]}]
+        payload = {"jobs": self.tracker_jobs(), "unsorted": unsorted, "last_pass": None}
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload=payload)
+        page = self.client.get("/admin/jobs/").get_data(as_text=True)
+        tracker, queue = page.split('id="queue"')
+        # the board's numbers, then the applications grouped in stage order: moving forward, waiting, rejected
+        self.assertIn('<span class="jobs__tile-n">1</span>\n            <span class="jobs__tile-name">Moving forward', tracker)
+        self.assertLess(tracker.index(">Forward<"), tracker.index(">Waits<"))
+        self.assertLess(tracker.index(">Waits<"), tracker.index(">Delta<"))
+        self.assertIn("set by you", tracker)
+        self.assertIn("1 email to sort", tracker)
+        self.assertIn('href="https://mail.google.com/mail/u/me@gmail.com/#search/rfc822msgid%3Ar%40x"', tracker)
+        self.assertIn("Nothing yet", tracker)
+        self.assertIn('<option value="rejected" selected>', tracker)
+        self.assertNotIn("Queued", tracker)
+        self.assertIn("Queued", queue)
+        # the email to sort, with a button per application it may be about and one for neither
+        self.assertIn("1 email could be about more than one application", tracker)
+        self.assertIn("Associate Software Engineer", tracker)
+        self.assertIn("None of these", tracker)
+        self.assertEqual(tracker.count('name="message_id" value="&lt;m@x&gt;"'), 3)
+        page = self.client.get("/admin/jobs/?stage=rejected").get_data(as_text=True)
+        tracker = page.split('id="queue"')[0]
+        self.assertIn(">Delta<", tracker)
+        self.assertNotIn(">Waits<", tracker)
+        self.assertIn("Showing rejected only", tracker)
+
+    def test_sorting_an_email_and_setting_a_stage_call_the_bot(self):
+        self.login()
+        self.responses[("POST", "/api/emails/assign")] = FakeResponse(payload={"emails": []})
+        response = self.client.post("/admin/jobs/emails/assign", data={
+            "csrf_token": "csrf", "message_id": "<m@x>", "job_id": "i1", "next": "/admin/jobs/?stage=all#tracker"})
+        self.assertEqual(response.headers["Location"], "/admin/jobs/?stage=all#tracker")
+        self.assertEqual(self.calls[-1][:3], ("POST", "http://bot.test/api/emails/assign", {"message_id": "<m@x>", "job_id": "i1"}))
+        self.client.post("/admin/jobs/emails/assign", data={"csrf_token": "csrf", "message_id": "<m@x>", "job_id": ""})
+        self.assertEqual(self.calls[-1][2], {"message_id": "<m@x>", "job_id": None})  # about none of them
+        # never sent off the site, and never without the CSRF token
+        response = self.client.post("/admin/jobs/emails/assign", data={"csrf_token": "csrf", "message_id": "x",
+                                                                       "next": "https://evil.example/admin/jobs/"})
+        self.assertEqual(response.headers["Location"], "/admin/jobs/#tracker")
+        calls = len(self.calls)
+        self.client.post("/admin/jobs/emails/assign", data={"message_id": "<m@x>", "job_id": "i1"})
+        self.assertEqual(len(self.calls), calls)
+
+        self.responses[("POST", "/api/jobs/url%3Aabc123/stage")] = FakeResponse(payload={"job": DETAIL})
+        response = self.client.post("/admin/jobs/url:abc123/stage", data={"csrf_token": "csrf", "stage": "interviewing"})
+        self.assertEqual(response.headers["Location"], "/admin/jobs/url:abc123#job-status")
+        self.assertEqual(self.calls[-1][2], {"stage": "interviewing"})
+        with self.client.session_transaction() as session:
+            self.assertIn(("success", "Marked Moving forward."), session["_flashes"])
+
+    def test_detail_says_where_the_application_stands(self):
+        self.login()
+        email = {"kind": "interview", "subject": "Next steps with Acme", "at": "2026-10-13T10:00:00+00:00", "link": ""}
+        emails = [{"id": "e1", "direction": "received", "kind": "interview", "subject": "Next steps with Acme",
+                   "sender": "jobs@acme.com", "recipient": "me@example.com", "at": "2026-10-13T10:00:00+00:00",
+                   "link": "", "message_id": "<i@acme>", "match": "sure", "why": "it quotes the requisition number R123"},
+                  {"id": "e2", "direction": "received", "kind": "rejection", "subject": "Acme update",
+                   "sender": "jobs@acme.com", "recipient": "me@example.com", "at": "2026-10-14T10:00:00+00:00",
+                   "link": "", "message_id": "<r@acme>", "match": "guess", "why": "you applied to 2 jobs at Acme"}]
+        job = dict(DETAIL, status="applied", emails=emails,
+                   stage=self.stage("interviewing", "Moving forward", email=email, unsorted=1, since=email["at"]))
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": job})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn("Where it stands", page)
+        self.assertIn('jobs__badge--stage-interviewing">Moving forward', page)
+        self.assertIn('From "Next steps with Acme", Oct 13.', page)
+        self.assertIn("1 email may be about this application", page)
+        self.assertIn('<option value="interviewing" selected>', page)
+        self.assertIn("Filed here because it quotes the requisition number R123", page)
+        self.assertIn("Not about this application", page)
+        self.assertIn("It's about this one", page)
+
+    def test_a_job_you_applied_to_yourself_can_be_tracked(self):
+        self.login()
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, status="blocked", stage=None)})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn("Applied to this one yourself?", page)
+        self.assertNotIn("Where it stands", page)
 
     def test_closed_and_skipped_jobs_leave_needs_attention(self):
         self.login()
@@ -164,7 +268,10 @@ class JobBotPageTests(unittest.TestCase):
         self.assertIn("Oct 07, 09:05 UTC", page)
 
     def test_company_email_kinds_have_labels(self):
-        from app.blueprints.jobbot import jobbot_email_kind
+        from app.blueprints.jobbot import jobbot_email_kind, jobbot_subject
+
+        self.assertEqual(jobbot_subject("[External] Thank you for applying"), "Thank you for applying")
+        self.assertEqual(jobbot_subject("Re: [External] x"), "Re: [External] x")
 
         self.assertEqual(jobbot_email_kind("confirmation"), "Application received")
         self.assertEqual(jobbot_email_kind("rejection"), "Rejection")
