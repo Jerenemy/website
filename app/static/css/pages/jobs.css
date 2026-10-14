@@ -413,6 +413,9 @@ p.jans__err { margin: 0 0 var(--s2); }
 .jkey { padding: 1px 8px; border: 1px dashed var(--hair); border-radius: 999px; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
 .jkey--had { border-style: solid; color: var(--ink-2); }
 .jkey--added { border: 1px solid var(--ink); color: var(--ink); }
+.jkey--lacks { border-style: dotted; text-decoration: line-through; text-decoration-color: var(--hair); }
+.jresume__note { margin: calc(-1 * var(--s1)) 0 var(--s2); color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+.jresume__note code { font-size: inherit; }
 .jresume__line { margin-bottom: var(--s1); color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
 .jresume__label { margin-right: var(--s1); color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
 .jresume__was { color: var(--ink-3); }

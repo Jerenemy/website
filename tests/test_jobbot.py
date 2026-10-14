@@ -437,14 +437,18 @@ class JobBotPageTests(unittest.TestCase):
             "bullets": [{"where": "Software Engineer Intern", "before": "Built REST APIs.", "after": "Built RESTful APIs.",
                          "added": ["RESTful APIs"], "unverified": ["web applications"]}],
             "projects": {"before": ["Zaychess"], "after": ["EAR"]},
-            "skills": [{"label": "Languages", "before": ["Python"], "after": ["TypeScript", "Python"]}],
+            "skills": [{"label": "Languages", "before": ["Python"], "after": ["TypeScript", "Python", "version control"],
+                        "unverified": ["version control"]}],
+            "unsupported": ["Rust"],
             "refused": [{"where": "Zaychess", "text": "Built it in <Rust>.", "why": "names 'Rust', which resume.yaml does not"}],
             "created_at": "2026-10-14T09:00:00+00:00",
         }
         self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, resume=resume)})
         page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
         self.assertIn("Resume, tailored", page)
-        self.assertIn("2 of 3 keywords on the page (was 1)", page)
+        self.assertIn("2 of 3 keywords on the page (was 1) · 1 you don't have", page)
+        self.assertIn('class="jkey jkey--lacks"', page)
+        self.assertIn("Check this is true: version control", page)
         self.assertIn('class="jkey jkey--added"', page)
         self.assertIn("<del class=\"jdiff__before\">Built REST APIs.</del>", page)
         self.assertIn("Check this is true: web applications", page)
