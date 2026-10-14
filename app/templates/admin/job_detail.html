@@ -163,6 +163,61 @@
         {%- endmacro %}
         {% if st %}{{ email_panel() }}{% endif %}
 
+        {#- The resume the bot tailored to this posting: what changed from resume.yaml and the page itself. -#}
+        {% set rs = job.resume %}
+        {% if rs %}
+        {% set cov = rs.coverage or {} %}
+        {% set after = cov.after or [] %}
+        {% set before = cov.before or [] %}
+        <details class="jpanel jresume" id="resume"{% if not st %} open{% endif %}>
+          <summary class="jpanel__head">
+            <h2 class="jpanel__name">Resume, tailored</h2>
+            <span class="jpanel__aside">{{ after | length }} of {{ (rs.keywords or []) | length }} keywords on the page{% if after | length != before | length %} (was {{ before | length }}){% endif %}</span>
+          </summary>
+          {% if rs.keywords %}
+            <ul class="jkeys" aria-label="The posting's keywords">
+              {% for k in rs.keywords %}
+                <li class="jkey{% if k in after and k not in before %} jkey--added{% elif k in after %} jkey--had{% endif %}"
+                    title="{% if k in after and k not in before %}Added for this job{% elif k in after %}Already on your resume{% else %}Not on the page{% endif %}">{{ k }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+          {% set projects = rs.projects or {} %}
+          {% if projects.before != projects.after %}
+            <p class="jresume__line"><span class="jresume__label">Projects</span> {{ (projects.after or []) | join(", ") }} <span class="jresume__was">instead of {{ (projects.before or []) | join(", ") }}</span></p>
+          {% endif %}
+          {% for line in rs.skills or [] %}
+            <p class="jresume__line"><span class="jresume__label">{{ line.label }}</span> {{ line.after | join(", ") }}</p>
+          {% endfor %}
+          {% if rs.bullets %}
+            <ol class="jdiffs">
+              {% for b in rs.bullets %}
+                <li class="jdiff">
+                  <div class="jdiff__where">{{ b.where }}</div>
+                  <del class="jdiff__before">{{ b.before }}</del>
+                  <ins class="jdiff__after">{{ b.after }}</ins>
+                  {% if b.unverified %}<p class="jdiff__check">Check this is true: {{ b.unverified | join(", ") }}</p>{% endif %}
+                </li>
+              {% endfor %}
+            </ol>
+          {% elif not rs.skills and projects.before == projects.after %}
+            <p class="jempty">No keyword fit any bullet honestly, so the resume went out as it is.</p>
+          {% endif %}
+          {% if rs.refused %}
+            <details class="jrefused">
+              <summary>{{ rs.refused | length }} suggested {{ "edit" if rs.refused | length == 1 else "edits" }} left out</summary>
+              <ul>
+                {% for r in rs.refused %}<li><span class="jrefused__why">{{ r.why }}</span> {{ r.text }}</li>{% endfor %}
+              </ul>
+            </details>
+          {% endif %}
+          <div class="jpdf">
+            <iframe src="{{ url_for('jobbot.job_resume', job_id=job.id) }}#navpanes=0&view=FitH" title="The resume tailored for {{ company }}" loading="lazy"></iframe>
+          </div>
+          <a class="jshot__full" href="{{ url_for('jobbot.job_resume', job_id=job.id) }}" target="_blank" rel="noopener" data-no-transition>Open the PDF<span class="sr"> (opens in a new tab)</span> ↗</a>
+        </details>
+        {% endif %}
+
         {#- The answers: open while there is something to decide, folded once the application went out. -#}
         {% if job.fields or job.validation_errors %}
         <details class="jpanel janswers-panel" id="answers"{% if not st %} open{% endif %}>

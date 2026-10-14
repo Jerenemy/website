@@ -407,3 +407,27 @@ p.jans__err { margin: 0 0 var(--s2); }
   .jside__link { padding: 10px var(--s1); }
 }
 @media (prefers-reduced-motion: reduce) { .jspin { animation-duration: 2.4s !important; } }
+
+/* The resume tailored for the job: the posting's keywords, what changed, and the PDF itself. */
+.jkeys { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 var(--s2); padding: 0; list-style: none; }
+.jkey { padding: 1px 8px; border: 1px dashed var(--hair); border-radius: 999px; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+.jkey--had { border-style: solid; color: var(--ink-2); }
+.jkey--added { border: 1px solid var(--ink); color: var(--ink); }
+.jresume__line { margin-bottom: var(--s1); color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jresume__label { margin-right: var(--s1); color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
+.jresume__was { color: var(--ink-3); }
+.jdiffs { margin: var(--s2) 0; padding: 0; list-style: none; border-bottom: 1px solid var(--rule); }
+.jdiff { display: grid; gap: 4px; padding: var(--s2) 0; border-top: 1px solid var(--rule); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jdiff__where { color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
+.jdiff__before { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--hair); }
+.jdiff__after { color: var(--ink); text-decoration: none; box-shadow: inset 1px 0 0 var(--ink); padding-left: var(--s1); }
+.jdiff__check { color: var(--ink); }
+.jdiff__check::before { content: "Check · "; color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
+.jrefused { margin-bottom: var(--s2); color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+.jrefused summary { cursor: pointer; }
+.jrefused ul { margin: var(--s1) 0 0; padding-left: var(--s3); }
+.jrefused li { margin-bottom: 4px; overflow-wrap: anywhere; }
+.jrefused__why { color: var(--ink-2); }
+.jrefused__why::after { content: " ·"; }
+.jpdf { width: 100%; aspect-ratio: 8.5 / 11; border: 1px solid var(--rule); background: #fff; } /* the PDF is a white page in either theme */
+.jpdf iframe { display: block; width: 100%; height: 100%; border: 0; }
