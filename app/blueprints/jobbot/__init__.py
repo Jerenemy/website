@@ -402,6 +402,18 @@ def job_screenshot(job_id):
                     headers={"Cache-Control": "no-store"})
 
 
+@bp.get("/<path:job_id>/resume.pdf")
+@admin_required
+def job_resume(job_id):
+    """The resume the bot tailored for this job (TAILOR_RESUME on the bot), as it uploads it."""
+    try:
+        response = _api("GET", _job_path(job_id, "/resume"), timeout=30)
+    except JobBotError as error:
+        return Response(error.message, status=404 if error.status == 404 else 502, mimetype="text/plain")
+    return Response(response.content, mimetype="application/pdf",
+                    headers={"Cache-Control": "no-store", "Content-Disposition": "inline; filename=resume.pdf"})
+
+
 @bp.get("/<path:job_id>/status.json")
 @admin_required
 def job_status(job_id):

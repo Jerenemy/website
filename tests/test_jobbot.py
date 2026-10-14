@@ -420,6 +420,43 @@ class JobBotPageTests(unittest.TestCase):
         self.assertEqual((response.status_code, response.data, response.mimetype), (200, b"PNGDATA", "image/png"))
         self.assertEqual(response.headers["Cache-Control"], "no-store")
 
+    def test_tailored_resume_is_proxied(self):
+        self.login()
+        self.responses[("GET", "/api/jobs/url%3Aabc123/resume")] = FakeResponse(content=b"%PDF-1.4", content_type="application/pdf")
+        response = self.client.get("/admin/jobs/url:abc123/resume.pdf")
+        self.assertEqual((response.status_code, response.data, response.mimetype), (200, b"%PDF-1.4", "application/pdf"))
+        self.assertEqual(response.headers["Cache-Control"], "no-store")
+        self.responses.clear()
+        self.assertEqual(self.client.get("/admin/jobs/url:abc123/resume.pdf").status_code, 404)
+
+    def test_detail_shows_the_tailored_resume(self):
+        self.login()
+        resume = {
+            "keywords": ["RESTful APIs", "TypeScript", "Rust"],
+            "coverage": {"before": ["TypeScript"], "after": ["TypeScript", "RESTful APIs"]},
+            "bullets": [{"where": "Software Engineer Intern", "before": "Built REST APIs.", "after": "Built RESTful APIs.",
+                         "added": ["RESTful APIs"], "unverified": ["web applications"]}],
+            "projects": {"before": ["Zaychess"], "after": ["EAR"]},
+            "skills": [{"label": "Languages", "before": ["Python"], "after": ["TypeScript", "Python"]}],
+            "refused": [{"where": "Zaychess", "text": "Built it in <Rust>.", "why": "names 'Rust', which resume.yaml does not"}],
+            "created_at": "2026-10-14T09:00:00+00:00",
+        }
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, resume=resume)})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn("Resume, tailored", page)
+        self.assertIn("2 of 3 keywords on the page (was 1)", page)
+        self.assertIn('class="jkey jkey--added"', page)
+        self.assertIn("<del class=\"jdiff__before\">Built REST APIs.</del>", page)
+        self.assertIn("Check this is true: web applications", page)
+        self.assertIn("EAR <span class=\"jresume__was\">instead of Zaychess</span>", page)
+        self.assertIn("Built it in &lt;Rust&gt;.", page)
+        self.assertIn('src="/admin/jobs/url:abc123/resume.pdf#navpanes=0&view=FitH"', page)
+
+    def test_detail_without_a_tailored_resume_has_no_resume_panel(self):
+        self.login()
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, resume=None)})
+        self.assertNotIn("Resume, tailored", self.client.get("/admin/jobs/url:abc123").get_data(as_text=True))
+
     def test_status_json_for_polling(self):
         self.login()
         self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, submission={"status": "running"})})
