@@ -5,7 +5,7 @@ server with a shared token, so the browser never talks to the bot directly and i
 (which show your phone number and address) are never in /static.
 """
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import quote
 
 import requests
@@ -16,15 +16,6 @@ from ..admin.routes import _csrf_token, _validate_csrf, admin_required
 bp = Blueprint("jobbot", __name__, url_prefix="/admin/jobs")
 
 ACTIVE = ("queued", "running", "needs_code")
-# The bot's queue: dry runs to review and what went wrong. Sent applications live in the tracker.
-FILTERS = {
-    "review": "Ready to review",
-    "active": "In progress",
-    "attention": "Needs attention",
-    "blocked": "Apply yourself",
-    "closed": "Closed",
-    "all": "All",
-}
 # Where a sent application stands, as the bot works it out from the company's emails (or you set it).
 # In the order the tracker lists them: the ones that need you first.
 STAGES = {
@@ -33,6 +24,26 @@ STAGES = {
     "waiting": ("Waiting to hear back", "Applied, no answer yet"),
     "rejected": ("Rejected", "Not moving forward"),
 }
+# The list page's views, in the sidebar's order: what needs you, where sent applications stand (the
+# tracker), then the bot's own queue of dry runs. Each is (name, group).
+VIEWS = {
+    "codes": ("Codes to enter", "you"),
+    "review": ("Ready to review", "you"),
+    "attention": ("Needs attention", "you"),
+    "sort": ("Emails to sort", "you"),
+    "blocked": ("Apply yourself", "you"),
+    "offer": ("Offers", "sent"),
+    "interviewing": ("Moving forward", "sent"),
+    "waiting": ("Waiting to hear back", "sent"),
+    "rejected": ("Rejected", "sent"),
+    "sent": ("All sent", "sent"),
+    "active": ("In progress", "bot"),
+    "closed": ("Closed", "bot"),
+    "all": ("Every dry run", "bot"),
+}
+VIEW_GROUPS = {"you": "Needs you", "sent": "Sent", "bot": "Bot"}
+# The first of these with anything in it is where the list opens.
+DEFAULT_VIEWS = ("codes", "review", "attention", "sort")
 
 
 class JobBotError(Exception):
@@ -83,8 +94,8 @@ def _category(job):
     sub = job.get("submission") or {}
     if job["status"] == "applied" or sub.get("status") == "applied":
         return "applied"
-    if sub.get("status") in ACTIVE or job.get("editing"):
-        return "active"
+    if sub.get("status") in ACTIVE or job.get("editing") or job["status"] == "retry":
+        return "active"  # the bot is on it (a `retry` job is tried again on its own)
     # Nothing to fix: the posting no longer takes applications. (`problem` covers bots without `closed`.)
     if job.get("closed") or (sub.get("problem") or {}).get("kind") == "closed":
         return "closed"
@@ -115,6 +126,7 @@ STATUS_LABELS = {
     "needs_code": "Needs code",
     "unconfirmed": "Unconfirmed",
     "cancelled": "Cancelled",
+    "retry": "Retrying",
 }
 
 
@@ -151,9 +163,49 @@ def jobbot_time(value):
     if not value:
         return ""
     try:
-        return datetime.fromisoformat(value).strftime("%b %d, %H:%M UTC")
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).strftime("%b %d, %H:%M UTC")
     except ValueError:
         return value
+
+
+def _parse(value):
+    try:
+        moment = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+
+
+@bp.app_template_filter("jobbot_ago")
+def jobbot_ago(value):
+    """How long ago (or, for a time to come, how soon): "just now", "5m ago", "3h ago", "2d ago", else the date."""
+    moment = _parse(value) if value else None
+    if moment is None:
+        return value or ""
+    seconds = (datetime.now(timezone.utc) - moment).total_seconds()
+    ahead, seconds = seconds < 0, abs(seconds)
+    if seconds < 60:
+        return "now" if ahead else "just now"
+    for size, unit in ((86400 * 7, None), (86400, "d"), (3600, "h"), (60, "m")):
+        if seconds >= size:
+            if unit is None:
+                return jobbot_date(value)
+            amount = f"{int(seconds // size)}{unit}"
+            return f"in {amount}" if ahead else f"{amount} ago"
+    return ""
+
+
+SOURCES = {
+    "llm": "AI", "profile": "Profile", "preset": "Preset", "resume": "Resume", "fallback": "Fallback",
+    "edit": "Your edit", "rule": "Rule", "prefilled": "Site", "skip": "Left blank", "error": "Error",
+}
+
+
+@bp.app_template_filter("jobbot_source")
+def jobbot_source(value):
+    """Where an answer came from, as a word: the part before ":" names it (profile:links.linkedin is Profile)."""
+    head = str(value or "").split(":", 1)[0].lower()
+    return SOURCES.get(head, head.replace("_", " ").capitalize() or "—")
 
 
 @bp.app_template_filter("jobbot_answer")
@@ -215,44 +267,93 @@ def jobbot_date(value):
     if not value:
         return ""
     try:
-        return datetime.fromisoformat(value).strftime("%b %d").replace(" 0", " ")
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).strftime("%b %d").replace(" 0", " ")
     except ValueError:
         return value
+
+
+def _reason(job):
+    """In a few words, why a job in the bot's queue is where it is: what went wrong, what it waits on."""
+    sub = job.get("submission") or {}
+    status = sub.get("status")
+    problem = sub.get("problem") or job.get("problem") or {}
+    if status == "needs_code":
+        return "Waiting for the code the company emailed you"
+    if status in ("queued", "running"):
+        return "Submitting now" if status == "running" else "Queued to submit"
+    if job.get("editing"):
+        return "Changing the answers"
+    if job["status"] == "retry":
+        retry = job.get("retry") or {}
+        when = jobbot_ago(retry.get("next_at")) if retry.get("next_at") else ""
+        again = "tries again on its own" + (f" {when}" if when.startswith("in ") else "")
+        return f"{problem['title']} · {again}" if problem.get("title") else again.capitalize()
+    if problem.get("title"):
+        return problem["title"]
+    if status == "unconfirmed":
+        return "Submitted, but no confirmation seen"
+    missing = job.get("missing_required") or []
+    if missing:
+        return f"{len(missing)} required question{'' if len(missing) == 1 else 's'} unanswered"
+    return ""
+
+
+def _legacy_view():
+    """The list's old addresses (?show=, ?stage=) still open the view they meant."""
+    stage = request.args.get("stage")
+    if stage:
+        return "sent" if stage == "all" else stage
+    return request.args.get("show")
 
 
 @bp.get("/")
 @admin_required
 def job_list():
-    show = request.args.get("show", "review")
-    if show not in FILTERS:
-        show = "review"
-    stage = request.args.get("stage", "all")
-    if stage not in STAGES:
-        stage = "all"
-    context = dict(filters=FILTERS, stages=STAGES, show=show, stage=stage, csrf_token=_csrf_token())
+    requested = request.args.get("view") or _legacy_view()
+    context = dict(views=VIEWS, view_groups=VIEW_GROUPS, stages=STAGES, csrf_token=_csrf_token())
     try:
         data = _api("GET", "/api/jobs?limit=500").json()
     except JobBotError as error:
-        return render_template("admin/jobs.html", error=error.message, jobs=[], counts={}, waiting=[], tracked=[],
-                               stage_counts={}, unsorted=[], **context), 503
+        return render_template("admin/jobs.html", error=error.message, view=requested or "review", rows=[], counts={},
+                               waiting=[], unsorted=[], **context), 503
     jobs = data.get("jobs", [])
     for job in jobs:
         job["category"] = _category(job)
         job["stage"] = _stage(job)
+        job["reason"] = _reason(job)
     queue = [job for job in jobs if not job["stage"]]  # a sent application (or one you track) is in the tracker
-    counts = {key: sum(1 for job in queue if key == "all" or job["category"] == key) for key in FILTERS}
-    waiting = [job for job in jobs if (job.get("submission") or {}).get("status") == "needs_code"]
-    shown = [job for job in queue if show == "all" or job["category"] == show]
     tracked = [job for job in jobs if job["stage"]]
-    stage_counts = {key: sum(1 for job in tracked if job["stage"]["key"] == key) for key in STAGES}
     order = list(STAGES)
     tracked.sort(key=_latest, reverse=True)  # newest news first within each stage
     tracked.sort(key=lambda job: order.index(job["stage"]["key"]) if job["stage"]["key"] in order else len(order))
-    if stage != "all":
-        tracked = [job for job in tracked if job["stage"]["key"] == stage]
-    return render_template("admin/jobs.html", error=None, jobs=shown, counts=counts, waiting=waiting,
-                           tracked=tracked, stage_counts=stage_counts, unsorted=data.get("unsorted") or [],
-                           last_pass=data.get("last_pass"), **context)
+    unsorted = data.get("unsorted") or []
+    waiting = [job for job in jobs if (job.get("submission") or {}).get("status") == "needs_code"]
+    members = {"codes": waiting, "sort": unsorted, "sent": tracked, "all": queue}
+    for key in ("review", "attention", "blocked", "active", "closed"):
+        members[key] = [job for job in queue if job["category"] == key]
+    for key in STAGES:
+        members[key] = [job for job in tracked if job["stage"]["key"] == key]
+    counts = {key: len(members[key]) for key in VIEWS}
+    if requested in VIEWS:
+        view = requested
+    else:
+        view = next((key for key in DEFAULT_VIEWS if counts[key]), "sent" if tracked else "all")
+    return render_template("admin/jobs.html", error=None, view=view, rows=members[view], counts=counts,
+                           waiting=waiting, unsorted=unsorted, last_pass=data.get("last_pass"), **context)
+
+
+def _mode(job, sub, editing):
+    """Which page a job's page is: what the job needs from you decides what comes first."""
+    if sub.get("status") == "needs_code":
+        return "code"
+    if sub.get("status") in ("queued", "running") or editing:
+        return "working"
+    if job.get("stage"):
+        return "tracked"
+    if job["status"] == "retry":
+        return "retry"
+    category = _category(job)
+    return category if category in ("review", "attention", "blocked", "closed") else "other"
 
 
 @bp.get("/<path:job_id>")
@@ -274,7 +375,15 @@ def job_detail(job_id):
     last_done = next((e for e in reversed(edits) if e.get("status") == "done"), None)
     edited = {(c.get("label"), c.get("education_index")) for c in (last_done or {}).get("changes") or []}
     job["stage"] = _stage(dict(job, category=_category(job)))
+    fields = job.get("fields") or []
+    tally = {
+        "all": len(fields),
+        "ai": sum(1 for f in fields if str(f.get("source") or "").startswith("llm")),
+        "issues": sum(1 for f in fields if not f.get("ok", True)),
+        "edited": sum(1 for f in fields if (f.get("label"), f.get("education_index")) in edited),
+    }
     return render_template("admin/job_detail.html", job=job, sub=sub, active=busy, editing=editing, stages=STAGES,
+                           mode=_mode(job, sub, editing), tally=tally, reason=_reason(job),
                            can_submit=can_submit, can_chat=can_chat, edits=edits, edited=edited,
                            signature=_signature(job), needs_force=sub.get("status") == "unconfirmed",
                            csrf_token=_csrf_token())
@@ -312,7 +421,7 @@ def _action(job_id, action, payload, success, anchor=""):
             flash(success, "success")
         except JobBotError as error:
             flash(error.message, "error")
-    return redirect(url_for("jobbot.job_detail", job_id=job_id) + anchor)
+    return redirect(_back(url_for("jobbot.job_detail", job_id=job_id) + anchor))
 
 
 def _back(default):
@@ -326,7 +435,7 @@ def _back(default):
 @bp.post("/emails/assign")
 @admin_required
 def email_assign():
-    back = _back(url_for("jobbot.job_list") + "#tracker")
+    back = _back(url_for("jobbot.job_list"))
     if not _validate_csrf(request.form.get("csrf_token")):
         flash("Invalid or missing CSRF token.", "error")
         return redirect(back)

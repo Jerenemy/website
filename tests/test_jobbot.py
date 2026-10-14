@@ -72,21 +72,47 @@ class JobBotPageTests(unittest.TestCase):
             self.assertIn("/admin/login", response.headers["Location"])
         self.assertEqual(self.calls, [])
 
-    def test_list_groups_jobs_and_flags_codes(self):
+    def view(self, page):
+        """The list's open view: its rows, after the sidebar."""
+        return page.split('id="view-name"', 1)[1]
+
+    def test_list_opens_on_what_needs_you_and_flags_codes(self):
         self.login()
         waiting = dict(JOB, id="j2", company="Beta", submission={"status": "needs_code", "prompt": "code?"})
         applied = dict(JOB, id="j3", company="Gamma", status="applied")
         self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": [JOB, waiting, applied], "last_pass": None})
         page = self.client.get("/admin/jobs/").get_data(as_text=True)
-        self.assertIn("Acme", page)
-        self.assertIn("Beta is waiting for an emailed verification code", page)
-        self.assertIn('/admin/jobs/url:abc123"', page)
         self.assertEqual(self.calls[0][3], {"Authorization": "Bearer tok"})
-        tracker, queue = page.split('id="queue"')
-        self.assertIn("Gamma", tracker)  # a sent application is in the tracker, not the bot's queue
-        self.assertNotIn("Gamma", queue)
-        self.assertIn("Waiting to hear back", tracker)  # an older bot sends no stage: applied means waiting
-        self.assertNotIn(">Acme<", tracker)
+        rows = self.view(page)  # a code can't wait: the list opens on it, with the box to type it in
+        self.assertIn("Codes to enter", rows.split("</h2>")[0])
+        self.assertIn(">Beta<", rows)
+        self.assertIn('action="/admin/jobs/j2/code"', rows)
+        self.assertNotIn(">Acme<", rows)
+
+        page = self.client.get("/admin/jobs/?view=review").get_data(as_text=True)
+        self.assertIn("Beta is waiting for the code they emailed you", page)  # on every other view, above it
+        rows = self.view(page)
+        self.assertIn(">Acme<", rows)
+        self.assertIn('/admin/jobs/url:abc123"', rows)
+        self.assertNotIn(">Gamma<", rows)
+
+        rows = self.view(self.client.get("/admin/jobs/?view=sent").get_data(as_text=True))
+        self.assertIn(">Gamma<", rows)  # a sent application is in the tracker, not the bot's queue
+        self.assertIn("Waiting to hear back", rows)  # an older bot sends no stage: applied means waiting
+        self.assertNotIn(">Acme<", rows)
+
+    def test_list_opens_on_the_tracker_when_nothing_needs_you(self):
+        self.login()
+        applied = dict(JOB, id="j3", company="Gamma", status="applied")
+        retry = dict(JOB, id="j4", company="Later", status="retry", retry={"retries": 1, "max_retries": 3, "next_at": None},
+                     problem={"title": "Gemini was rate-limited", "action": "", "detail": "", "kind": "transient"})
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": [applied, retry], "last_pass": None})
+        rows = self.view(self.client.get("/admin/jobs/").get_data(as_text=True))
+        self.assertIn("All sent", rows.split("</h2>")[0])
+        self.assertIn(">Gamma<", rows)
+        rows = self.view(self.client.get("/admin/jobs/?view=active").get_data(as_text=True))
+        self.assertIn(">Later<", rows)  # a job the bot retries on its own is in progress, not needing you
+        self.assertIn("Gemini was rate-limited", rows)
 
     def stage(self, key, label, source="email", email=None, unsorted=0, since="2026-10-12T10:00:00+00:00"):
         return {"key": key, "label": label, "source": source, "since": since, "email": email, "unsorted": unsorted,
@@ -115,28 +141,31 @@ class JobBotPageTests(unittest.TestCase):
         payload = {"jobs": self.tracker_jobs(), "unsorted": unsorted, "last_pass": None}
         self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload=payload)
         page = self.client.get("/admin/jobs/").get_data(as_text=True)
-        tracker, queue = page.split('id="queue"')
-        # the board's numbers, then the applications grouped in stage order: moving forward, waiting, rejected
-        self.assertIn('<span class="jobs__tile-n">1</span>\n            <span class="jobs__tile-name">Moving forward', tracker)
+        self.assertIn("Ready to review", self.view(page).split("</h2>")[0])  # the dry run comes first
+        self.assertIn("Emails to sort", page.split('id="view-name"')[0])  # the email is a view of its own
+        page = self.client.get("/admin/jobs/?view=sort").get_data(as_text=True)
+        tracker = self.view(self.client.get("/admin/jobs/?view=sent").get_data(as_text=True))
+        # the applications grouped in stage order: moving forward, waiting, rejected
         self.assertLess(tracker.index(">Forward<"), tracker.index(">Waits<"))
         self.assertLess(tracker.index(">Waits<"), tracker.index(">Delta<"))
         self.assertIn("set by you", tracker)
         self.assertIn("1 email to sort", tracker)
         self.assertIn('href="https://mail.google.com/mail/u/me@gmail.com/#search/rfc822msgid%3Ar%40x"', tracker)
-        self.assertIn("Nothing yet", tracker)
+        self.assertIn("Nothing from them yet", tracker)
         self.assertIn('<option value="rejected" selected>', tracker)
-        self.assertNotIn("Queued", tracker)
-        self.assertIn("Queued", queue)
+        self.assertNotIn(">Queued<", tracker)
+        self.assertIn(">Queued<", self.view(self.client.get("/admin/jobs/?view=all").get_data(as_text=True)))
         # the email to sort, with a button per application it may be about and one for neither
-        self.assertIn("1 email could be about more than one application", tracker)
-        self.assertIn("Associate Software Engineer", tracker)
-        self.assertIn("None of these", tracker)
-        self.assertEqual(tracker.count('name="message_id" value="&lt;m@x&gt;"'), 3)
-        page = self.client.get("/admin/jobs/?stage=rejected").get_data(as_text=True)
-        tracker = page.split('id="queue"')[0]
-        self.assertIn(">Delta<", tracker)
-        self.assertNotIn(">Waits<", tracker)
-        self.assertIn("Showing rejected only", tracker)
+        sort = self.view(page)
+        self.assertIn("Until you pick, it doesn&#39;t change any stage", sort)
+        self.assertIn("Associate Software Engineer", sort)
+        self.assertIn("None of these", sort)
+        self.assertEqual(sort.count('name="message_id" value="&lt;m@x&gt;"'), 3)
+        for old in ("/admin/jobs/?stage=rejected", "/admin/jobs/?view=rejected"):  # the old address still works
+            tracker = self.view(self.client.get(old).get_data(as_text=True))
+            self.assertIn("Rejected", tracker.split("</h2>")[0])
+            self.assertIn(">Delta<", tracker)
+            self.assertNotIn(">Waits<", tracker)
 
     def test_sorting_an_email_and_setting_a_stage_call_the_bot(self):
         self.login()
@@ -150,7 +179,7 @@ class JobBotPageTests(unittest.TestCase):
         # never sent off the site, and never without the CSRF token
         response = self.client.post("/admin/jobs/emails/assign", data={"csrf_token": "csrf", "message_id": "x",
                                                                        "next": "https://evil.example/admin/jobs/"})
-        self.assertEqual(response.headers["Location"], "/admin/jobs/#tracker")
+        self.assertEqual(response.headers["Location"], "/admin/jobs/")
         calls = len(self.calls)
         self.client.post("/admin/jobs/emails/assign", data={"message_id": "<m@x>", "job_id": "i1"})
         self.assertEqual(len(self.calls), calls)
@@ -188,7 +217,9 @@ class JobBotPageTests(unittest.TestCase):
         self.login()
         self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, status="blocked", stage=None)})
         page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
-        self.assertIn("Applied to this one yourself?", page)
+        self.assertIn("I applied: track it", page)
+        self.assertIn('name="stage" value="waiting"', page)
+        self.assertIn("Apply on their site", page)
         self.assertNotIn("Where it stands", page)
 
     def test_closed_and_skipped_jobs_leave_needs_attention(self):
@@ -331,6 +362,31 @@ class JobBotPageTests(unittest.TestCase):
         self.assertTrue(response.headers["Location"].endswith("/admin/jobs/url:abc123#chat"))
         self.assertEqual(self.calls[-1][:3], ("POST", "http://bot.test/api/jobs/url%3Aabc123/rerun", {}))
 
+    def test_a_code_sent_from_the_list_comes_back_to_it(self):
+        self.login()
+        self.responses[("POST", "/api/jobs/url%3Aabc123/code")] = FakeResponse(payload={"submission": {"status": "running"}})
+        response = self.client.post("/admin/jobs/url:abc123/code", data={
+            "csrf_token": "csrf", "code": "AB12CD34", "next": "/admin/jobs/?view=review"})
+        self.assertEqual(response.headers["Location"], "/admin/jobs/?view=review")
+        response = self.client.post("/admin/jobs/url:abc123/code", data={
+            "csrf_token": "csrf", "code": "AB12CD34", "next": "https://evil.example/admin/jobs/"})
+        self.assertEqual(response.headers["Location"], "/admin/jobs/url:abc123")
+
+    def test_times_read_as_how_long_ago(self):
+        from datetime import datetime, timedelta, timezone
+
+        from app.blueprints.jobbot import jobbot_ago, jobbot_source
+
+        now = datetime.now(timezone.utc)
+        self.assertEqual(jobbot_ago((now - timedelta(minutes=5, seconds=3)).isoformat()), "5m ago")
+        self.assertEqual(jobbot_ago((now - timedelta(hours=3, minutes=1)).isoformat()), "3h ago")
+        self.assertEqual(jobbot_ago((now + timedelta(minutes=30, seconds=5)).isoformat()), "in 30m")
+        self.assertEqual(jobbot_ago((now - timedelta(days=20)).isoformat().replace("+00:00", "Z")),
+                         (now - timedelta(days=20)).strftime("%b %d").replace(" 0", " "))  # over a week: the date
+        self.assertEqual(jobbot_ago(None), "")
+        self.assertEqual(jobbot_source("profile:links.linkedin"), "Profile")
+        self.assertEqual(jobbot_source("llm"), "AI")
+
     def test_code_and_errors_are_relayed(self):
         self.login()
         self.responses[("POST", "/api/jobs/url%3Aabc123/code")] = FakeResponse(409, {"error": "this job is not waiting for a code"})
@@ -365,8 +421,8 @@ class JobBotPageTests(unittest.TestCase):
         self.assertIn('action="/admin/jobs/url:abc123/edit"', page)
         self.assertIn("say I can start in June 2027", page)
         self.assertIn("Updated your start date.", page)
-        self.assertRegex(page, r"Jeremy\s*&rarr;\s*Jay")
-        self.assertIn("jobs__row--edited", page)  # the changed answer is highlighted
+        self.assertRegex(page, r"Jeremy</span>\s*&rarr;\s*<span[^>]*>Jay")
+        self.assertIn("jans--edited", page)  # the changed answer is highlighted
         self.assertIn("Submit application", page)
 
     def test_chat_hides_buttons_while_editing(self):

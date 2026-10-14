@@ -1,0 +1,89 @@
+{#- The application pages' own pieces (jobs.html, job_detail.html), on top of _ui.html and _admin.html.
+    Styles: static/css/pages/jobs.css. Import with: {% import "admin/_jobs.html" as jobs with context %} -#}
+{% import "partials/_ui.html" as ui %}
+
+{#- The page's head, compact: these are tools, opened many times a day. `where` sits beside the light. -#}
+{% macro head(title, where, line=None) -%}
+<header class="jhead">
+  <p class="jhead__where label"><span class="here" aria-hidden="true"></span>{{ where }}</p>
+  <div class="jhead__row">
+    <h1 class="jhead__title">{{ title }}</h1>
+    {%- if caller %}<div class="jhead__side">{{ caller() }}</div>{% endif %}
+  </div>
+  {%- if line %}<p class="jhead__line">{{ line }}</p>{% endif %}
+</header>
+{%- endmacro %}
+
+{#- A time as "3h ago", the exact time on hover. -#}
+{% macro ago(value) -%}
+{%- if value %}<time datetime="{{ value }}" title="{{ value | jobbot_time }}">{{ value | jobbot_ago }}</time>{% endif -%}
+{%- endmacro %}
+
+{#- A job in the bot's queue, as one state: what it needs from you, if anything. -#}
+{% macro queue_badge(job) -%}
+{%- set sub = job.submission or {} -%}
+{%- if job.category == "closed" %}<span class="jobs__badge jobs__badge--closed">Closed</span>
+{%- elif job.category == "blocked" %}<span class="jobs__badge jobs__badge--blocked">Apply yourself</span>
+{%- elif sub.status %}<span class="jobs__badge jobs__badge--{{ sub.status }}">{{ sub.status | jobbot_status }}</span>
+{%- elif job.editing %}<span class="jobs__badge jobs__badge--running">Updating</span>
+{%- elif job.status == "dry_run_ok" %}<span class="jobs__badge jobs__badge--review">Ready to submit</span>
+{%- else %}<span class="jobs__badge jobs__badge--{{ job.status }}">{{ job.status | jobbot_status }}</span>{% endif -%}
+{%- endmacro %}
+
+{#- Where an application stands, as the menu that changes it: saves when you pick (a button without
+    JavaScript). `next` is where saving brings you back to. -#}
+{% macro stage_form(job, next=None, label=None) -%}
+<form class="jobs__stage-form jobs__stage-form--{{ job.stage.key }}" method="post" action="{{ url_for('jobbot.job_stage', job_id=job.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {%- if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+  <label class="{{ 'label' if label else 'sr' }}" for="stage-{{ job.id }}">{{ label or ("Where " ~ (job.company or "it") ~ " stands") }}</label>
+  <select name="stage" id="stage-{{ job.id }}" data-autosubmit>
+    {%- for key, (name, hint) in stages.items() %}
+    <option value="{{ key }}"{% if job.stage.key == key %} selected{% endif %}>{{ name }}</option>
+    {%- endfor %}
+    {%- if job.stage.source == "you" %}<option value="auto">Go by their emails</option>{% endif %}
+  </select>
+  <noscript><button class="open open--quiet" type="submit"><span>Save</span></button></noscript>
+</form>
+{%- endmacro %}
+
+{#- A plain form that posts one action for a job: a hidden token, a button. -#}
+{% macro post(action, job, label, kind="ghost", confirm=None, next=None, extra={}) -%}
+<form class="jbtn-form" method="post" action="{{ url_for('jobbot.job_' ~ action, job_id=job.id) }}"{% if confirm %} data-confirm="{{ confirm }}"{% endif %}>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {%- if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+  {%- for key, value in extra.items() %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+  <button class="jbtn jbtn--{{ kind }}" type="submit">{{ label }}</button>
+</form>
+{%- endmacro %}
+
+{#- The code a submission waits on, entered where you are. -#}
+{% macro code_form(job, next=None, autofocus=False) -%}
+{%- set sub = job.submission or {} -%}
+<form class="jcode" method="post" action="{{ url_for('jobbot.job_code', job_id=job.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {%- if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+  <label class="sr" for="code-{{ job.id }}">{{ sub.prompt or "The code the company emailed you" }}</label>
+  <input class="jcode__input" id="code-{{ job.id }}" name="code" autocomplete="one-time-code" spellcheck="false" required placeholder="Code"{% if autofocus %} autofocus{% endif %}>
+  <button class="jbtn jbtn--primary" type="submit">Send code</button>
+</form>
+{%- endmacro %}
+
+{#- The scripts both pages share: menus that save on pick, buttons that ask first. -#}
+{% macro scripts() -%}
+<script>
+  document.querySelectorAll("select[data-autosubmit]").forEach((select) => {
+    select.addEventListener("change", () => select.form.requestSubmit ? select.form.requestSubmit() : select.form.submit());
+  });
+  document.querySelectorAll("form[data-confirm]").forEach((form) => {
+    form.addEventListener("submit", (event) => { if (!confirm(form.dataset.confirm)) event.preventDefault(); });
+  });
+  // A form posts once: its button says so while the page goes.
+  document.querySelectorAll("form[method=post]").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      if (event.defaultPrevented) return;
+      form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = true; b.setAttribute("aria-busy", "true"); });
+    });
+  });
+</script>
+{%- endmacro %}
