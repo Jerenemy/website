@@ -1,6 +1,178 @@
-/* The job application pages (templates/admin/jobs.html, job_detail.html). Builds on admin.css and,
-   like it, holds no values of its own. States are told in the label voice and in grey: what needs
-   you is in ink and marked filled, what is under way is marked hollow, what is done is quiet. */
+/* The job application pages (templates/admin/jobs.html, job_detail.html; macros in admin/_jobs.html).
+   Builds on admin.css and, like it, holds no values of its own. These are tools opened many times a
+   day, so they are denser than the site's pages: a compact head, what needs you at the top, and the
+   rest a click away. States are still told in grey: what needs you is in ink and filled, what is
+   under way is hollow, what is done is quiet. The one exception to the site's rule of no boxed
+   buttons is here: the action a page exists for (Submit, Send code) sits in a hairline box. */
+
+/* ---------------------------------------------------------------- the head, compact */
+.jhead { margin-top: var(--s8); }
+.jhead__where { display: flex; align-items: center; gap: var(--s1); min-width: 0; color: var(--ink-3); }
+.jhead__where .here { margin-right: var(--s1); }
+.jhead__where a { color: var(--ink-2); transition: color var(--t-mid) var(--ease); }
+.jhead__where a:hover, .jhead__where a:focus-visible { color: var(--ink); }
+.jhead__where > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jhead__row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--s3) var(--s5); margin-top: var(--s2); }
+.jhead__what { min-width: 0; flex: 1 1 420px; }
+.jhead__title {
+  color: var(--ink); font-size: calc(var(--h2-size) * 1.5); line-height: 1.1;
+  font-weight: var(--title-weight); letter-spacing: var(--title-track); overflow-wrap: anywhere;
+}
+.jhead__line { margin-top: var(--s1); color: var(--ink-2); font-size: var(--text-size); line-height: var(--text-lead); }
+.jhead__facts {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s3); margin-top: var(--s2);
+  color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead);
+}
+.jhead__facts .jobs__badge + .jobs__badge { margin-left: 0; }
+.jhead__meta { color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+.jobs-app .head + *, .jhead + .admin-tabs { margin-top: var(--s4); }
+
+/* ---------------------------------------------------------------- buttons
+   primary: the page's one action, on a hairline in ink. ghost: on a quieter hairline. quiet: words. */
+.jbtn-form { display: contents; }
+.jbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s1); min-height: 36px;
+  padding: var(--s1) var(--s2); background: transparent; border: 1px solid var(--hair); border-radius: var(--radius);
+  color: var(--ink-2); cursor: pointer; white-space: nowrap;
+  font: inherit; font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
+  transition: border-color var(--t-mid) var(--ease), color var(--t-mid) var(--ease), background-color var(--t-mid) var(--ease);
+}
+.jbtn:hover, .jbtn:focus-visible { border-color: var(--ink); color: var(--ink); }
+.jbtn:focus-visible { outline-offset: 3px; }
+.jbtn--primary { border-color: var(--ink); color: var(--ink); }
+.jbtn--primary:hover, .jbtn--primary:focus-visible { background: var(--surface-2); }
+.jbtn--quiet { border-color: transparent; color: var(--ink-3); }
+.jbtn--quiet:hover, .jbtn--quiet:focus-visible { border-color: transparent; color: var(--ink); }
+.jbtn--small { min-height: 28px; padding: 4px var(--s1); }
+.jbtn:disabled { color: var(--ink-3); border-color: var(--rule); cursor: progress; }
+.jactions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--s1); }
+
+/* ---------------------------------------------------------------- notices
+   What needs you now, or what the bot is doing: a raised strip with a line at its edge. */
+.japp { margin-top: var(--s4); }
+.japp > * + * { margin-top: var(--s3); }
+.jalerts > * + * { margin-top: var(--s1); }
+.jalert {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--s4); row-gap: 4px; align-items: center;
+  padding: var(--s2) var(--s3); background: var(--surface); border-left: 1px solid var(--hair);
+}
+.jalert--error, .jalert--urgent { border-left-color: var(--ink); }
+.jalert__title { grid-column: 1; display: flex; align-items: baseline; gap: var(--s2); color: var(--ink); font-size: var(--text-size); line-height: var(--text-lead); }
+.jalert__text { grid-column: 1; color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jalert__act { grid-column: 2; grid-row: 1 / span 3; }
+.jalert__tag {
+  flex: none; padding: 0 6px; border: 1px solid var(--ink); color: var(--ink);
+  font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
+}
+.jalert__more { grid-column: 1; margin-top: 4px; }
+.jalert__more summary { width: max-content; cursor: pointer; color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
+.jalert__more summary:hover { color: var(--ink); }
+.jalert__more pre {
+  margin: var(--s1) 0 0; max-height: 240px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;
+  color: var(--ink-3); font: var(--label-size)/var(--label-lead) var(--font-mono);
+}
+.jalert--busy .jalert__title { align-items: center; }
+.admin-flash + .jalert, .admin-flash + .jalerts, .admin-flash + .jlist, .admin-flash + .jdetail { margin-top: var(--s3); }
+
+/* A spinner: a hairline circle, one side in ink, turning. */
+.jspin {
+  flex: none; display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+  border: 1px solid var(--hair); border-top-color: var(--ink); animation: jspin 0.9s linear infinite;
+}
+@keyframes jspin { to { transform: rotate(360deg); } }
+
+/* The code a submission waits on, typed where you are. */
+.jcode { display: flex; align-items: center; gap: var(--s1); margin: 0; }
+.jcode__input {
+  width: 14ch; min-height: 36px; padding: var(--s1); background: var(--bg); border: 1px solid var(--hair); border-radius: var(--radius);
+  color: var(--ink); caret-color: var(--ink); font: var(--small-size)/var(--small-lead) var(--font-mono); letter-spacing: var(--track);
+  outline: none; transition: border-color var(--t-mid) var(--ease);
+}
+.jcode__input::placeholder { color: var(--ink-3); font-family: var(--font); }
+.jcode__input:focus { border-color: var(--ink); }
+
+/* ---------------------------------------------------------------- the list: views beside rows */
+.jlist { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: var(--s5); align-items: start; }
+.jside { position: sticky; top: var(--s3); }
+.jside__group + .jside__group { margin-top: var(--s4); }
+.jside__name { padding: 0 var(--s1) var(--s1); color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jside ul { margin: 0; padding: 0; list-style: none; }
+.jside__link {
+  display: flex; justify-content: space-between; gap: var(--s2); padding: 6px var(--s1);
+  color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead);
+  transition: color var(--t-mid) var(--ease), background-color var(--t-mid) var(--ease);
+}
+.jside__link:hover, .jside__link:focus-visible { color: var(--ink); background: var(--surface); }
+.jside__link[aria-current="page"] { color: var(--ink); background: var(--surface); box-shadow: inset 1px 0 0 var(--ink); }
+.jside__link:focus-visible { outline-offset: -1px; }
+.jside__n { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.jside__link--due .jside__n { color: var(--ink); }
+.jside__link--due .jside__n::before { content: ""; display: inline-block; width: 5px; height: 5px; margin-right: 6px; vertical-align: middle; background: var(--ink); }
+
+.jmain { min-width: 0; }
+.jmain__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s2); padding-bottom: var(--s2); border-bottom: 1px solid var(--rule); }
+.jmain__name { color: var(--ink); font-size: var(--h2-size); line-height: var(--h2-lead); font-weight: var(--heading-weight); letter-spacing: -0.01em; }
+.jmain__n { margin-left: 4px; color: var(--ink-3); font-size: var(--text-size); }
+.jmain__hint { margin-top: var(--s2); color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); max-width: var(--measure); }
+.jempty { padding: var(--s3) 0; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+.jempty[hidden] { display: none; }
+
+.jsearch { position: relative; display: block; width: min(100%, 260px); }
+.jsearch input {
+  display: block; width: 100%; padding: 6px var(--s4) 6px 0; background: transparent; border: 0; border-bottom: 1px solid var(--hair); border-radius: 0;
+  -webkit-appearance: none; appearance: none; outline: none; color: var(--ink); caret-color: var(--ink);
+  font: var(--small-size)/var(--small-lead) var(--font); transition: border-color var(--t-mid) var(--ease);
+}
+.jsearch input::placeholder { color: var(--ink-3); }
+.jsearch input:focus { border-bottom-color: var(--ink); }
+.jsearch input::-webkit-search-cancel-button { display: none; }
+.jsearch kbd {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 0 5px; border: 1px solid var(--rule);
+  color: var(--ink-3); font: var(--label-size)/var(--label-lead) var(--font-mono);
+}
+.jsearch input:focus + kbd { display: none; }
+
+/* A row: the whole of it opens the application; what sits in it (a code, a stage) works in place. */
+.jrows { margin: 0; padding: 0; list-style: none; }
+.jrow {
+  position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr) minmax(150px, auto) 12px;
+  column-gap: var(--s3); align-items: center; padding: var(--s2) var(--s1); border-bottom: 1px solid var(--rule);
+  transition: background-color var(--t-mid) var(--ease);
+}
+.jrow--sent { grid-template-columns: minmax(0, 4fr) minmax(150px, 2fr) minmax(0, 5fr) 110px 12px; }
+.jrow:hover, .jrow:focus-within { background: var(--surface); }
+.jrow[hidden] { display: none; }
+.jrow__main { display: flex; flex-direction: column; min-width: 0; }
+.jrow__main::after { content: ""; position: absolute; inset: 0; }
+.jrow__main:focus-visible { outline: none; }
+.jrow__main:focus-visible::after { outline: 1px solid var(--ink); outline-offset: -1px; }
+.jrow form, .jrow a:not(.jrow__main), .jrow select, .jrow input, .jrow button { position: relative; z-index: 1; }
+.jrow__company { color: var(--ink); font-size: var(--text-size); line-height: var(--text-lead); font-weight: var(--strong-weight); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jrow__company--none { color: var(--ink-3); font-weight: 400; }
+.jrow__title { color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jrow__state { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s2); min-width: 0; }
+.jrow__reason { flex-basis: 100%; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jrow__kind { flex-basis: 100%; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jrow__mail { color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+a.jrow__mail { text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+a.jrow__mail:hover, a.jrow__mail:focus-visible { color: var(--ink); text-decoration-color: currentColor; }
+.jrow__stage { min-width: 0; }
+.jrow__note { display: block; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); }
+.jrow__flag { display: block; width: max-content; color: var(--ink); font-size: var(--label-size); line-height: var(--label-lead); text-decoration: underline; text-underline-offset: 3px; }
+.jrow__when { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; text-align: right; white-space: nowrap; }
+.jrow__when-label { display: none; }
+.jrow__ats { margin-right: var(--s2); }
+.jrow__go svg { width: 8px; height: 8px; color: var(--ink-3); transition: transform var(--t-mid) var(--ease), color var(--t-mid) var(--ease); }
+.jrow:hover .jrow__go svg { color: var(--ink); transform: translate(2px, -2px); }
+.jrow__act { justify-self: end; }
+.jrow--rejected .jrow__company, .jrow--rejected .jrow__title { color: var(--ink-3); }
+.jrows__group {
+  padding: var(--s4) var(--s1) var(--s1); border-bottom: 1px solid var(--rule); color: var(--ink);
+  font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
+}
+.jrows__group:first-child { padding-top: var(--s2); }
+.jrows__group span { margin-left: 4px; color: var(--ink-3); }
+.jrows__group[hidden] { display: none; }
 
 /* ---------------------------------------------------------------- states */
 .jobs__badge {
@@ -8,180 +180,27 @@
   font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
 }
 .jobs__badge::before { content: ""; flex: none; width: 5px; height: 5px; border: 1px solid var(--ink-3); }
-.jobs__badge + .jobs__badge { margin-left: var(--s2); }
+.jobs__badge:has(.jspin)::before { display: none; }
+.jobs__badge .jspin { width: 9px; height: 9px; }
 /* Needs you. */
 .jobs__badge--review, .jobs__badge--needs_code, .jobs__badge--attention,
 .jobs__badge--unconfirmed, .jobs__badge--failed { color: var(--ink); }
 .jobs__badge--review::before, .jobs__badge--needs_code::before, .jobs__badge--attention::before,
 .jobs__badge--unconfirmed::before, .jobs__badge--failed::before { background: var(--ink); border-color: var(--ink); }
 /* Under way. */
-.jobs__badge--active::before, .jobs__badge--queued::before, .jobs__badge--running::before { border-color: var(--ink-2); }
+.jobs__badge--active::before, .jobs__badge--queued::before, .jobs__badge--running::before, .jobs__badge--retry::before { border-color: var(--ink-2); border-radius: 50%; }
 /* Done. */
 .jobs__badge--applied, .jobs__badge--other, .jobs__badge--closed, .jobs__badge--blocked, .jobs__badge--skipped, .jobs__badge--cancelled { color: var(--ink-3); }
-
-/* ---------------------------------------------------------------- notices
-   A line to act on or to know: on a hairline, like the site's quotes. */
-.jobs__notice {
-  display: flex; gap: var(--s2); align-items: baseline;
-  padding-left: var(--s3); border-left: 1px solid var(--hair); color: var(--ink-2);
-  font-size: var(--small-size); line-height: var(--small-lead);
-}
-.jobs__notice--error, .jobs__notice--urgent { border-left-color: var(--ink); color: var(--ink); }
-a.jobs__notice { transition: padding var(--t-mid) var(--ease); }
-a.jobs__notice:hover, a.jobs__notice:focus-visible { padding-left: var(--s4); }
-a.jobs__notice svg { flex: none; width: 8px; height: 8px; align-self: center; }
-.sect__body > .jobs__notice + .jobs__notice { margin-top: var(--s1); }
-
-/* ---------------------------------------------------------------- the list's filters
-   Inside the section: the label voice, the current one in ink, each with its count. */
-.jobs__filters { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
-.jobs__filters a { color: var(--ink-3); transition: color var(--t-mid) var(--ease); }
-.jobs__filters a:hover, .jobs__filters a:focus-visible { color: var(--ink-2); }
-.jobs__filters a[aria-current="page"] { color: var(--ink); }
-.jobs__count { margin-left: 4px; color: var(--ink-3); }
-
-/* ---------------------------------------------------------------- the status */
-#job-status, #chat { scroll-margin-top: var(--s5); }
-.jobs__note { color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; max-width: var(--measure); }
-.jobs__status .facts + .jobs__note { margin-top: var(--s3); }
-.jobs__status .jobs__note + .jobs__note { margin-top: var(--s1); }
-.jobs__code .field { max-width: 240px; }
-.jobs__code-input { font-family: var(--font-mono) !important; letter-spacing: var(--track) !important; }
-.jobs__buttons:empty { display: none; }
-.jobs__buttons form { margin: 0; }
-
-/* ---------------------------------------------------------------- the conversation
-   A transcript, not bubbles: who spoke in the margin, what they said beside it. */
-.jobs__messages { margin: 0; padding: 0; list-style: none; max-width: var(--measure); }
-.jobs__message {
-  display: grid; grid-template-columns: 6ch 1fr; column-gap: var(--s2); align-items: baseline;
-  padding: var(--s2) 0; border-top: 1px solid var(--rule);
-  font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere;
-}
-.jobs__message:last-child { border-bottom: 1px solid var(--rule); }
-.jobs__message--you { color: var(--ink); }
-.jobs__message--you > div { white-space: pre-wrap; }
-.jobs__message--bot { color: var(--ink-2); }
-.jobs__message--bot .jobs__badge { margin-right: var(--s1); }
-.jobs__changes { margin: var(--s1) 0 0; padding: 0; list-style: none; }
-.jobs__changes li { position: relative; padding-left: var(--s3); }
-.jobs__changes li::before { content: ""; position: absolute; left: 0; top: calc(var(--small-lead) / 2); width: 10px; height: 1px; background: var(--tick); }
-.jobs__changes strong { color: var(--ink); font-weight: var(--strong-weight); }
-.jobs__chat-form textarea { min-height: 96px; }
-
-/* ---------------------------------------------------------------- the answers
-   The form as the bot left it beside what it wrote. A changed answer is marked by a line in ink
-   at its edge; a wrong one says what went wrong under it. */
-.jobs__layout { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s6); align-items: start; }
-.jobs__shots > * + * { margin-top: var(--s5); }
-.jobs__shot img { width: 100%; }
-.jobs__answers > * + * { margin-top: var(--s3); }
-.jobs__answer { white-space: pre-wrap !important; }
-.jobs__required { color: var(--ink-3); }
-.jobs__error { display: block; margin-top: 4px; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); white-space: normal; }
-.jobs__error::before { content: "Error · "; color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
-li.jobs__error { display: list-item; }
-li.jobs__error::before { content: ""; }
-.jobs__row--edited td:first-child, .jobs__row--error td:first-child { box-shadow: inset 1px 0 0 var(--ink); padding-left: var(--s2); }
-.jobs__row--edited td.jobs__answer { color: var(--ink); }
-/* The source can be one long token (profile:files.resume_document): capped and broken anywhere, so it
-   never takes the width the question and answer need. They keep a floor; past it the table scrolls. */
-.admin-table td.jobs__from, .admin-table th.jobs__from { width: 1%; text-align: right; padding-right: 0; }
-.admin-table th.jobs__from { white-space: nowrap; }
-.jobs__answers td:first-child { min-width: 12ch; }
-.jobs__answers td.jobs__answer { min-width: 16ch; }
-.jobs__source { display: inline-block; width: max-content; max-width: 16ch; overflow-wrap: anywhere; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
-.jobs__source--edit, .jobs__source--fallback, .jobs__source--error { color: var(--ink); }
-.jobs__source--llm { color: var(--ink-2); }
-
-@media (max-width: 900px) {
-  .jobs__layout { grid-template-columns: 1fr; }
-  .jobs__shots { max-width: 480px; }
-}
-@media (max-width: 640px) {
-  .admin-table td.jobs__from { width: auto; text-align: left; }
-  .jobs__answers td:first-child, .jobs__answers td.jobs__answer { min-width: 0; }
-  .jobs__source { max-width: none; }
-  .jobs__row--edited td:first-child, .jobs__row--error td:first-child { box-shadow: none; padding-left: 0; }
-  .jobs__row--edited, .jobs__row--error { box-shadow: inset 1px 0 0 var(--ink); padding-left: var(--s2) !important; }
-}
-
-/* Emails about the application (alerts sent, codes read): subjects link to Gmail */
-.jobs__emails a { overflow-wrap: anywhere; text-decoration: underline; text-decoration-color: var(--ink-3, currentColor); text-underline-offset: 3px; }
-.jobs__emails a:hover, .jobs__emails a:focus-visible { text-decoration-color: currentColor; }
-.jobs__emails td.jobs__email-when { white-space: nowrap; }
-.jobs__email-kind { display: block; margin-top: var(--s1); }
-.jobs__emails td.jobs__email-who { color: var(--ink-2); overflow-wrap: anywhere; }
-
-/* ---------------------------------------------------------------- where you stand
-   The tracker: four numbers you can click, the emails to sort, then every sent application by
-   stage. Still grey and ink: what is good news or needs you is in ink, what is over is quiet. */
-.jobs__board {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3);
-  margin: var(--s4) 0 var(--s6);
-}
-.jobs__tile {
-  display: flex; flex-direction: column; gap: 4px; padding: var(--s3) 0 0;
-  border-top: 1px solid var(--rule); color: var(--ink-2);
-  transition: border-color var(--t-mid) var(--ease), color var(--t-mid) var(--ease);
-}
-.jobs__tile:hover, .jobs__tile:focus-visible { border-top-color: var(--ink-3); color: var(--ink); }
-.jobs__tile[aria-current="page"] { border-top-color: var(--ink); color: var(--ink); }
-.jobs__tile-n { color: var(--ink); font-size: calc(var(--small-size) * 2.6); line-height: 1; font-variant-numeric: tabular-nums; }
-.jobs__tile--rejected .jobs__tile-n { color: var(--ink-3); }
-.jobs__tile-name { font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
-.jobs__tile-hint { color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
-
-/* Stages as badges: good news filled in ink, waiting hollow, rejected quiet. */
+/* Stages: good news filled in ink, waiting hollow, rejected quiet. */
 .jobs__badge--stage-offer, .jobs__badge--stage-interviewing { color: var(--ink); }
 .jobs__badge--stage-offer::before, .jobs__badge--stage-interviewing::before { background: var(--ink); border-color: var(--ink); }
 .jobs__badge--stage-waiting::before { border-color: var(--ink-2); }
 .jobs__badge--stage-rejected { color: var(--ink-3); }
-.jobs__by-you { display: block; margin-top: 2px; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); }
-.jobs__unsorted { display: block; margin-top: 2px; color: var(--ink); font-size: var(--label-size); line-height: var(--label-lead); text-decoration: underline; text-underline-offset: 3px; }
 
-/* The emails to sort: each on a hairline, its choices as plain buttons in a row. */
-.jobs__sort { margin-bottom: var(--s6); padding-left: var(--s3); border-left: 1px solid var(--ink); scroll-margin-top: var(--s5); }
-.jobs__sort-head .label { flex: none; white-space: nowrap; }
-.jobs__sort-head { display: flex; gap: var(--s2); align-items: baseline; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); max-width: var(--measure); }
-.jobs__sort-list { margin: var(--s3) 0 0; padding: 0; list-style: none; }
-.jobs__sort-item { padding: var(--s3) 0; border-top: 1px solid var(--rule); }
-.jobs__sort-what { display: flex; gap: var(--s2); align-items: baseline; }
-.jobs__sort-when { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); }
-.jobs__sort-subject { margin-top: 4px; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
-.jobs__sort-subject a, .jobs__latest a, .jobs__standing a { text-decoration: underline; text-decoration-color: var(--ink-3); text-underline-offset: 3px; overflow-wrap: anywhere; }
-.jobs__sort-subject a:hover, .jobs__latest a:hover, .jobs__standing a:hover { text-decoration-color: currentColor; }
-.jobs__sort-from { margin-top: 2px; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
-.jobs__sort-choices { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s2); }
-.jobs__sort-choices form { margin: 0; }
-.jobs__choice {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px;
-  padding: var(--s1) var(--s2); background: none; border: 1px solid var(--hair); cursor: pointer;
-  color: var(--ink); font: inherit; text-align: left;
-  transition: border-color var(--t-mid) var(--ease), background-color var(--t-mid) var(--ease);
-}
-.jobs__choice:hover, .jobs__choice:focus-visible { border-color: var(--ink); }
-.jobs__choice-title { font-size: var(--small-size); line-height: var(--small-lead); }
-.jobs__choice-meta { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
-.jobs__choice--none { border-style: dashed; color: var(--ink-2); }
-
-/* The tracker's table: a stage's heading row, then its applications. */
-.jobs__filters + .table { margin-top: var(--s3); }
-.jobs__tracker .jobs__group th {
-  padding-top: var(--s4); color: var(--ink); border-top: 1px solid var(--ink-3);
-  font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase;
-}
-.jobs__tracker .jobs__row--rejected td { color: var(--ink-3); }
-.jobs__latest { min-width: 22ch; }
-.jobs__latest-kind { display: block; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
-.jobs__tracker th, .jobs__tracker td.jobs__when { white-space: nowrap; }
-.jobs__tracker td.jobs__change { white-space: nowrap; }
-/* The menu is the stage: good news in ink, rejected quiet. */
-.jobs__stage-form--offer select, .jobs__stage-form--interviewing select { color: var(--ink); border-bottom-color: var(--ink-2); }
-.jobs__stage-form--rejected select { color: var(--ink-3); }
+/* Where an application stands, as a menu that saves when you pick. */
 .jobs__stage-form { display: flex; gap: var(--s2); align-items: baseline; margin: 0; }
 .jobs__stage-form select {
-  padding: 4px var(--s3) 4px 0; background-color: transparent; border: 0; border-bottom: 1px solid var(--hair);
+  max-width: 100%; padding: 4px var(--s3) 4px 0; background-color: transparent; border: 0; border-bottom: 1px solid var(--hair); border-radius: 0;
   color: var(--ink-2); font: inherit; font-size: var(--small-size); cursor: pointer; -webkit-appearance: none; appearance: none;
   background:
     linear-gradient(45deg, transparent 50%, var(--ink-3) 50%) right 6px center / 5px 5px no-repeat,
@@ -190,32 +209,201 @@ li.jobs__error::before { content: ""; }
 }
 .jobs__stage-form select:hover, .jobs__stage-form select:focus-visible { border-bottom-color: var(--ink); color: var(--ink); }
 .jobs__stage-form select option { background: var(--surface); color: var(--ink); }
+.jobs__stage-form--offer select, .jobs__stage-form--interviewing select { color: var(--ink); border-bottom-color: var(--ink-2); }
+.jobs__stage-form--rejected select { color: var(--ink-3); }
 
-/* A job's own page: where it stands, above the bot's status. */
-.jobs__standing { margin-bottom: var(--s5); padding-left: var(--s3); border-left: 1px solid var(--ink); }
-.jobs__standing-now { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: baseline; }
-.jobs__standing-now .jobs__by-you { display: inline; margin: 0; }
-.jobs__standing .jobs__note { margin-top: var(--s1); }
-.jobs__standing .jobs__stage-form { margin-top: var(--s2); }
-.jobs__stage-form--manual { margin-bottom: var(--s4); }
-.jobs__email-why { display: block; margin-top: 2px; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
-.jobs__email-fix { margin: var(--s1) 0 0; }
-.jobs__email-fix button {
-  padding: 0; background: none; border: 0; cursor: pointer; color: var(--ink-3); font: inherit;
-  font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase;
-  text-decoration: underline; text-underline-offset: 3px; transition: color var(--t-mid) var(--ease);
+/* ---------------------------------------------------------------- emails to sort */
+.jsort { margin: var(--s2) 0 0; padding: 0; list-style: none; }
+.jsort__item { padding: var(--s3) 0; border-bottom: 1px solid var(--rule); }
+.jsort__what { display: flex; gap: var(--s2); align-items: baseline; }
+.jsort__when { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); }
+.jsort__subject { margin-top: 4px; color: var(--ink); font-size: var(--text-size); line-height: var(--text-lead); overflow-wrap: anywhere; }
+.jsort__subject a { text-decoration: underline; text-decoration-color: var(--hair); text-underline-offset: 3px; }
+.jsort__subject a:hover { text-decoration-color: currentColor; }
+.jsort__from { margin-top: 2px; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jsort__choices { display: flex; flex-wrap: wrap; gap: var(--s1); margin-top: var(--s2); }
+.jsort__choices form { margin: 0; }
+.jchoice {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px;
+  padding: var(--s1) var(--s2); background: none; border: 1px solid var(--hair); cursor: pointer;
+  color: var(--ink); font: inherit; text-align: left;
+  transition: border-color var(--t-mid) var(--ease), background-color var(--t-mid) var(--ease);
 }
-.jobs__email-fix button:hover, .jobs__email-fix button:focus-visible { color: var(--ink); }
+.jchoice:hover, .jchoice:focus-visible { border-color: var(--ink); background: var(--surface); }
+.jchoice__title { font-size: var(--small-size); line-height: var(--small-lead); }
+.jchoice__meta { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jchoice--none { border-style: dashed; color: var(--ink-2); }
 
-@media (max-width: 760px) {
-  .jobs__board { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4) var(--s3); }
+/* ---------------------------------------------------------------- one application
+   The work in the wide column (where it stands, the answers, the emails); the tools beside it, in a
+   column that keeps in view and scrolls on its own (the conversation, the form, the facts). */
+.jdetail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); gap: var(--s5); align-items: start; }
+.jdetail__main { min-width: 0; }
+.jdetail__aside {
+  position: sticky; top: var(--s3); max-height: calc(100vh - 2 * var(--s3)); overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
+}
+.jpanel { padding-top: var(--s2); border-top: 1px solid var(--rule); }
+.jpanel + .jpanel { margin-top: var(--s5); }
+.jpanel__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--s1) var(--s2); margin-bottom: var(--s2); }
+.jpanel__name { color: var(--ink-2); font-size: var(--label-size); line-height: var(--label-lead); font-weight: 400; letter-spacing: var(--track); text-transform: uppercase; }
+.jpanel__aside { color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+details.jpanel > summary { list-style: none; cursor: pointer; }
+details.jpanel > summary::-webkit-details-marker { display: none; }
+details.jpanel > summary .jpanel__name::before { content: "+"; display: inline-block; width: 2ch; color: var(--ink-3); transition: transform var(--t-mid) var(--ease); }
+details.jpanel[open] > summary .jpanel__name::before { transform: rotate(45deg); }
+details.jpanel > summary:hover .jpanel__name { color: var(--ink); }
+details.jpanel:not([open]) > summary { margin-bottom: 0; }
+
+/* Where it stands. */
+.jstage { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--s3); padding-bottom: var(--s1); }
+.jstage__now { min-width: 0; flex: 1 1 320px; }
+.jstage__name { display: flex; align-items: baseline; gap: var(--s2); margin-top: var(--s1); }
+.jstage__name .jobs__badge { font-size: var(--small-size); }
+.jstage__name .jobs__badge::before { width: 7px; height: 7px; }
+.jstage__why { margin-top: var(--s1); color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); max-width: var(--measure); overflow-wrap: anywhere; }
+.jstage__change .jobs__stage-form { flex-direction: column; gap: 2px; }
+
+/* The answers: a filter, then question beside answer, where it came from at the edge. A changed or a
+   wrong answer is marked by a line in ink at its edge. */
+.jchips { display: flex; flex-wrap: wrap; gap: var(--s1); margin-bottom: var(--s2); }
+.jchip {
+  padding: 4px var(--s1); background: none; border: 1px solid var(--rule); cursor: pointer; color: var(--ink-3);
+  font: inherit; font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
+  transition: border-color var(--t-mid) var(--ease), color var(--t-mid) var(--ease);
+}
+.jchip span { margin-left: 4px; color: var(--ink-3); }
+.jchip:hover, .jchip:focus-visible { color: var(--ink-2); border-color: var(--hair); }
+.jchip[aria-pressed="true"] { color: var(--ink); border-color: var(--ink); }
+.janswers { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--rule); }
+.jans {
+  display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) auto; column-gap: var(--s3); align-items: baseline;
+  padding: var(--s2) 0; border-top: 1px solid var(--rule);
+}
+.jans[hidden] { display: none; }
+.jans--issue, .jans--edited { box-shadow: inset 1px 0 0 var(--ink); padding-left: var(--s2); }
+.jans__q { color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jans__req { color: var(--ink-3); }
+.jans__a { color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jans__text { white-space: pre-wrap; }
+.jans__err { display: block; margin-top: 4px; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); white-space: normal; }
+.jans__err::before { content: "Error · "; color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
+p.jans__err { margin: 0 0 var(--s2); }
+.jans__side { display: flex; flex-direction: row-reverse; align-items: baseline; gap: var(--s2); min-width: 9ch; }
+.jans__src { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; white-space: nowrap; }
+.jans__src--ai { color: var(--ink-2); }
+.jans__src--edited { color: var(--ink); }
+.jcopy {
+  padding: 0; background: none; border: 0; cursor: pointer; color: var(--ink-3); opacity: 0;
+  font: inherit; font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
+  text-decoration: underline; text-underline-offset: 3px;
+  transition: opacity var(--t-mid) var(--ease), color var(--t-mid) var(--ease);
+}
+.jans:hover .jcopy, .jcopy:focus-visible { opacity: 1; }
+.jcopy:hover, .jcopy:focus-visible { color: var(--ink); }
+
+/* Emails, newest first. */
+.jmails { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--rule); }
+.jmail { padding: var(--s2) 0; border-top: 1px solid var(--rule); }
+.jmail__meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s2); color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jmail__subject { margin-top: 4px; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jmail__subject a { text-decoration: underline; text-decoration-color: var(--hair); text-underline-offset: 3px; }
+.jmail__subject a:hover, .jmail__subject a:focus-visible { text-decoration-color: currentColor; }
+.jmail__who { margin-top: 2px; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jmail__fix { margin: var(--s1) 0 0; }
+.jmail__fix .jbtn--quiet { padding-left: 0; }
+.jmail--sent .jmail__subject { color: var(--ink-2); }
+
+/* The conversation: who spoke in the margin, what they said beside it. */
+.jmsgs { margin: 0 0 var(--s2); padding: 0; list-style: none; }
+.jmsg { display: grid; grid-template-columns: 4ch minmax(0, 1fr); column-gap: var(--s2); align-items: baseline; padding: var(--s1) 0; font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jmsg--you { border-top: 1px solid var(--rule); color: var(--ink); }
+.jmsg--you .jmsg__text { white-space: pre-wrap; }
+.jmsg--bot { color: var(--ink-2); padding-top: 0; }
+.jmsg__who { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jmsg--bot .jobs__badge { margin-right: var(--s1); }
+.jchanges { margin: var(--s1) 0 0; padding: 0; list-style: none; }
+.jchanges li + li { margin-top: 4px; }
+.jchanges strong { display: block; color: var(--ink); font-weight: var(--strong-weight); }
+.jchanges__old { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--ink-3); }
+.jchanges__new { color: var(--ink); }
+.jchanges__miss strong::after { content: " · didn't take"; color: var(--ink-3); font-weight: 400; }
+.jchanges__miss em { display: none; }
+.jchat__form textarea {
+  display: block; width: 100%; min-height: 84px; margin: 0; padding: var(--s1); resize: vertical;
+  background: var(--bg); border: 1px solid var(--hair); border-radius: var(--radius); outline: none;
+  color: var(--ink); caret-color: var(--ink); font: var(--small-size)/var(--small-lead) var(--font);
+  transition: border-color var(--t-mid) var(--ease);
+}
+.jchat__form textarea::placeholder { color: var(--ink-3); }
+.jchat__form textarea:focus { border-color: var(--ink); }
+.jchat__send { display: flex; align-items: center; justify-content: flex-end; gap: var(--s2); margin-top: var(--s1); }
+.jchat__hint { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); }
+
+/* The form's screenshots, one at a time, scrolled inside their frame. */
+.jtabs { display: flex; gap: var(--s2); }
+.jtab {
+  padding: 0 0 2px; background: none; border: 0; border-bottom: 1px solid transparent; cursor: pointer; color: var(--ink-3);
+  font: inherit; font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
+  transition: color var(--t-mid) var(--ease), border-color var(--t-mid) var(--ease);
+}
+.jtab:hover, .jtab:focus-visible { color: var(--ink-2); }
+.jtab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.jshot {
+  display: block; max-height: 56vh; overflow-y: auto; border: 1px solid var(--rule); cursor: zoom-in;
+  scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
+}
+.jshot img { width: 100%; }
+.jshot__full { display: inline-block; margin-top: var(--s1); color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jshot__full:hover, .jshot__full:focus-visible { color: var(--ink); }
+
+/* The facts. */
+.jfacts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px var(--s3); margin: 0; font-size: var(--small-size); line-height: var(--small-lead); }
+.jfacts > div { display: contents; }
+.jfacts dt { color: var(--ink-3); }
+.jfacts dd { margin: 0; color: var(--ink-2); overflow-wrap: anywhere; }
+.jfacts__note { margin-top: var(--s2); color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---------------------------------------------------------------- narrower */
+@media (max-width: 1080px) {
+  .jdetail { grid-template-columns: minmax(0, 1fr); }
+  .jdetail__aside { position: static; max-height: none; overflow: visible; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--s5); }
+  .jdetail__aside > .jpanel + .jpanel { margin-top: 0; }
+  .jdetail__main + .jdetail__aside { margin-top: var(--s3); }
+}
+@media (max-width: 900px) {
+  .jlist { grid-template-columns: minmax(0, 1fr); gap: var(--s3); }
+  /* The views become one row of tabs that scrolls sideways. */
+  .jside { position: static; display: flex; gap: var(--s3); overflow-x: auto; margin: 0 calc(-1 * var(--margin)); padding: 0 var(--margin) 2px; scrollbar-width: none; }
+  .jside::-webkit-scrollbar { display: none; }
+  .jside__group + .jside__group { margin-top: 0; padding-left: var(--s3); border-left: 1px solid var(--rule); }
+  .jside__group { display: flex; align-items: center; gap: var(--s1); flex: none; }
+  .jside__name { padding: 0; }
+  .jside ul { display: flex; gap: 2px; }
+  .jside__link { white-space: nowrap; gap: var(--s1); }
+  .jrow--sent { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto 12px; }
+  .jrow--sent .jrow__state { grid-column: 1 / span 2; grid-row: 2; margin-top: var(--s1); }
 }
 @media (max-width: 640px) {
-  .jobs__latest { min-width: 0; }
-  .jobs__tracker .jobs__group th { display: block; }
-  .jobs__choice { width: 100%; }
-  .jobs__sort-choices form { flex: 1 1 100%; }
+  .jhead { margin-top: var(--s5); }
+  .jactions { justify-content: flex-start; }
+  .jalert { grid-template-columns: minmax(0, 1fr); }
+  .jalert__act { grid-column: 1; grid-row: auto; margin-top: var(--s1); }
+  .jrow, .jrow--sent { grid-template-columns: minmax(0, 1fr) auto; row-gap: var(--s1); padding: var(--s2) 0; }
+  .jrow:hover, .jrow:focus-within { background: none; }
+  .jrow__state, .jrow--sent .jrow__state, .jrow__stage, .jrow__act { grid-column: 1 / -1; grid-row: auto; margin-top: 0; justify-self: start; }
+  .jrow__when { grid-column: 2; grid-row: 1; align-self: start; }
+  .jrow__go { display: none; }
+  .jrow__when-label { display: none; }
+  .jans { grid-template-columns: minmax(0, 1fr) auto; row-gap: 4px; }
+  .jans__q { grid-column: 1; }
+  .jans__side { grid-column: 2; grid-row: 1; }
+  .jans__a { grid-column: 1 / -1; }
+  .jsearch { width: 100%; }
 }
-.jobs__showing { color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
-.jobs__showing a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.jobs__showing + .table { margin-top: var(--s2); }
+@media (pointer: coarse) {
+  .jcopy { opacity: 1; }
+  .jbtn { min-height: 44px; }
+  .jside__link { padding: 10px var(--s1); }
+}
+@media (prefers-reduced-motion: reduce) { .jspin { animation-duration: 2.4s !important; } }
