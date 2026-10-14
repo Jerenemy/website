@@ -169,18 +169,20 @@
         {% set cov = rs.coverage or {} %}
         {% set after = cov.after or [] %}
         {% set before = cov.before or [] %}
+        {% set lacks = rs.unsupported or [] %}
         <details class="jpanel jresume" id="resume"{% if not st %} open{% endif %}>
           <summary class="jpanel__head">
             <h2 class="jpanel__name">Resume, tailored</h2>
-            <span class="jpanel__aside">{{ after | length }} of {{ (rs.keywords or []) | length }} keywords on the page{% if after | length != before | length %} (was {{ before | length }}){% endif %}</span>
+            <span class="jpanel__aside">{{ after | length }} of {{ (rs.keywords or []) | length }} keywords on the page{% if after | length != before | length %} (was {{ before | length }}){% endif %}{% if lacks %} · {{ lacks | length }} you don't have{% endif %}</span>
           </summary>
           {% if rs.keywords %}
             <ul class="jkeys" aria-label="The posting's keywords">
               {% for k in rs.keywords %}
-                <li class="jkey{% if k in after and k not in before %} jkey--added{% elif k in after %} jkey--had{% endif %}"
-                    title="{% if k in after and k not in before %}Added for this job{% elif k in after %}Already on your resume{% else %}Not on the page{% endif %}">{{ k }}</li>
+                <li class="jkey{% if k in after and k not in before %} jkey--added{% elif k in after %} jkey--had{% elif k in lacks %} jkey--lacks{% endif %}"
+                    title="{% if k in after and k not in before %}Added for this job{% elif k in after %}Already on your resume{% elif k in lacks %}Your resume.yaml doesn't show this, so it stays off{% else %}Not on the page{% endif %}">{{ k }}</li>
               {% endfor %}
             </ul>
+            {% if lacks %}<p class="jresume__note">Struck through: keywords your resume.yaml doesn't show, so they stay off. If you do have one, add it to <code>inventory</code> in resume.yaml.</p>{% endif %}
           {% endif %}
           {% set projects = rs.projects or {} %}
           {% if projects.before != projects.after %}
@@ -188,6 +190,7 @@
           {% endif %}
           {% for line in rs.skills or [] %}
             <p class="jresume__line"><span class="jresume__label">{{ line.label }}</span> {{ line.after | join(", ") }}</p>
+            {% if line.unverified %}<p class="jdiff__check">Check this is true: {{ line.unverified | join(", ") }}</p>{% endif %}
           {% endfor %}
           {% if rs.bullets %}
             <ol class="jdiffs">
