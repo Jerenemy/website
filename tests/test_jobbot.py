@@ -231,16 +231,34 @@ class JobBotPageTests(unittest.TestCase):
         skipped = dict(JOB, id="j4", company="Skipped", status="skipped", submission=failed)
         jobs = [broken, closed, older, skipped]
         self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": jobs, "last_pass": None})
-        page = self.client.get("/admin/jobs/?show=attention").get_data(as_text=True)
-        self.assertIn("Broken", page)
+        rows = self.view(self.client.get("/admin/jobs/?show=attention").get_data(as_text=True))
+        self.assertIn(">Broken<", rows)
         for name in ("Shut", "Older", "Skipped"):
-            self.assertNotIn(name, page)
-        page = self.client.get("/admin/jobs/?show=closed").get_data(as_text=True)
-        self.assertIn("Shut", page)
-        self.assertIn("Older", page)
-        self.assertNotIn("Broken", page)
-        self.assertNotIn("Skipped", page)
-        self.assertIn("jobs__badge--closed", page)
+            self.assertNotIn(f">{name}<", rows)
+        rows = self.view(self.client.get("/admin/jobs/?show=closed").get_data(as_text=True))
+        self.assertIn(">Shut<", rows)
+        self.assertIn(">Older<", rows)
+        self.assertNotIn(">Broken<", rows)
+        self.assertNotIn(">Skipped<", rows)
+        self.assertIn("jobs__badge--closed", rows)
+        rows = self.view(self.client.get("/admin/jobs/?view=skipped").get_data(as_text=True))
+        self.assertIn(">Skipped<", rows)
+
+    def test_skipped_jobs_have_a_view_of_their_own(self):
+        self.login()
+        skipped = dict(JOB, id="j1", company="Passed", status="skipped")
+        shut = dict(JOB, id="j2", company="Shut", status="skipped", closed=True)
+        jobs = [JOB, skipped, shut]
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": jobs, "last_pass": None})
+        page = self.client.get("/admin/jobs/?view=skipped").get_data(as_text=True)
+        self.assertIn('href="/admin/jobs/?view=skipped" aria-current="page"', page)
+        rows = self.view(page)
+        self.assertIn("Skipped", rows.split("</h2>")[0])
+        self.assertIn(">Passed<", rows)
+        self.assertNotIn(">Acme<", rows)
+        self.assertNotIn(">Shut<", rows)  # a closed posting is closed, whoever skipped it
+        rows = self.view(self.client.get("/admin/jobs/?view=review").get_data(as_text=True))
+        self.assertNotIn(">Passed<", rows)
 
     def test_blocked_jobs_are_listed_to_apply_yourself(self):
         self.login()
