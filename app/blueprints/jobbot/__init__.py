@@ -39,6 +39,7 @@ VIEWS = {
     "sent": ("All sent", "sent"),
     "active": ("In progress", "bot"),
     "closed": ("Closed", "bot"),
+    "skipped": ("Skipped", "bot"),
     "all": ("Every dry run", "bot"),
 }
 VIEW_GROUPS = {"you": "Needs you", "sent": "Sent", "bot": "Bot"}
@@ -102,8 +103,8 @@ def _category(job):
     # The site stops the bot for good (captcha, spam flag): the bot never retries it; apply on the site.
     if job.get("blocked") or job["status"] == "blocked":
         return "blocked"
-    if job["status"] == "skipped":  # skipped from the review page: out of the queue
-        return "other"
+    if job["status"] == "skipped":  # skipped from the review page: out of the queue, in a view of its own
+        return "skipped"
     if sub.get("status") in ("failed", "unconfirmed"):
         return "attention"
     if job["status"] == "dry_run_ok":
@@ -329,7 +330,7 @@ def job_list():
     unsorted = data.get("unsorted") or []
     waiting = [job for job in jobs if (job.get("submission") or {}).get("status") == "needs_code"]
     members = {"codes": waiting, "sort": unsorted, "sent": tracked, "all": queue}
-    for key in ("review", "attention", "blocked", "active", "closed"):
+    for key in ("review", "attention", "blocked", "active", "closed", "skipped"):
         members[key] = [job for job in queue if job["category"] == key]
     for key in STAGES:
         members[key] = [job for job in tracked if job["stage"]["key"] == key]

@@ -165,6 +165,7 @@
             {%- if view == "review" %}Nothing to review. New dry runs land here.
             {%- elif view == "attention" %}Nothing has gone wrong.
             {%- elif view == "codes" %}No submission is waiting for a code.
+            {%- elif view == "skipped" %}Nothing skipped. A job you skip waits here; Rerun on its page puts it back.
             {%- elif view in ("sent", "offer", "interviewing", "waiting", "rejected") and not counts.sent %}No applications sent yet. Once one goes out, it moves along here as the company writes back.
             {%- else %}None right now.{% endif -%}
           </p>
