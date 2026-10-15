@@ -175,6 +175,14 @@
             <h2 class="jpanel__name">Resume, tailored</h2>
             <span class="jpanel__aside">{{ after | length }} of {{ (rs.keywords or []) | length }} keywords on the page{% if after | length != before | length %} (was {{ before | length }}){% endif %}{% if lacks %} · {{ lacks | length }} you don't have{% endif %}</span>
           </summary>
+          {% if job.resume_notes %}
+            {#- What the chat asked of this resume: every dry run of the job tailors it with these. -#}
+            <div class="jresume__asks">
+              <span class="jresume__label">Your requests</span>
+              <ul>{% for n in job.resume_notes %}<li>{{ n }}</li>{% endfor %}</ul>
+              <p class="jresume__note">Every new dry run of this job follows these. Ask in the chat to undo them.</p>
+            </div>
+          {% endif %}
           {% if rs.keywords %}
             <ul class="jkeys" aria-label="The posting's keywords">
               {% for k in rs.keywords %}
@@ -303,7 +311,7 @@
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <label class="sr" for="message">Message</label>
               <textarea id="message" name="message" rows="3" maxlength="2000" required
-                        placeholder="{{ 'What should change?' if edits else 'e.g. say I can start in June 2027' }}"></textarea>
+                        placeholder="{{ 'What should change?' if edits else 'e.g. say I can start in June 2027, or list C++ first on my resume' }}"></textarea>
               <div class="jchat__send"><span class="jchat__hint">⌘↵ to send</span><button class="jbtn jbtn--primary jbtn--small" type="submit">Send</button></div>
             </form>
           {% elif not editing and job.status not in ("dry_run_ok", "failed") %}

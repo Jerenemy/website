@@ -476,6 +476,17 @@ class JobBotPageTests(unittest.TestCase):
         self.assertIn("Built it in &lt;Rust&gt;.", page)
         self.assertIn('src="/admin/jobs/url:abc123/resume.pdf#navpanes=0&view=FitH"', page)
 
+    def test_detail_lists_the_chats_resume_requests(self):
+        self.login()
+        resume = {"keywords": ["C++"], "coverage": {"before": [], "after": ["C++"]}, "created_at": "2026-10-15T09:00:00+00:00"}
+        job = dict(DETAIL, resume=resume, resume_notes=["List C++ first on the Languages line.", "Show <EAR>."])
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": job})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn("Your requests", page)
+        self.assertIn("<li>List C++ first on the Languages line.</li><li>Show &lt;EAR&gt;.</li>", page)
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, resume=resume)})
+        self.assertNotIn("Your requests", self.client.get("/admin/jobs/url:abc123").get_data(as_text=True))
+
     def test_detail_without_a_tailored_resume_has_no_resume_panel(self):
         self.login()
         self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, resume=None)})
