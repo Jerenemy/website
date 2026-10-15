@@ -48,9 +48,15 @@ class Config:
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
     ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH")
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+    # The works: the live file is the server's own (written by /admin/portfolio, untracked); the
+    # seed is tracked and only fills a missing live file, or lends it words via `flask portfolio-copy`.
     PORTFOLIO_DATA_PATH = os.getenv(
         "PORTFOLIO_DATA_PATH",
         os.path.join(_project_root, "app", "data", "portfolio.json"),
+    )
+    PORTFOLIO_SEED_PATH = os.getenv(
+        "PORTFOLIO_SEED_PATH",
+        os.path.join(_project_root, "app", "data", "portfolio.seed.json"),
     )
     SITE_SETTINGS_PATH = os.getenv(
         "SITE_SETTINGS_PATH",
@@ -59,10 +65,6 @@ class Config:
     SITE_FILES_DIR = os.getenv(
         "SITE_FILES_DIR",
         os.path.join(_project_root, "app", "static", "files"),
-    )
-    SITE_THEME_CSS_PATH = os.getenv(
-        "SITE_THEME_CSS_PATH",
-        os.path.join(_project_root, "app", "static", "css", "theme.css"),
     )
     # The site's theme: static/site/themes/<name>.css over static/site/tokens.css ("void" is
     # tokens.css alone). See app/design.py.

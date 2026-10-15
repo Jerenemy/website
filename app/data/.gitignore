@@ -1,3 +1,4 @@
 *
 !.gitignore
-!portfolio.json
+# the seed only: the live portfolio.json and site_settings.json are the server's own
+!portfolio.seed.json

@@ -1,6 +1,5 @@
 import hashlib
 import secrets
-import re
 from functools import wraps
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -17,7 +16,6 @@ from ...portfolio import get_portfolio_store
 from ...portfolio.store import KINDS
 from ...site_settings import get_site_settings_store
 
-_HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
 LINE_MAX = 72   # characters: the homepage caption wraps it over two or three short lines
 TITLE_MAX = 24  # characters: the homepage caption's head is one line, between the edge and the light, on a 320 px phone too
 
@@ -103,8 +101,6 @@ def site_settings():
         else:
             updates["home_description"] = home_description
 
-
-
         resume_upload = request.files.get("resume_file")
         if resume_upload and resume_upload.filename:
             try:
@@ -114,42 +110,10 @@ def site_settings():
             except ValueError as exc:
                 errors.append(str(exc))
 
-        theme_bg = request.form.get("theme_bg", "").strip()
-        theme_fg = request.form.get("theme_fg", "").strip()
-        theme_accent = request.form.get("theme_accent", "").strip()
-        squircle_bg_color = request.form.get("squircle_bg_color", "").strip()
-
-        for label, value in (
-            ("Background color", theme_bg),
-            ("Text color", theme_fg),
-            ("Accent color", theme_accent),
-            ("Squircle background color", squircle_bg_color),
-        ):
-            error = _validate_hex_color(value, label)
-            if error:
-                errors.append(error)
-
-        if not errors:
-            updates["theme"] = {
-                "bg": theme_bg,
-                "fg": theme_fg,
-                "accent": theme_accent,
-                "squircle_bg_color": squircle_bg_color,
-            }
-
         if errors:
             flash(" ".join(errors), "error")
             form_settings = settings.copy()
             form_settings["home_description"] = home_description or settings.get("home_description", "")
-            form_settings["theme"] = dict(settings.get("theme", {}))
-            if theme_bg:
-                form_settings["theme"]["bg"] = theme_bg
-            if theme_fg:
-                form_settings["theme"]["fg"] = theme_fg
-            if theme_accent:
-                form_settings["theme"]["accent"] = theme_accent
-            if squircle_bg_color:
-                form_settings["theme"]["squircle_bg_color"] = squircle_bg_color
             return render_template(
                 "admin/site_settings.html",
                 settings=form_settings,
@@ -157,9 +121,7 @@ def site_settings():
                 **_upload_context(),
             )
 
-        updated = store.update_settings(updates)
-        if "theme" in updates:
-            _write_theme_css(updated.get("theme", {}))
+        store.update_settings(updates)
         flash("Site settings updated.", "success")
         return redirect(url_for("admin.site_settings"))
 
@@ -482,14 +444,6 @@ def _upload_context() -> dict:
     }
 
 
-def _validate_hex_color(value: str, label: str) -> str | None:
-    if not value:
-        return f"{label} is required."
-    if not _HEX_COLOR_RE.match(value):
-        return f"{label} must be a hex color like #112233."
-    return None
-
-
 def _save_pdf_upload(file_storage, dest_dir: Path) -> str:
     filename = secure_filename(file_storage.filename or "")
     if not filename or "." not in filename:
@@ -513,24 +467,6 @@ def _save_pdf_upload(file_storage, dest_dir: Path) -> str:
     dest_path = dest_dir / unique_name
     file_storage.save(dest_path)
     return dest_path.name
-
-
-def _write_theme_css(theme: dict) -> None:
-    theme_path = Path(current_app.config["SITE_THEME_CSS_PATH"])
-    theme_path.parent.mkdir(parents=True, exist_ok=True)
-    bg = theme.get("bg", "#555555")
-    fg = theme.get("fg", "#111111")
-    accent = theme.get("accent", "#4fc3f7")
-    squircle_bg_color = theme.get("squircle_bg_color", "#111111")
-    css = (
-        ":root {\n"
-        f"  --bg: {bg};\n"
-        f"  --fg: {fg};\n"
-        f"  --accent: {accent};\n"
-        f"  --squircle-bg-color: {squircle_bg_color};\n"
-        "}\n"
-    )
-    theme_path.write_text(css, encoding="utf-8")
 
 
 def _save_image_upload(file_storage, dest_dir: Path) -> str:

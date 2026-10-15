@@ -1,8 +1,8 @@
 name: Deploy
 
 # Every push to main fast-forwards the server's checkout and restarts the supervisor programs
-# whose code changed. The server keeps local edits made through the admin pages (theme.css,
-# portfolio.json, résumé PDFs); --ff-only stops the deploy, untouched, if a pull would clash.
+# whose code changed. What the admin pages write (portfolio.json, site_settings.json, résumé PDFs)
+# is untracked, so pulls never meet it; --ff-only stops the deploy, untouched, if one would clash.
 on:
   push:
     branches: [main]

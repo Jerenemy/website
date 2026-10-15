@@ -29,19 +29,8 @@
         <input type="file" id="resume_file" name="resume_file" accept="application/pdf,.pdf">
         <p class="note">The new file is served at /resume.</p>
       </div>
-    {% endcall %}
-
-    {% call ui.sect("03", "Older pages") %}
-      <p class="note">Colours for the pages still on the old look; the rest of the site takes its colours from static/site/tokens.css.</p>
-      <div class="admin-swatches">
-        {%- for name, label, value in [("theme_bg", "Background", settings.theme.bg), ("theme_fg", "Text", settings.theme.fg), ("theme_accent", "Accent", settings.theme.accent), ("squircle_bg_color", "Squircle", settings.theme.squircle_bg_color | default('#111111'))] %}
-        <div class="field">
-          <label for="{{ name }}">{{ label }}</label>
-          <input type="color" id="{{ name }}" name="{{ name }}" value="{{ value | e }}">
-        </div>
-        {%- endfor %}
-      </div>
       <div class="send">{{ admin.button("Save settings") }}</div>
     {% endcall %}
+
   </form>
 {% endblock %}

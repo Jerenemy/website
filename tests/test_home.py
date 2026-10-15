@@ -12,7 +12,7 @@ from app import create_app
 from app.portfolio.store import KINDS, PortfolioStore
 
 ROOT = Path(__file__).resolve().parents[1]
-SHIPPED_PORTFOLIO = ROOT / "app" / "data" / "portfolio.json"
+SHIPPED_PORTFOLIO = ROOT / "app" / "data" / "portfolio.seed.json"
 HOME_STATIC = ROOT / "app" / "static" / "home"
 SITE_STATIC = ROOT / "app" / "static" / "site"
 
@@ -382,6 +382,44 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(ranks(), [("e", 0), ("d", 1), ("a", 2), ("c", 3)])
         store.update_item("a", {"title": "A2"})           # no rank given: order untouched
         self.assertEqual(ranks(), [("e", 0), ("d", 1), ("a", 2), ("c", 3)])
+
+
+    def test_a_missing_live_file_starts_as_the_seed(self):
+        seed = Path(self.temp.name) / "seed.json"
+        seed.write_text(json.dumps({"items": [{"id": "a", "title": "A", "sort_order": 0, "is_published": True}]}))
+        store = PortfolioStore(str(self.path), str(seed))
+        self.assertEqual([item["id"] for item in store.list_items()], ["a"])
+        store.update_item("a", {"title": "Edited"})                 # the live file is now its own
+        self.assertEqual(json.loads(seed.read_text())["items"][0]["title"], "A")
+
+    def test_portfolio_copy_brings_words_and_nothing_else(self):
+        seed = Path(self.temp.name) / "seed.json"
+        live_items = [{"id": "a", "title": "A", "line": "old", "short_desc": "old", "sort_order": 1, "is_published": False},
+                      {"id": "b", "title": "B", "line": "keep", "sort_order": 0, "is_published": True}]
+        self.path.write_text(json.dumps({"items": live_items}))
+        seed.write_text(json.dumps({"items": [
+            {"id": "a", "title": "A", "line": "new", "short_desc": "new", "sort_order": 0, "is_published": True},
+            {"id": "z", "title": "Only in the seed", "sort_order": 2},
+        ]}))
+        store = PortfolioStore(str(self.path), str(seed))
+        self.assertEqual(store.import_copy(str(seed), dry_run=True), [("a", "line"), ("a", "short_desc")])
+        self.assertEqual(json.loads(self.path.read_text())["items"], live_items)   # a dry run writes nothing
+        app = create_app()
+        app.config.update(PORTFOLIO_DATA_PATH=str(self.path), PORTFOLIO_SEED_PATH=str(seed))
+        result = app.test_cli_runner().invoke(args=["portfolio-copy"])
+        self.assertIn("2 field(s) updated.", result.output)
+        a, b = json.loads(self.path.read_text())["items"]
+        self.assertEqual((a["line"], a["short_desc"]), ("new", "new"))
+        self.assertEqual((a["sort_order"], a["is_published"]), (1, False))       # the admin's order and publishing stay
+        self.assertEqual(b["line"], "keep")
+        self.assertEqual(len(json.loads(self.path.read_text())["items"]), 2)     # seed-only items are not added
+
+    def test_shipped_data_is_the_seed_alone(self):
+        tracked = subprocess.run(["git", "ls-files", "app/data", "app/static/css"], cwd=ROOT,
+                                 capture_output=True, text=True, check=True).stdout.split()
+        self.assertIn("app/data/portfolio.seed.json", tracked)
+        self.assertNotIn("app/data/portfolio.json", tracked)                     # the server's own, never pulled over
+        self.assertNotIn("app/static/css/theme.css", tracked)
 
 
 class AdminTests(unittest.TestCase):

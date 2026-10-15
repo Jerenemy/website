@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -9,6 +10,8 @@ from pathlib import Path
 from threading import Lock
 
 _STORE_LOCK = Lock()
+# The words of an item, which `flask portfolio-copy` brings over from the seed.
+COPY_FIELDS = ("title", "line", "short_desc", "long_desc", "image_alt")
 
 # What a work is, for the homepage's caption and the screen reader ("Title, Kind, line").
 KINDS = ("about", "research", "engineering", "product", "play")   # "about": the page about the person, not a work
@@ -65,8 +68,11 @@ class PortfolioItem:
 
 
 class PortfolioStore:
-    def __init__(self, data_path: str) -> None:
+    # The live file is the server's own (written by /admin/portfolio, never tracked); a missing
+    # one starts as a copy of the seed that ships in the repository.
+    def __init__(self, data_path: str, seed_path: str | None = None) -> None:
         self._path = Path(data_path)
+        self._seed = Path(seed_path) if seed_path else None
         self._path.parent.mkdir(parents=True, exist_ok=True)
 
     def list_items(self, include_unpublished: bool = False) -> list[dict]:
@@ -180,11 +186,35 @@ class PortfolioStore:
             candidate, n = f"{base}-{n}", n + 1
         return candidate
 
+    def import_copy(self, seed_path: str, dry_run: bool = False) -> list[tuple[str, str]]:
+        """Copies the words (COPY_FIELDS) of every seed item into the live item with its id, and
+        nothing else: order, publishing, images and the admin's other edits stay as they are.
+        Returns the (id, field) pairs that changed."""
+        seed = {item.get("id"): item for item in json.loads(Path(seed_path).read_text(encoding="utf-8")).get("items", [])}
+        with _STORE_LOCK:
+            data = self._read()
+            changed = []
+            for item in data.get("items", []):
+                source = seed.get(item.get("id"))
+                if not source:
+                    continue
+                for field in COPY_FIELDS:
+                    if field in source and source[field] != item.get(field):
+                        item[field] = source[field]
+                        changed.append((item["id"], field))
+            if changed and not dry_run:
+                self._write(data)
+            return changed
+
     def _next_sort_order(self, items: list[dict]) -> int:
         return len(items)
 
     def _ensure_data_file(self) -> None:
-        if not self._path.exists():
+        if self._path.exists():
+            return
+        if self._seed and self._seed.exists():
+            shutil.copyfile(self._seed, self._path)
+        else:
             self._write({"items": []})
 
     def _read(self) -> dict:

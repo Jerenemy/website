@@ -53,16 +53,6 @@
 }
 .field input[type="file"]:hover::file-selector-button { border-bottom-color: var(--ink); }
 
-/* Colours: a swatch on a hairline, in a row. */
-.admin-swatches { display: flex; flex-wrap: wrap; gap: var(--s3) var(--s5); }
-.admin-swatches .field + .field { margin-top: 0; }
-.field input[type="color"] {
-  width: var(--s8); height: var(--s4); padding: 4px 0; cursor: pointer;
-}
-.field input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-.field input[type="color"]::-webkit-color-swatch { border: 1px solid var(--rule); border-radius: 0; }
-.field input[type="color"]::-moz-color-swatch { border: 1px solid var(--rule); border-radius: 0; }
-
 /* A checkbox: a square drawn on a hairline, filled with ink when on. */
 .check {
   display: flex; align-items: center; gap: var(--s2); cursor: pointer; color: var(--ink-2);
