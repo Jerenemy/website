@@ -101,6 +101,7 @@
       </p>
       {#- Not rendered, so no person (or autofill) fills it; a form-filling bot does, and is not mailed. #}
       <p hidden><label>Leave empty <input name="website" tabindex="-1" autocomplete="off"></label></p>
+      <input type="hidden" name="t" value="{{ contact_token() }}">
       <button type="submit" class="open send"><span>Send</span>{{ ui.arrow() }}</button>
       <p id="contact-status" class="status" role="status" aria-live="polite"></p>
     </form>

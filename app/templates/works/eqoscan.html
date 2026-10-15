@@ -71,6 +71,7 @@
         <label for="message-input">Message (optional)</label>
         <textarea id="message-input" rows="4" placeholder="Your dining system, your timeline"></textarea>
       </p>
+      <input type="hidden" name="t" value="{{ contact_token() }}">
       <button type="submit" class="open send"><span>Request information</span>{{ ui.arrow() }}</button>
       <p id="contact-status" class="status" role="status" aria-live="polite"></p>
     </form>
@@ -92,6 +93,7 @@
         const payload = {
           name: data.name,
           email: data.email,
+          t: data.t,
           message: `ORGANIZATION: ${orgName}\n\nMESSAGE:\n${userMessage ? userMessage : "No additional message provided."}`,
         };
         try {

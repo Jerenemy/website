@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import time
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -275,7 +276,7 @@ class HomeTests(unittest.TestCase):
         self.assertEqual([{k: f.get(k) for k in ("id", "method", "action")} for f in page.forms],
                          [{"id": "contact-form", "method": "post", "action": "/api/contact"}])
         self.assertEqual([(f.get("name"), "required" in f) for f in page.fields],
-                         [("name", True), ("email", True), ("message", True), ("website", False)])
+                         [("name", True), ("email", True), ("message", True), ("website", False), ("t", False)])
         self.assertIn({"src": "/static/js/contact.js", "defer": None}, page.scripts)
         self.assertIn('id="contact-status"', response.text)
         # The contact page is built on the design system (templates/layout.html), like every page.
@@ -288,7 +289,11 @@ class HomeTests(unittest.TestCase):
     def test_contact_form_works_without_javascript(self):
         from unittest import mock
         self.app.config.update(MAIL_SERVER="127.0.0.1", MAIL_USERNAME="qa@localhost", MAIL_DEFAULT_SENDER="qa@localhost")
-        fields = {"name": "Ada", "email": "ada@example.com", "message": "Hello"}
+        from app.blueprints.api import routes
+        def token(age):
+            with self.app.test_request_context(), mock.patch.object(routes.time, "time", return_value=time.time() - age):
+                return routes.contact_token()
+        fields = {"name": "Ada", "email": "ada@example.com", "message": "Hello", "t": token(10)}
         with mock.patch("app.blueprints.api.routes.mail.send") as send:
             # The browser posts the form itself: the answer is the contact page, with the outcome.
             response = self.client.post("/api/contact", data=fields)
@@ -303,6 +308,17 @@ class HomeTests(unittest.TestCase):
             response = self.client.post("/api/contact", data={**fields, "website": "http://spam.example"})
             self.assertEqual((response.status_code, response.headers["Location"]), (303, "/contact?status=sent"))
             self.assertEqual(send.call_count, 1)
+            # So is a script that never loaded the page, a bot that fills it in at once, a replayed
+            # token, and a name of random letters.
+            for spam in ({**fields, "t": ""}, {**fields, "t": token(10) + "x"}, {**fields, "t": token(1)},
+                         {**fields, "t": token(2 * 24 * 60 * 60)}, {**fields, "name": "RXfFZcgFTYqq"},
+                         {**fields, "message": "vKpQmZtRwLyB"}):
+                with self.subTest(spam=spam), self.assertLogs(self.app.logger, "INFO"):
+                    response = self.client.post("/api/contact", data=spam)
+                self.assertEqual(response.headers["Location"], "/contact?status=sent")
+            self.assertEqual(send.call_count, 1)
+            for name in ("McDonald", "DeAndre", "Jean-Luc O'Neil", "ALEXANDRA", "maximilian"):
+                self.assertFalse(routes._is_random_letters(name), name)
             # The JSON API (static/js/contact.js and the other pages) answers as before.
             response = self.client.post("/api/contact", json={**fields, "website": ""})
             self.assertEqual((response.status_code, response.get_json()), (200, {"ok": True}))
@@ -604,9 +620,13 @@ class ShippedAssetsTests(unittest.TestCase):
         paths += [demo + name for name in ("CONCEPT.md", "INTEGRATION.md", "index.html", "data.js", "package.json",
                                            "src", "styles.css", "vendor", "site")]
         paths += [str(p.relative_to(ROOT)) for p in sorted((ROOT / demo / "tools").glob("*"))]
-        result = subprocess.run(["git", "-C", str(ROOT), "check-ignore", "--no-index", *paths],
+        # -v names the rule that decided each path ("source:line:pattern<TAB>path"); a path whose rule
+        # is a "!" exception is kept. (Git before 2.27 lists those as ignored without -v.)
+        result = subprocess.run(["git", "-C", str(ROOT), "check-ignore", "--no-index", "-v", *paths],
                                 capture_output=True, text=True)
-        self.assertEqual(result.stdout.strip(), "", "ignored by .gitignore: " + result.stdout)
+        ignored = [line.split("\t", 1)[1] for line in result.stdout.splitlines()
+                   if not line.split("\t", 1)[0].split(":", 2)[2].startswith("!")]
+        self.assertEqual(ignored, [], "ignored by .gitignore: " + result.stdout)
 
 
 if __name__ == "__main__":
