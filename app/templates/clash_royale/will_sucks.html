@@ -12,7 +12,7 @@
     <p class="status {{ category }}" role="status">{{ message }}</p>
     {%- endfor %}
     {%- if not configured %}<p class="status" role="status">Tracking unavailable: the server API token is not configured. Starting scores are preserved.</p>
-    {%- elif not verified %}<p class="status" role="status">Score tracking awaits live friendly-battle verification.</p>{% endif %}
+    {%- elif not verified %}<p class="status" role="status">Scores start counting once a live friendly battle has been verified.</p>{% endif %}
   </div>
   {%- endif %}
 

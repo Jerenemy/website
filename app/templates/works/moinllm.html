@@ -7,24 +7,23 @@
 
   {% call ui.sect("01", "The concept") %}
     <div class="prose">
-      <p class="lede">Most large language models are generalists: they know a little about everything from everywhere. MoinLLM explores the opposite, around one research question: <strong>can we build a localized “Hamburg AI”?</strong></p>
-      <p>The goal was to fine-tune a model so that it did not just hold facts about Hamburg, Germany, but understood the city’s cultural, historical and geographic nuances like a local.</p>
+      <p class="lede">Large language models are generalists that know a little about everywhere. MoinLLM asks whether one can be made into a local instead: a “Hamburg AI”.</p>
+      <p>The goal was a model that knows Hamburg, Germany the way someone who lives there does: its culture, history and geography as well as the plain facts.</p>
     </div>
   {% endcall %}
 
   {% call ui.sect("02", "The process") %}
     <div class="prose">
-      <p>The model was trained on cluster computing environments alongside Google’s infrastructure, using instruction-formatted data that gradually taught it to adopt a regional persona and prioritize localized data.</p>
+      <p>Training ran on cluster computing environments and Google’s infrastructure, using instruction-formatted data that taught the model to take on a regional persona and favor local information.</p>
       <p class="label">LLM fine-tuning · Cluster computing · Natural language processing · Data formatting</p>
     </div>
   {% endcall %}
 
   {% call ui.sect("03", "Results") %}
     <div class="prose">
-      <p>The training metrics showed steady learning progression, reaching a mean token accuracy of over 61%.</p>
-      <p>Qualitatively, the model adopted its intended identity: when prompted, it identified itself as an AI specialized in the history and development of Hamburg.</p>
-      <blockquote><p>Asked for directions from the Speicherstadt to the Reeperbahn, the model did not give a sterile route. It suggested driving along the Elbe riverbank to see the historic port facilities before reaching the cultural landscape of the Reeperbahn.</p></blockquote>
-      <p>With the right fine-tuning, a model can move beyond generic, broad-stroke answers to localized, context-aware ones.</p>
+      <p>The training metrics improved steadily, and mean token accuracy passed 61%.</p>
+      <p>The model also took on the identity it was trained for. When prompted, it described itself as an AI specialized in the history and development of Hamburg.</p>
+      <blockquote><p>Asked for directions from the Speicherstadt to the Reeperbahn, the model suggested driving along the Elbe to see the historic port before arriving at the Reeperbahn.</p></blockquote>
     </div>
   {% endcall %}
 {% endblock %}

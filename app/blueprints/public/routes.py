@@ -18,7 +18,7 @@ KIND_LABELS = {kind: kind.capitalize() for kind in KINDS}   # as static/home/src
 # The outcome of a contact form posted without JavaScript (api.api_contact redirects here with it);
 # the same words static/js/contact.js shows.
 CONTACT_STATUS = {
-    "sent": "Message sent successfully!",
+    "sent": "Message sent. Thanks!",
     "missing": "Please fill in every field.",
     "failed": "Failed to send message. Please try again.",
 }

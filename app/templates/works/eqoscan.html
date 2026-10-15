@@ -16,17 +16,17 @@
   {% endcall %}
 
   {% call ui.sect("02", "How it works", id="how-it-works") %}
-    <h2 class="sect__title">Track and return in seconds.</h2>
+    <h2 class="sect__title">Check out a container, then return it.</h2>
     <ol class="points">
       <li><span class="no">01</span><h3>Scan the location</h3><p>At a dining hall or return station, scan the location QR code in the eQoScan app.</p></li>
       <li><span class="no">02</span><h3>Scan the container</h3><p>Scan the unique QR code on the reusable food container to link it to your account.</p></li>
-      <li><span class="no">03</span><h3>Credits update</h3><p>Your digital credits update instantly. Return containers to earn credits back for your next meal.</p></li>
+      <li><span class="no">03</span><h3>Credits update</h3><p>Your credits update right away, and returning a container earns them back for your next meal.</p></li>
     </ol>
   {% endcall %}
 
   {% call ui.sect("03", "Features", id="features") %}
     <ol class="points">
-      <li><span class="no">01</span><h3>University sign-in</h3><p>Sign-in with university Google accounts, so only authorized students can use the system.</p></li>
+      <li><span class="no">01</span><h3>University sign-in</h3><p>Students sign in with their university Google accounts, so only they can use the system.</p></li>
       <li><span class="no">02</span><h3>Location history</h3><p>A map shows where and when you last checked out or returned a container.</p></li>
       <li><span class="no">03</span><h3>Real-time database</h3><p>Firebase keeps the student app and the administrative dashboard in sync.</p></li>
     </ol>
@@ -47,12 +47,12 @@
   {% call ui.sect("05", "Team") %}
     <div class="prose">
       <p class="lede">Built in a weekend at WesHack, Wesleyan's hackathon, where it won the Internship Prize.</p>
-      <p>Two applications work in concert. With Yehor Mishchyriak, I built the web application: a dynamic QR code system, an interactive dashboard for the institution running the program, and the real-time database that bridges the web and mobile apps. Ambrose Vannier and Samvit Prem Singhal built the mobile app in Swift.</p>
+      <p>eQoScan is two apps. Yehor Mishchyriak and I built the web app: the dynamic QR codes, a dashboard for the institution running the program, and the real-time database the web and mobile apps share. Ambrose Vannier and Samvit Prem Singhal built the mobile app in Swift.</p>
     </div>
   {% endcall %}
 
   {% call ui.sect("06", "Contact", id="contact") %}
-    <h2 class="sect__title">Bring eQoScan to your campus.</h2>
+    <h2 class="sect__title">Using eQoScan on your campus</h2>
     <p class="note">Request a demo or technical documentation.</p>
     <form id="contact-form" class="form">
       <p class="field">
@@ -101,7 +101,7 @@
             body: JSON.stringify(payload),
           });
           if (response.ok) {
-            status.textContent = "Request sent. We'll be in touch shortly.";
+            status.textContent = "Request sent. We'll get back to you soon.";
             form.reset();
           } else {
             status.textContent = "Failed to send. Please try again.";

@@ -7,11 +7,11 @@
   {{ zaychess.zaychess_head('public.zaychess') }}
 
   {%- set shots = [
-    ("home-screen.png", "Start fast", "The home screen puts every mode one click away: Local Game, ZayBot, Load Game and Multiplayer.", "Zaychess home screen with Local Game, ZayBot, Load Game and Multiplayer"),
-    ("drag-pawn.png", "Drag and drop", "Move pieces directly on the board. Legal destinations are highlighted as you drag.", "A pawn being dragged on the Zaychess board, its legal squares highlighted"),
-    ("choose-difficulty-aggr.png", "Match setup", "Before a ZayBot match, pick the difficulty on a slider; the aggressiveness for that level is shown as you move it.", "Choosing ZayBot's difficulty level, with its aggressiveness shown"),
-    ("vs-human-ai.png", "Resume a saved game", "When reopening a saved game, continue against another player or hand the other side to the AI.", "The resume prompt: continue a saved game against a human or the AI"),
-    ("waiting-for-opponent.png", "Online matchmaking", "Queue for an online game through the relay server; the waiting screen lets you cancel at any time.", "The multiplayer waiting screen while matchmaking"),
+    ("home-screen.png", "Home screen", "Every mode is one click from the home screen: Local Game, ZayBot, Load Game and Multiplayer.", "Zaychess home screen with Local Game, ZayBot, Load Game and Multiplayer"),
+    ("drag-pawn.png", "Drag and drop", "Drag pieces on the board, and the squares they can legally move to light up.", "A pawn being dragged on the Zaychess board, its legal squares highlighted"),
+    ("choose-difficulty-aggr.png", "Match setup", "Before a ZayBot match you pick the difficulty on a slider, which also shows how aggressive that level plays.", "Choosing ZayBot's difficulty level, with its aggressiveness shown"),
+    ("vs-human-ai.png", "Resume a saved game", "When you reopen a saved game, you can keep playing against a person or hand the other side to the AI.", "The resume prompt: continue a saved game against a human or the AI"),
+    ("waiting-for-opponent.png", "Online matchmaking", "Queue for an online game through the relay server, and cancel from the waiting screen whenever you like.", "The multiplayer waiting screen while matchmaking"),
   ] %}
   {%- for file, title, text, alt in shots %}
   {% call ui.show('%02d' % loop.index, title, text, device="window", flip=loop.index is even) %}
@@ -20,11 +20,11 @@
   {%- endfor %}
 
   {% call ui.sect('%02d' % (shots | length + 1), "What it does") %}
-    <h2 class="sect__title">Three ways to play, and every game kept.</h2>
+    <h2 class="sect__title">Play the AI, a friend or someone online, and save any game.</h2>
     <ol class="points">
-      <li><span class="no">01</span><h3>ZayBot and Serendipity</h3><p>An AI opponent across 11 difficulty levels, its lower levels biased in style from passive to hyper-aggressive.</p></li>
+      <li><span class="no">01</span><h3>ZayBot and Serendipity</h3><p>An AI opponent with 11 difficulty levels. The lower ones each lean toward a style, from passive to hyper-aggressive.</p></li>
       <li><span class="no">02</span><h3>Local and online play</h3><p>Face to face on one Mac with automatic board flipping, or online through the relay server's matchmaking.</p></li>
-      <li><span class="no">03</span><h3>Portable sessions</h3><p>Save games to .chesslog files, load them later, and undo or redo with AI-aware reconstruction.</p></li>
+      <li><span class="no">03</span><h3>Saved games</h3><p>Save games to .chesslog files and load them later. Undo and redo work in AI games too.</p></li>
     </ol>
   {% endcall %}
 
