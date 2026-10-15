@@ -91,6 +91,16 @@ def _signature(job):
     return "|".join([job.get("status") or "", sub.get("status") or "", last.get("id") or "", last.get("status") or ""])
 
 
+def _rerun_since(job, sub):
+    """The job was dry-run again after its submission ended: that run, not the old failure, is what to look at."""
+    try:
+        ran = datetime.fromisoformat(str(job.get("last_attempt")).replace("Z", "+00:00"))
+        ended = datetime.fromisoformat(str(sub.get("updated_at")).replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return ran > ended
+
+
 def _category(job):
     sub = job.get("submission") or {}
     if job["status"] == "applied" or sub.get("status") == "applied":
@@ -105,7 +115,8 @@ def _category(job):
         return "blocked"
     if job["status"] == "skipped":  # skipped from the review page: out of the queue, in a view of its own
         return "skipped"
-    if sub.get("status") in ("failed", "unconfirmed"):
+    # A failed submission stays until a clean rerun replaces it; an unconfirmed one may have gone through: check it.
+    if sub.get("status") == "unconfirmed" or (sub.get("status") == "failed" and not _rerun_since(job, sub)):
         return "attention"
     if job["status"] == "dry_run_ok":
         return "review"
