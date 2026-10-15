@@ -145,7 +145,8 @@ app/blog/*.pyc
 # Versioned portfolio content
 !app/data/
 !app/data/.gitignore
-!app/data/portfolio.json
+# the works' seed only: the live portfolio.json is the server's own (written by /admin)
+!app/data/portfolio.seed.json
 
 # The homepage's design record and the proofs that guard it (the paradox rule, the regression
 # checklist): design/homepage-demo runs the code in app/static/home through three symlinks.

@@ -137,20 +137,21 @@ sudo cp ~/nginx-personal_website.conf.bak "$(readlink -f "$(grep -l 'server_name
 
 ### Editing works on the server
 
-`app/data/portfolio.json` is tracked, so every save in `/admin/portfolio` on the server changes it, and the next deploy's check stops on it. To keep the server's works out of git, once the homepage is live:
+The live works are `app/data/portfolio.json`, which git ignores: `/admin/portfolio` writes it, and deploys never touch it, so editing works on the server can't block a deploy. The repository tracks `app/data/portfolio.seed.json` instead. It only fills a missing live file (a fresh checkout, a new machine, the tests).
+
+Order, publishing and new works are changed in the admin. Words written in the repository (a work's `title`, `line`, `short_desc`, `long_desc`, `image_alt`) go into the seed and then into the live file with:
 
 ```bash
 cd /home/jzay/personal_website
-cp app/data/portfolio.json instance/portfolio.json
-echo 'PORTFOLIO_DATA_PATH=/home/jzay/personal_website/instance/portfolio.json' >> .env
-sudo supervisorctl restart personal_website
+.venv/bin/flask --app app portfolio-copy --dry-run   # lists the fields that would change
+.venv/bin/flask --app app portfolio-copy             # copies them; order, publishing and images stay
 ```
 
-From then on the admin writes `instance/portfolio.json` and the tracked file only seeds new checkouts: works changed in the repository no longer reach the live site (change them in the admin). To undo, and before any rollback to the old code, delete that line from `.env` and restart.
+It only updates works that exist in both files and never adds or removes one.
 
 ## Automatic deploys
 
-`.github/workflows/deploy.yml` runs on every push to `main` (and by hand from the Actions tab). It SSHes into the server, fast-forwards `/home/jzay/personal_website` to `origin/main`, restarts `personal_website`, and restarts `ear_service` or `attack_target_network` only when their folder under `projects/` changed and the program is already running (a stopped program stays stopped: `restart` would start it). A pull that would overwrite a file edited on the server (the admin pages' `theme.css`, `portfolio.json`) fails the run and leaves the server as it was. It never touches the Python environment: `pyproject.toml` and `poetry.lock` are untracked, so the server and the Mac each keep their own, and a new dependency is installed on the server by hand.
+`.github/workflows/deploy.yml` runs on every push to `main` (and by hand from the Actions tab). It SSHes into the server, fast-forwards `/home/jzay/personal_website` to `origin/main`, restarts `personal_website`, and restarts `ear_service` or `attack_target_network` only when their folder under `projects/` changed and the program is already running (a stopped program stays stopped: `restart` would start it). The files the admin pages write (`app/data/portfolio.json`, `app/data/site_settings.json`, the résumé in `app/static/files/`) are untracked, so a pull never meets them; if a pull would still overwrite a file edited on the server, the run fails and leaves the server as it was. It never touches the Python environment: `pyproject.toml` and `poetry.lock` are untracked, so the server and the Mac each keep their own, and a new dependency is installed on the server by hand.
 
 One-time setup:
 
@@ -271,12 +272,12 @@ Run `.venv/bin/python -m unittest discover -s tests -v` for signup, validation, 
    ADMIN_PASSWORD_HASH=pbkdf2:sha256:...
    # Optional fallback for local-only use
    # ADMIN_PASSWORD=your-plain-text-password
-   # Optional: move the portfolio data file
+   # Optional: move the portfolio data file or its seed
    # PORTFOLIO_DATA_PATH=/absolute/path/to/portfolio.json
-   # Optional: site settings storage + theme overrides
+   # PORTFOLIO_SEED_PATH=/absolute/path/to/portfolio.seed.json
+   # Optional: site settings storage
    # SITE_SETTINGS_PATH=/absolute/path/to/site_settings.json
    # SITE_FILES_DIR=/absolute/path/to/app/static/files
-   # SITE_THEME_CSS_PATH=/absolute/path/to/app/static/css/theme.css
    # BLOG_POSTS_DIR=/absolute/path/to/app/blog_posts
    # Optional: upload limits/paths
    # MAX_UPLOAD_MB=6
@@ -289,7 +290,7 @@ Run `.venv/bin/python -m unittest discover -s tests -v` for signup, validation, 
    ```
 
 ## Portfolio Admin
-- Data lives in `app/data/portfolio.json` (configurable via `PORTFOLIO_DATA_PATH`).
+- Data lives in `app/data/portfolio.json` (configurable via `PORTFOLIO_DATA_PATH`), untracked; a missing file starts as a copy of the tracked `app/data/portfolio.seed.json` (see "Editing works on the server").
 - Portfolio items are rendered on the homepage from this JSON store.
 - Add/edit/delete items at `/admin/portfolio`.
 - Uploads are saved to `app/static/img/uploads` with auto-thumbnails in `app/static/img/uploads/thumbs`.
@@ -310,7 +311,6 @@ Run `.venv/bin/python -m unittest discover -s tests -v` for signup, validation, 
 - Home description supports minimal HTML. The homepage no longer shows it; with the HTML stripped it is the site's `<meta name="description">` (search results and link previews).
 - Home background can be uploaded or set as a path relative to `/static` (unused by the TRIBAR homepage).
 - Resume uploads are stored in `app/static/files/` (override with `SITE_FILES_DIR`); `/resume` serves the current filename with a fallback to `resume.pdf`.
-- Theme colors are validated hex values and written to `app/static/css/theme.css` (override with `SITE_THEME_CSS_PATH`), which loads after `base.css`.
 
 ## Admin Integration
 - The admin UI is a standalone blueprint (`/admin`) that uses the same portfolio + site settings stores as the public site.
@@ -346,7 +346,7 @@ app/
     clash_royale/        /will-sucks table + its sync CLI commands
   blog/  portfolio/  site_settings/    the stores (markdown posts, JSON files)
   blog_posts/            the posts, one .md each
-  data/portfolio.json    the works on the homepage
+  data/portfolio.seed.json  the works' seed (the live portfolio.json is untracked)
   templates/
     layout.html          the page every template but home.html extends
     home.html            the homepage scene (standalone)
@@ -358,7 +358,6 @@ app/
   static/
     site/                the design system: tokens.css, site.css, site.js, themes/, works/ (see its README)
     home/                the homepage scene: src/ (ES modules), styles.css, vendor/three-r186/
-    css/theme.css        theme overrides written by /admin/settings
     css/pages/           admin.css, jobs.css (the admin pages)
     js/                  contact.js (contact + support forms), leaderboard.js (game)
     img/  files/  vendor/pdfjs-*/  zaychess/  sonar/
@@ -376,7 +375,7 @@ tests/
 - Adjust `MAIL_*` variables in `.env` or your shell to match your mail provider. The app loads `.env` explicitly from the project root, and `Config` will inject missing keys from `.env` into `os.environ` as a fallback (helps when supervisor/gunicorn starts with a different cwd).
 - For production, set `MAIL_*` in your process manager (e.g., `environment=` in supervisor) if you prefer not to rely on `.env` file loading.
 - Use `poetry run` before commands to ensure the virtualenv is active.
-- The site settings JSON and `theme.css` are created/updated at runtime when you save settings in `/admin/settings`.
+- The site settings JSON is created/updated at runtime when you save settings in `/admin/settings`.
 - The `/ear` demo reads from `ear_data/` by default (dataset, pretrained model, cache). Install the heavy deps manually (`torch`, `torchvision`, `torchaudio`, `Pillow`) and ensure the process user can read/write that folder. Override the location with `EAR_BASE_DIR=/absolute/path/to/ear_data` in your supervisor config if needed.
 
 ## Future Directions
