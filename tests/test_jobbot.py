@@ -244,6 +244,26 @@ class JobBotPageTests(unittest.TestCase):
         rows = self.view(self.client.get("/admin/jobs/?view=skipped").get_data(as_text=True))
         self.assertIn(">Skipped<", rows)
 
+    def test_a_clean_rerun_after_a_failed_submission_goes_back_to_review(self):
+        self.login()
+        failed = {"status": "failed", "updated_at": "2026-10-15T06:34:33+00:00", "problem": {"kind": "changed"}}
+        rerun = dict(JOB, id="j1", company="Rerun", last_attempt="2026-10-15T14:05:35+00:00", submission=failed)
+        stale = dict(JOB, id="j2", company="Stale", last_attempt="2026-10-15T06:27:11+00:00", submission=failed)
+        unconfirmed = dict(JOB, id="j3", company="Unsure", last_attempt="2026-10-15T14:05:35+00:00",
+                           submission=dict(failed, status="unconfirmed"))
+        broken = dict(JOB, id="j4", company="Broken", status="failed", last_attempt="2026-10-15T14:05:35+00:00",
+                      submission=failed)
+        jobs = [rerun, stale, unconfirmed, broken]
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": jobs, "last_pass": None})
+        rows = self.view(self.client.get("/admin/jobs/?show=review").get_data(as_text=True))
+        self.assertIn(">Rerun<", rows)
+        for name in ("Stale", "Unsure", "Broken"):
+            self.assertNotIn(f">{name}<", rows)
+        rows = self.view(self.client.get("/admin/jobs/?show=attention").get_data(as_text=True))
+        for name in ("Stale", "Unsure", "Broken"):
+            self.assertIn(f">{name}<", rows)
+        self.assertNotIn(">Rerun<", rows)
+
     def test_skipped_jobs_have_a_view_of_their_own(self):
         self.login()
         skipped = dict(JOB, id="j1", company="Passed", status="skipped")
