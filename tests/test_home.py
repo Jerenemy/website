@@ -348,6 +348,26 @@ class StoreTests(unittest.TestCase):
         self.assertEqual((first["kind"], first["line"], first["href"]), ("engineering", "l", "/x"))
 
 
+    def test_ranks_stay_unique_when_reordered(self):
+        store = PortfolioStore(str(self.path))
+        for title in ("A", "B", "C", "D"):
+            store.create_item({"title": title})
+        ranks = lambda: [(item["id"], item["sort_order"]) for item in store.list_items(include_unpublished=True)]
+        self.assertEqual(ranks(), [("a", 0), ("b", 1), ("c", 2), ("d", 3)])
+        store.update_item("d", {"sort_order": 1})        # moving up shifts the ones it passes down
+        self.assertEqual(ranks(), [("a", 0), ("d", 1), ("b", 2), ("c", 3)])
+        store.update_item("a", {"sort_order": 2})        # moving down shifts them up
+        self.assertEqual(ranks(), [("d", 0), ("b", 1), ("a", 2), ("c", 3)])
+        store.update_item("c", {"sort_order": 99})       # past the end clamps to last
+        self.assertEqual(ranks(), [("d", 0), ("b", 1), ("a", 2), ("c", 3)])
+        store.create_item({"title": "E", "sort_order": 0})
+        self.assertEqual(ranks(), [("e", 0), ("d", 1), ("b", 2), ("a", 3), ("c", 4)])
+        store.delete_item("b")
+        self.assertEqual(ranks(), [("e", 0), ("d", 1), ("a", 2), ("c", 3)])
+        store.update_item("a", {"title": "A2"})           # no rank given: order untouched
+        self.assertEqual(ranks(), [("e", 0), ("d", 1), ("a", 2), ("c", 3)])
+
+
 class AdminTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -367,7 +387,7 @@ class AdminTests(unittest.TestCase):
 
     def post(self, path, **fields):
         form = {"csrf_token": "token", "title": "Tribar", "kind": "engineering",
-                "line": "  A Penrose tribar  you can walk ", "href": "/blog/tribar", "sort_order": "10",
+                "line": "  A Penrose tribar  you can walk ", "href": "/blog/tribar", "sort_order": "",
                 "is_published": "on", "auto_thumbnail": "on"}
         form.update(fields)
         return self.client.post(path, data=form)

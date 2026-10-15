@@ -112,9 +112,9 @@ class PortfolioStore:
             ).to_dict()
 
             items.append(item)
-            data["items"] = items
+            data["items"] = _rerank(items, item["id"], item["sort_order"])
             self._write(data)
-            return item
+            return next(i for i in data["items"] if i["id"] == item["id"])
 
     def update_item(self, item_id: str, payload: dict) -> dict | None:
         with _STORE_LOCK:
@@ -150,6 +150,9 @@ class PortfolioStore:
             if updated_item is None:
                 return None
 
+            if payload.get("sort_order") is not None:
+                items = _rerank(items, item_id, updated_item["sort_order"])
+                updated_item = next(i for i in items if i["id"] == item_id)
             data["items"] = items
             self._write(data)
             return updated_item
@@ -161,7 +164,7 @@ class PortfolioStore:
             filtered = [item for item in items if item.get("id") != item_id]
             if len(filtered) == len(items):
                 return False
-            data["items"] = filtered
+            data["items"] = _rerank(filtered)
             self._write(data)
             return True
 
@@ -178,9 +181,7 @@ class PortfolioStore:
         return candidate
 
     def _next_sort_order(self, items: list[dict]) -> int:
-        if not items:
-            return 0
-        return max(int(item.get("sort_order", 0)) for item in items) + 1
+        return len(items)
 
     def _ensure_data_file(self) -> None:
         if not self._path.exists():
@@ -198,6 +199,19 @@ class PortfolioStore:
         temp_path = self._path.with_suffix(".tmp")
         temp_path.write_text(serialized, encoding="utf-8")
         temp_path.replace(self._path)
+
+
+def _rerank(items: list[dict], moved_id: str | None = None, position: int = 0) -> list[dict]:
+    """Every item gets a distinct rank 0..n-1 in its current order. The moved item lands at
+    `position` (clamped to the ends) and the others shift around it, so no two share a rank."""
+    order = sorted(range(len(items)), key=lambda i: (int(items[i].get("sort_order", 0)), i))
+    ordered = [items[i] for i in order if items[i].get("id") != moved_id]
+    if moved_id is not None:
+        moved = next(item for item in items if item.get("id") == moved_id)
+        ordered.insert(max(0, min(int(position), len(ordered))), moved)
+    for rank, item in enumerate(ordered):
+        item["sort_order"] = rank
+    return ordered
 
 
 def _timestamp() -> str:
