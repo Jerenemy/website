@@ -10,8 +10,8 @@
 
   {% call ui.sect("01", "About") %}
     <div class="prose">
-      <p class="lede">Zaychess is a local-first macOS chess app with hot-seat play, a built-in AI opponent (the Serendipity engine) and online multiplayer through a relay matchmaking server.</p>
-      <p>Save and load games as <code>.chesslog</code> files, then continue them against either a human player or the AI.</p>
+      <p class="lede">Zaychess is a macOS chess app. You can play a friend on the same Mac, play the built-in AI (the Serendipity engine), or find an opponent online through a relay matchmaking server.</p>
+      <p>Games save as <code>.chesslog</code> files, and you can pick a saved game back up against a person or the AI.</p>
     </div>
   {% endcall %}
 
@@ -24,14 +24,14 @@
     </dl>
   {% endcall %}
 
-  {% call ui.sect("03", "Key features") %}
+  {% call ui.sect("03", "Features") %}
     <div class="prose">
       <ul>
         <li>Local hot-seat play with automatic board flipping, SAN move list and captured piece tracking.</li>
         <li>Play against the Serendipity AI with adjustable difficulty and style-biased lower levels.</li>
         <li>Queue for online multiplayer through the relay server.</li>
         <li>Save and load <code>.chesslog</code> games, then continue the same position against a human or the AI.</li>
-        <li>Undo and redo that handle AI turns correctly.</li>
+        <li>Undo and redo, including in games against the AI.</li>
       </ul>
     </div>
   {% endcall %}

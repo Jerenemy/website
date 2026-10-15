@@ -7,7 +7,7 @@
   {{ sonar.sonar_head('public.sonar_support', title="Support") }}
 
   {% call ui.sect("01", "Quick help", id="quick-help") %}
-    <h2 class="sect__title">The most common issues, first.</h2>
+    <h2 class="sect__title">Common issues</h2>
     <ol class="points">
       <li><span class="no">01</span><h3>Account access</h3><p>Confirm the username or email tied to your account, check for typos, and try signing in again on a stable network connection.</p></li>
       <li><span class="no">02</span><h3>Podcast search</h3><p>Sonar uses the open Podcast Index catalog. If a show or episode is missing, include the podcast title and RSS feed URL in your request.</p></li>
@@ -16,13 +16,13 @@
   {% endcall %}
 
   {% call ui.sect("02", "Contact", id="contact") %}
-    <h2 class="sect__title">Send the details that help fix it.</h2>
+    <h2 class="sect__title">What to include</h2>
     <div class="prose">
-      <p>For account, search, sync, rating, review, or feed issues, include enough context to reproduce what happened:</p>
+      <p>Whatever the problem, it helps to send enough detail to reproduce it:</p>
       <ol>
-        <li><strong>Your account:</strong> Sonar username and the email address you use to sign in.</li>
-        <li><strong>Your device:</strong> iPhone model, iOS version, and Sonar app version if available.</li>
-        <li><strong>The issue:</strong> Podcast name, episode title, screenshots, and the exact action that failed.</li>
+        <li>Your Sonar username and the email address you sign in with.</li>
+        <li>Your iPhone model, iOS version, and Sonar version if you know it.</li>
+        <li>The podcast and episode involved, screenshots, and exactly what you did when it failed.</li>
       </ol>
     </div>
   {% endcall %}

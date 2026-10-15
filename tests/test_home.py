@@ -301,7 +301,7 @@ class HomeTests(unittest.TestCase):
             self.assertEqual(send.call_count, 1)
             self.assertIn("From: Ada <ada@example.com>", send.call_args[0][0].body)
             page = self.client.get("/contact?status=sent").text
-            self.assertIn('aria-live="polite">Message sent successfully!</p>', page)
+            self.assertIn('aria-live="polite">Message sent. Thanks!</p>', page)
             response = self.client.post("/api/contact", data={**fields, "message": ""})
             self.assertEqual((response.status_code, response.headers["Location"]), (303, "/contact?status=missing"))
             # A bot fills the hidden field: told it went, nothing is sent.
