@@ -419,6 +419,9 @@ p.jans__err { margin: 0 0 var(--s2); }
 .jresume__line { margin-bottom: var(--s1); color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
 .jresume__label { margin-right: var(--s1); color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
 .jresume__was { color: var(--ink-3); }
+.jresume__asks { margin: 0 0 var(--s2); }
+.jresume__asks ul { margin: 4px 0 var(--s2); padding-left: 1.2em; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jresume__asks .jresume__note { margin: 0; }
 .jdiffs { margin: var(--s2) 0; padding: 0; list-style: none; border-bottom: 1px solid var(--rule); }
 .jdiff { display: grid; gap: 4px; padding: var(--s2) 0; border-top: 1px solid var(--rule); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
 .jdiff__where { color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); text-transform: uppercase; }
