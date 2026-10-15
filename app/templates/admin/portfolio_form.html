@@ -44,7 +44,7 @@
       <div class="field">
         <label for="sort_order">Sort order</label>
         <input type="number" id="sort_order" name="sort_order" value="{{ item.sort_order | e }}">
-        <p class="note">Lower numbers come first, on the homepage loop as in the list.</p>
+        <p class="note">Lower numbers come first, on the homepage loop as in the list. Saving moves the other works up or down so no two share a number.</p>
       </div>
       <label class="check">
         <input type="checkbox" name="is_published" {% if item.is_published %}checked{% endif %}>
