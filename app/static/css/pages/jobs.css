@@ -191,6 +191,10 @@ a.jrow__mail:hover, a.jrow__mail:focus-visible { color: var(--ink); text-decorat
 .jobs__badge--active::before, .jobs__badge--queued::before, .jobs__badge--running::before, .jobs__badge--retry::before { border-color: var(--ink-2); border-radius: 50%; }
 /* Done. */
 .jobs__badge--applied, .jobs__badge--other, .jobs__badge--closed, .jobs__badge--blocked, .jobs__badge--skipped, .jobs__badge--cancelled { color: var(--ink-3); }
+/* Triage's answers: what still needs you in ink, the rest quiet. */
+.jobs__badge--triage-failed, .jobs__badge--triage-fix_open, .jobs__badge--triage-fixed { color: var(--ink); }
+.jobs__badge--triage-failed::before, .jobs__badge--triage-fix_open::before, .jobs__badge--triage-fixed::before { background: var(--ink); border-color: var(--ink); }
+.jobs__badge--triage-rerun, .jobs__badge--triage-no_change, .jobs__badge--triage-blocked, .jobs__badge--triage-cancelled { color: var(--ink-3); }
 /* Stages: good news filled in ink, waiting hollow, rejected quiet. */
 .jobs__badge--stage-offer, .jobs__badge--stage-interviewing { color: var(--ink); }
 .jobs__badge--stage-offer::before, .jobs__badge--stage-interviewing::before { background: var(--ink); border-color: var(--ink); }
@@ -316,12 +320,19 @@ p.jans__err { margin: 0 0 var(--s2); }
 
 /* The conversation: who spoke in the margin, what they said beside it. */
 .jmsgs { margin: 0 0 var(--s2); padding: 0; list-style: none; }
-.jmsg { display: grid; grid-template-columns: 4ch minmax(0, 1fr); column-gap: var(--s2); align-items: baseline; padding: var(--s1) 0; font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
+.jmsg { display: grid; grid-template-columns: 8ch minmax(0, 1fr); column-gap: var(--s2); align-items: baseline; padding: var(--s1) 0; font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
 .jmsg--you { border-top: 1px solid var(--rule); color: var(--ink); }
 .jmsg--you .jmsg__text { white-space: pre-wrap; }
 .jmsg--bot { color: var(--ink-2); padding-top: 0; }
-.jmsg__who { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jmsg__who { white-space: nowrap; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
 .jmsg--bot .jobs__badge { margin-right: var(--s1); }
+/* When each message and answer happened, under it. */
+.jmsg .jtime { grid-column: 2; color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); }
+.jmsg--triage .jmsg__text { color: var(--ink-2); }
+.jtriage .jobs__badge { margin-right: var(--s1); }
+.jtriage__ran { display: block; margin-top: 4px; color: var(--ink-3); }
+.jtriage > .jchat__send { justify-content: flex-start; }
+.jalert__when { color: var(--ink-3); }
 .jchanges { margin: var(--s1) 0 0; padding: 0; list-style: none; }
 .jchanges li + li { margin-top: 4px; }
 .jchanges strong { display: block; color: var(--ink); font-weight: var(--strong-weight); }

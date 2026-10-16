@@ -13,7 +13,7 @@
 {#- One application in a list: the whole row opens it; what is in it (a code, a stage) works in place. -#}
 {% macro row(job, here) -%}
 {%- set sub = job.submission or {} -%}
-<li class="jrow{% if job.stage %} jrow--sent jrow--{{ job.stage.key }}{% endif %}" data-search="{{ [job.company, job.title, job.reason, job.ats] | select | join(' ') | lower }}">
+<li class="jrow{% if job.stage %} jrow--sent jrow--{{ job.stage.key }}{% endif %}" data-search="{{ [job.company, job.title, job.reason, job.ats, (job.your_note or {}).text] | select | join(' ') | lower }}">
   <a class="jrow__main" href="{{ url_for('jobbot.job_detail', job_id=job.id) }}">
     <span class="jrow__company{% if not job.company %} jrow__company--none{% endif %}">{{ job.company or "Unknown company" }}</span>
     <span class="jrow__title">{{ job.title or "Untitled role" }}</span>
@@ -39,6 +39,7 @@
       {{ jobs.queue_badge(job) }}
       {%- if job.missing_required and job.category == "review" %}<span class="jobs__badge jobs__badge--attention">{{ job.missing_required | length }} unanswered</span>{% endif %}
       {%- if job.reason %}<span class="jrow__reason">{{ job.reason }}</span>{% endif %}
+      {%- if job.your_note %}<span class="jrow__note" title="{{ job.your_note.text }}">Note: {{ job.your_note.text | truncate(60) }}</span>{% endif %}
     </div>
     {%- if sub.status == "needs_code" %}
       <div class="jrow__act">{{ jobs.code_form(job, here) }}</div>

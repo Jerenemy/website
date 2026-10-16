@@ -19,6 +19,12 @@
 {%- if value %}<time datetime="{{ value }}" title="{{ value | jobbot_time }}">{{ value | jobbot_ago }}</time>{% endif -%}
 {%- endmacro %}
 
+{#- When something happened, as a date and time (the reader's own time zone once the page's script runs; UTC
+    without it), how long ago on hover. -#}
+{% macro at(value) -%}
+{%- if value %}<time class="jtime" datetime="{{ value }}" title="{{ value | jobbot_ago }}" data-local>{{ value | jobbot_time }}</time>{% endif -%}
+{%- endmacro %}
+
 {#- A job in the bot's queue, as one state: what it needs from you, if anything. -#}
 {% macro queue_badge(job) -%}
 {%- set sub = job.submission or {} -%}
@@ -77,6 +83,12 @@
   });
   document.querySelectorAll("form[data-confirm]").forEach((form) => {
     form.addEventListener("submit", (event) => { if (!confirm(form.dataset.confirm)) event.preventDefault(); });
+  });
+  // Times in the reader's own zone: "Oct 16, 4:03 PM".
+  const local = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  document.querySelectorAll("time[data-local]").forEach((time) => {
+    const moment = new Date(time.getAttribute("datetime"));
+    if (!isNaN(moment)) time.textContent = local.format(moment);
   });
   // A form posts once: its button says so while the page goes.
   document.querySelectorAll("form[method=post]").forEach((form) => {

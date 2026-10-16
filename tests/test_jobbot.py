@@ -541,6 +541,86 @@ class JobBotPageTests(unittest.TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertIn("not configured", response.get_data(as_text=True))
 
+    def test_chat_messages_show_when_they_happened(self):
+        self.login()
+        edits = [
+            {"id": "e1", "message": "make it shorter", "status": "done", "reply": "Shortened it.", "changes": [],
+             "created_at": "2026-10-07T09:00:00+00:00", "updated_at": "2026-10-07T09:04:00+00:00"},
+            {"id": "e2", "message": "/rerun triage", "by": "triage", "rerun": True, "status": "done", "reply": "Ran again.",
+             "changes": [], "created_at": "2026-10-08T10:00:00+00:00", "updated_at": "2026-10-08T10:05:00+00:00"},
+        ]
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, edits=edits)})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        chat = page.split('id="chat-name"')[1].split("</section>")[0]
+        self.assertIn('datetime="2026-10-07T09:00:00+00:00"', chat)  # you asked
+        self.assertIn("Oct 07, 09:04 UTC", chat)  # the bot answered
+        self.assertIn(">Triage</span>", chat)  # a rerun triage queued says so
+        self.assertIn("Reran the job to check a fix", chat)
+        self.assertNotIn("/rerun triage", chat)
+
+    def test_a_note_is_shown_and_saved(self):
+        self.login()
+        job = dict(DETAIL, your_note={"text": "referred by Sam", "updated_at": "2026-10-07T09:00:00+00:00"})
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": job})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn(">referred by Sam</textarea>", page)
+        self.responses[("POST", "/api/jobs/url%3Aabc123/note")] = FakeResponse(payload={"job": job})
+        response = self.client.post("/admin/jobs/url:abc123/note", data={"csrf_token": "csrf", "note": " call Friday "})
+        self.assertTrue(response.headers["Location"].endswith("/admin/jobs/url:abc123#note"))
+        self.assertEqual(self.calls[-1][:3], ("POST", "http://bot.test/api/jobs/url%3Aabc123/note", {"note": "call Friday"}))
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": [dict(JOB, your_note=job["your_note"])]})
+        self.assertIn("Note: referred by Sam", self.client.get("/admin/jobs/?view=review").get_data(as_text=True))
+
+    def test_asking_triage_about_a_job_and_withdrawing(self):
+        self.login()
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": DETAIL})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn('action="/admin/jobs/url:abc123/triage"', page)
+        self.responses[("POST", "/api/jobs/url%3Aabc123/triage")] = FakeResponse(202, {"job": DETAIL})
+        response = self.client.post("/admin/jobs/url:abc123/triage", data={"csrf_token": "csrf", "request": "salary is wrong"})
+        self.assertTrue(response.headers["Location"].endswith("/admin/jobs/url:abc123#triage"))
+        self.assertEqual(self.calls[-1][:3], ("POST", "http://bot.test/api/jobs/url%3Aabc123/triage", {"message": "salary is wrong"}))
+
+        asked = {"id": "t1", "requested": True, "message": "salary is wrong", "status": "queued", "outcome": None,
+                 "reply": None, "pr": None, "tries": 0, "created_at": "2026-10-07T09:00:00+00:00", "picked_at": None,
+                 "resolved_at": None, "reran": False, "action": None}
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, triage=asked, triage_history=[asked])})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn("Waiting for the next run", page)
+        self.assertIn("Waiting for triage", page)
+        self.assertIn('data-watching="true"', page)  # the page checks back for triage's answer
+        self.assertNotIn('action="/admin/jobs/url:abc123/triage"', page)  # one request at a time
+        self.assertIn('action="/admin/jobs/url:abc123/triage-cancel"', page)
+        self.responses[("POST", "/api/jobs/url%3Aabc123/triage/cancel")] = FakeResponse(payload={"job": DETAIL})
+        self.client.post("/admin/jobs/url:abc123/triage-cancel", data={"csrf_token": "csrf"})
+        self.assertEqual(self.calls[-1][:2], ("POST", "http://bot.test/api/jobs/url%3Aabc123/triage/cancel"))
+
+    def test_what_triage_left_for_you_is_up_front(self):
+        self.login()
+        done = {"id": "t1", "requested": True, "message": "salary is wrong", "status": "done", "outcome": "fixed",
+                "reply": "The salary rule read the range wrong.", "pr": "https://github.com/x/getmeajob/pull/9", "tries": 1,
+                "created_at": "2026-10-07T09:00:00+00:00", "picked_at": "2026-10-07T09:10:00+00:00",
+                "resolved_at": "2026-10-07T09:40:00+00:00", "reran": False, "action": "rerun"}
+        failed_job = dict(JOB, id="j2", company="Beta", triage=dict(done, outcome="failed", action="failed"))
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, triage=done, triage_history=[done])})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        alert = page.split('id="triage-alert"')[1].split("</div>\n      </div>")[0]
+        self.assertIn("Triage fixed it but didn&#39;t rerun it", alert)
+        self.assertIn('action="/admin/jobs/url:abc123/rerun"', alert)
+        self.assertIn("The job hasn't run since.", page)
+        self.assertIn("Fixed, not rerun", page)
+
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": [dict(JOB, triage=done), failed_job]})
+        rows = self.view(self.client.get("/admin/jobs/?view=triage").get_data(as_text=True))
+        self.assertIn("Triage fixed it but didn&#39;t rerun it: rerun it", rows)
+        self.assertIn("Triage couldn&#39;t fix it", rows)
+
+        reran = dict(done, outcome="rerun", reran=True, action=None)
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, triage=reran, triage_history=[reran])})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertNotIn('id="triage-alert"', page)
+        self.assertIn("The job ran again", page)
+
 
 if __name__ == "__main__":
     unittest.main()
