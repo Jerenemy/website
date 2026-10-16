@@ -32,6 +32,7 @@
           {%- elif mode == "closed" %}<span class="jobs__badge jobs__badge--closed">Closed</span>
           {%- else %}<span class="jobs__badge jobs__badge--{{ job.status }}">{{ job.status | jobbot_status }}</span>{% endif %}
           {%- if job.missing_required %}<span class="jobs__badge jobs__badge--attention">{{ job.missing_required | length }} unanswered</span>{% endif %}
+          {%- if triage.status in ("queued", "working") %}<a class="jobs__badge jobs__badge--{{ 'running' if triage.status == 'working' else 'queued' }}" href="#triage">{{ "Triage is looking at it" if triage.status == "working" else "Waiting for triage" }}</a>{% endif %}
           {%- if job.ats %}<span>{{ job.ats }}</span>{% endif %}
           {%- if job.last_attempt %}<span>Last run {{ jobs.ago(job.last_attempt) }}</span>{% endif %}
           <a class="link" href="{{ job.url }}" target="_blank" rel="noopener">Job posting<span class="sr"> (opens in a new tab)</span> ↗</a>
@@ -54,7 +55,7 @@
   </header>
   {{ admin.nav("jobs") }}
 
-  <div class="japp" id="job-status" data-active="{{ 'true' if active else 'false' }}"
+  <div class="japp" id="job-status" data-active="{{ 'true' if active else 'false' }}" data-watching="{{ 'true' if watching else 'false' }}"
        data-status-url="{{ url_for('jobbot.job_status', job_id=job.id) }}" data-current="{{ signature }}">
     {% include "admin/_flash.html" %}
 
@@ -91,6 +92,26 @@
         {%- if problem.detail and problem.detail != problem.title %}
           <details class="jalert__more"><summary>Details</summary><pre>{{ problem.detail }}</pre></details>
         {%- endif %}
+      </div>
+    {% endif %}
+    {#- What triage left for you: merge its fix, rerun the job, or know it couldn't fix it. -#}
+    {% if triage.action and mode not in ("working", "code") %}
+      <div class="jalert jalert--error" id="triage-alert">
+        <p class="jalert__title"><span class="jalert__tag">Triage</span>
+          {%- if triage.action == "rerun" and triage.outcome == "rerun" %}Triage says it reran this, but the job hasn't run since
+          {%- else %}{{ triage_actions[triage.action] }}{% endif %}</p>
+        <p class="jalert__text">
+          {%- if triage.reply %}{{ triage.reply }} {% endif %}
+          {%- if triage.action == "merge" %}Merge the PR, wait for it to deploy, then rerun this job.
+          {%- elif triage.action == "rerun" %}Rerun it to see the fix work.
+          {%- elif triage.action == "rerun_failed" %}See the problem above, then rerun it or ask triage again.
+          {%- else %}Fix it in the chat, rerun it, or ask triage again.{% endif %}
+          {%- if triage.resolved_at %} <span class="jalert__when">Triage answered {{ jobs.at(triage.resolved_at) }}.</span>{% endif %}</p>
+        <div class="jalert__act jactions">
+          {%- if triage.action == "merge" and triage.pr %}<a class="jbtn jbtn--ghost" href="{{ triage.pr }}" target="_blank" rel="noopener">Open the PR<span class="sr"> (opens in a new tab)</span> ↗</a>{% endif %}
+          {%- if job.status != "applied" and not active %}{{ jobs.post("rerun", job, "Rerun now", "ghost" if triage.action == "merge" else "primary") }}{% endif %}
+          {%- if triage.action in ("failed", "rerun_failed") %}<a class="jbtn jbtn--ghost" href="#triage">Ask triage again</a>{% endif %}
+        </div>
       </div>
     {% endif %}
     {% if job.missing_required %}
@@ -276,6 +297,18 @@
       </div>
 
       <aside class="jdetail__aside">
+        {#- Your own note on the application: for you, and context for triage when it looks at the job. -#}
+        <section class="jpanel jnote" id="note" aria-labelledby="note-name">
+          <header class="jpanel__head"><h2 class="jpanel__name" id="note-name">Your note</h2>
+            {%- if job.your_note %}<span class="jpanel__aside">Saved {{ jobs.at(job.your_note.updated_at) }}</span>{% endif %}</header>
+          <form class="jchat__form" method="post" action="{{ url_for('jobbot.job_note', job_id=job.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label class="sr" for="note-text">Your note on this application</label>
+            <textarea id="note-text" name="note" rows="2" maxlength="4000" placeholder="e.g. referred by Sam; follow up after Oct 20">{{ job.your_note.text if job.your_note else "" }}</textarea>
+            <div class="jchat__send"><span class="jchat__hint">Triage reads it too</span><button class="jbtn jbtn--ghost jbtn--small" type="submit">Save note</button></div>
+          </form>
+        </section>
+
         {#- Changes, asked in words: the bot rewrites the answers and fills the form again. -#}
         {% if can_chat or edits %}
         <section class="jpanel jchat" id="chat" aria-labelledby="chat-name">
@@ -283,7 +316,9 @@
           {% if edits %}
             <ol class="jmsgs">
               {% for edit in edits %}
-                <li class="jmsg jmsg--you"><span class="jmsg__who">You</span><div class="jmsg__text">{{ edit.message }}</div></li>
+                {%- set by_triage = edit.by == "triage" %}
+                <li class="jmsg jmsg--you{% if by_triage %} jmsg--triage{% endif %}"><span class="jmsg__who">{{ "Triage" if by_triage else "You" }}</span><div class="jmsg__text">
+                  {%- if by_triage %}Reran the job to check a fix{% elif edit.rerun %}Rerun{% else %}{{ edit.message }}{% endif %}</div>{{ jobs.at(edit.created_at) }}</li>
                 <li class="jmsg jmsg--bot"><span class="jmsg__who">Bot</span><div class="jmsg__text">
                   {% if edit.status in ("queued", "running") %}
                     <span class="jobs__badge jobs__badge--running"><span class="jspin" aria-hidden="true"></span>{{ "Working on it" if edit.status == "running" else "Queued" }}</span>
@@ -302,7 +337,7 @@
                       </ul>
                     {% endif %}
                   {% endif %}
-                </div></li>
+                </div>{% if edit.status not in ("queued", "running") %}{{ jobs.at(edit.updated_at) }}{% endif %}</li>
               {% endfor %}
             </ol>
           {% endif %}
@@ -316,6 +351,50 @@
             </form>
           {% elif not editing and job.status not in ("dry_run_ok", "failed") %}
             <p class="jempty">Only dry runs that haven't been submitted can be changed.</p>
+          {% endif %}
+        </section>
+        {% endif %}
+
+        {#- The triage agent on this job: what you asked, what it did, and whether the job ran again since. -#}
+        {% set history = job.triage_history or [] %}
+        {% if history or can_ask_triage %}
+        <section class="jpanel jtriage" id="triage" aria-labelledby="triage-name">
+          <header class="jpanel__head"><h2 class="jpanel__name" id="triage-name">Triage</h2></header>
+          {% if history %}
+            <ol class="jmsgs">
+              {% for t in history %}
+                {% if t.requested %}
+                  <li class="jmsg jmsg--you"><span class="jmsg__who">You</span><div class="jmsg__text">{{ t.message }}</div>{{ jobs.at(t.created_at) }}</li>
+                {% endif %}
+                <li class="jmsg {{ 'jmsg--bot' if t.requested else 'jmsg--you' }}"><span class="jmsg__who">Triage</span><div class="jmsg__text">
+                  {%- if t.status == "queued" %}
+                    <span class="jobs__badge jobs__badge--queued">Waiting for the next run</span>
+                    {%- if t.reply %} {{ t.reply }}{% endif %}
+                  {%- elif t.status == "working" %}
+                    <span class="jobs__badge jobs__badge--running"><span class="jspin" aria-hidden="true"></span>Working on it</span>
+                    {%- if t.tries > 1 %} Try {{ t.tries }}: the last run stopped before finishing.{% endif %}
+                  {%- else %}
+                    <span class="jobs__badge jobs__badge--triage-{{ t.outcome }}">{{ t.outcome | jobbot_triage_outcome }}</span> {{ t.reply or "" }}
+                    {%- if t.pr %} <a class="link" href="{{ t.pr }}" target="_blank" rel="noopener">The PR<span class="sr"> (opens in a new tab)</span> ↗</a>{% endif %}
+                    {%- if loop.last and t.outcome not in ("cancelled", "blocked") %}
+                      <span class="jtriage__ran">
+                        {%- if t.reran %}The job ran again {{ jobs.ago(job.last_attempt) }}: {{ job.status | jobbot_status }}.
+                        {%- elif t.outcome != "no_change" %}The job hasn't run since.{% endif %}</span>
+                    {%- endif %}
+                  {%- endif %}</div>
+                  {{- jobs.at(t.resolved_at if t.status == "done" else (t.picked_at if t.status == "working" else (t.updated_at if t.reply else none))) }}</li>
+              {% endfor %}
+            </ol>
+          {% endif %}
+          {% if can_ask_triage %}
+            <form class="jchat__form" method="post" action="{{ url_for('jobbot.job_triage', job_id=job.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <label class="sr" for="triage-message">What should triage look at?</label>
+              <textarea id="triage-message" name="request" rows="2" maxlength="2000" placeholder="e.g. the salary answer is wrong, or why did this fail?"></textarea>
+              <div class="jchat__send"><span class="jchat__hint">The next triage run takes it, on top of its usual review</span><button class="jbtn jbtn--ghost jbtn--small" type="submit">Ask triage</button></div>
+            </form>
+          {% elif triage.status == "queued" %}
+            <div class="jchat__send">{{ jobs.post("triage_cancel", job, "Withdraw the request", "quiet") }}</div>
           {% endif %}
         </section>
         {% endif %}
@@ -395,7 +474,8 @@
 <script>
   (function () {
     const box = document.getElementById("job-status");
-    if (!box || box.dataset.active !== "true") return;
+    // While the bot works, check every few seconds; while triage has the job (it can take an hour), now and then.
+    if (!box || (box.dataset.active !== "true" && box.dataset.watching !== "true")) return;
     const check = () => fetch(box.dataset.statusUrl, { credentials: "same-origin", cache: "no-store" })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
@@ -405,7 +485,7 @@
         window.location.href = window.location.pathname + "?updated=" + Date.now();
       })
       .catch(() => {});
-    setInterval(check, 3000);
+    setInterval(check, box.dataset.active === "true" ? 3000 : 30000);
   })();
 </script>
 {% endblock %}

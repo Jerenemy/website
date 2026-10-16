@@ -30,6 +30,7 @@ VIEWS = {
     "codes": ("Codes to enter", "you"),
     "review": ("Ready to review", "you"),
     "attention": ("Needs attention", "you"),
+    "triage": ("Triage needs you", "you"),
     "sort": ("Emails to sort", "you"),
     "blocked": ("Apply yourself", "you"),
     "offer": ("Offers", "sent"),
@@ -44,7 +45,7 @@ VIEWS = {
 }
 VIEW_GROUPS = {"you": "Needs you", "sent": "Sent", "bot": "Bot"}
 # The first of these with anything in it is where the list opens.
-DEFAULT_VIEWS = ("codes", "review", "attention", "sort")
+DEFAULT_VIEWS = ("codes", "review", "attention", "triage", "sort")
 
 
 class JobBotError(Exception):
@@ -84,11 +85,20 @@ def _job_path(job_id, suffix=""):
 
 
 def _signature(job):
-    """Changes whenever the page should reload: job status, submission status, latest edit status."""
+    """Changes whenever the page should reload: job status, submission status, latest edit status, triage status."""
     sub = job.get("submission") or {}
     edits = job.get("edits") or []
     last = edits[-1] if edits else {}
-    return "|".join([job.get("status") or "", sub.get("status") or "", last.get("id") or "", last.get("status") or ""])
+    parts = [job.get("status") or "", sub.get("status") or "", last.get("id") or "", last.get("status") or ""]
+    triage = job.get("triage")
+    if triage:
+        parts.append(f"{triage.get('id')}:{triage.get('status')}")
+    return "|".join(parts)
+
+
+def _triage_waiting(job):
+    """Triage has this job, asked by you, and hasn't answered yet."""
+    return (job.get("triage") or {}).get("status") in ("queued", "working")
 
 
 def _rerun_since(job, sub):
@@ -163,6 +173,30 @@ EMAIL_KINDS = {
     "offer": "Offer",
     "company": "From the company",
 }
+
+
+# How the triage agent's look at a job ended (its `outcome`), in a few words.
+TRIAGE_OUTCOMES = {
+    "rerun": "Fixed and reran",
+    "fixed": "Fixed, not rerun",
+    "fix_open": "Fix waiting in a PR",
+    "no_change": "Nothing to fix",
+    "blocked": "Apply yourself",
+    "failed": "Couldn't fix",
+    "cancelled": "Withdrawn",
+}
+# What triage left for you to do (its `action`), as a line for the list and the job's head.
+TRIAGE_ACTIONS = {
+    "merge": "Triage's fix waits in a PR: merge it, then rerun",
+    "rerun": "Triage fixed it but didn't rerun it: rerun it",
+    "failed": "Triage couldn't fix it",
+    "rerun_failed": "Triage fixed it, but the rerun failed",
+}
+
+
+@bp.app_template_filter("jobbot_triage_outcome")
+def jobbot_triage_outcome(value):
+    return TRIAGE_OUTCOMES.get(value, str(value or "").replace("_", " ").capitalize())
 
 
 @bp.app_template_filter("jobbot_email_kind")
@@ -289,12 +323,19 @@ def _reason(job):
     sub = job.get("submission") or {}
     status = sub.get("status")
     problem = sub.get("problem") or job.get("problem") or {}
+    triage = job.get("triage") or {}
     if status == "needs_code":
         return "Waiting for the code the company emailed you"
     if status in ("queued", "running"):
         return "Submitting now" if status == "running" else "Queued to submit"
     if job.get("editing"):
         return "Changing the answers"
+    if triage.get("action") in TRIAGE_ACTIONS:
+        return TRIAGE_ACTIONS[triage["action"]]
+    if triage.get("status") == "working":
+        return "Triage is looking at it"
+    if triage.get("status") == "queued":
+        return "Waiting for the next triage run"
     if job["status"] == "retry":
         retry = job.get("retry") or {}
         when = jobbot_ago(retry.get("next_at")) if retry.get("next_at") else ""
@@ -343,6 +384,7 @@ def job_list():
     members = {"codes": waiting, "sort": unsorted, "sent": tracked, "all": queue}
     for key in ("review", "attention", "blocked", "active", "closed", "skipped"):
         members[key] = [job for job in queue if job["category"] == key]
+    members["triage"] = [job for job in jobs if (job.get("triage") or {}).get("action")]
     for key in STAGES:
         members[key] = [job for job in tracked if job["stage"]["key"] == key]
     counts = {key: len(members[key]) for key in VIEWS}
@@ -394,8 +436,12 @@ def job_detail(job_id):
         "issues": sum(1 for f in fields if not f.get("ok", True)),
         "edited": sum(1 for f in fields if (f.get("label"), f.get("education_index")) in edited),
     }
+    triage = job.get("triage") or {}
+    can_ask_triage = job["status"] != "applied" and not _triage_waiting(job)
     return render_template("admin/job_detail.html", job=job, sub=sub, active=busy, editing=editing, stages=STAGES,
                            mode=_mode(job, sub, editing), tally=tally, reason=_reason(job),
+                           triage=triage, triage_actions=TRIAGE_ACTIONS, can_ask_triage=can_ask_triage,
+                           watching=_triage_waiting(job),
                            can_submit=can_submit, can_chat=can_chat, edits=edits, edited=edited,
                            signature=_signature(job), needs_force=sub.get("status") == "unconfirmed",
                            csrf_token=_csrf_token())
@@ -433,7 +479,7 @@ def job_status(job_id):
     except JobBotError as error:
         return jsonify({"error": error.message}), error.status
     return jsonify({"status": job["status"], "submission": job.get("submission"), "editing": bool(job.get("editing")),
-                    "signature": _signature(job)})
+                    "triage": job.get("triage"), "signature": _signature(job)})
 
 
 def _action(job_id, action, payload, success, anchor=""):
@@ -527,3 +573,32 @@ def job_skip(job_id):
 def job_rerun(job_id):
     return _action(job_id, "rerun", {},
                    "Rerun queued: the bot is filling the form again with its current code.", anchor="#chat")
+
+
+@bp.post("/<path:job_id>/note")
+@admin_required
+def job_note(job_id):
+    note = request.form.get("note", "").strip()
+    return _action(job_id, "note", {"note": note}, "Note saved." if note else "Note deleted.", anchor="#note")
+
+
+@bp.post("/<path:job_id>/triage")
+@admin_required
+def job_triage(job_id):
+    return _action(job_id, "triage", {"message": request.form.get("request", "").strip()},
+                   "Sent to triage. The next triage run picks it up, apart from its regular review.",
+                   anchor="#triage")
+
+
+@bp.post("/<path:job_id>/triage-cancel")
+@admin_required
+def job_triage_cancel(job_id):
+    try:
+        if _validate_csrf(request.form.get("csrf_token")):
+            _api("POST", _job_path(job_id, "/triage/cancel"), {})
+            flash("Request withdrawn.", "success")
+        else:
+            flash("Invalid or missing CSRF token.", "error")
+    except JobBotError as error:
+        flash(error.message, "error")
+    return redirect(_back(url_for("jobbot.job_detail", job_id=job_id) + "#triage"))
