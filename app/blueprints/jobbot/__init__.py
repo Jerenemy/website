@@ -101,11 +101,16 @@ def _triage_waiting(job):
     return (job.get("triage") or {}).get("status") in ("queued", "working")
 
 
+def _fromiso(value):
+    """A time from the bot's API ("2026-10-19T12:00:00Z"); ValueError when it is not one."""
+    return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+
+
 def _rerun_since(job, sub):
     """The job was dry-run again after its submission ended: that run, not the old failure, is what to look at."""
     try:
-        ran = datetime.fromisoformat(str(job.get("last_attempt")).replace("Z", "+00:00"))
-        ended = datetime.fromisoformat(str(sub.get("updated_at")).replace("Z", "+00:00"))
+        ran = _fromiso(job.get("last_attempt"))
+        ended = _fromiso(sub.get("updated_at"))
     except ValueError:
         return False
     return ran > ended
@@ -209,14 +214,14 @@ def jobbot_time(value):
     if not value:
         return ""
     try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).strftime("%b %d, %H:%M UTC")
+        return _fromiso(value).strftime("%b %d, %H:%M UTC")
     except ValueError:
         return value
 
 
 def _parse(value):
     try:
-        moment = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        moment = _fromiso(value)
     except ValueError:
         return None
     return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
@@ -313,7 +318,7 @@ def jobbot_date(value):
     if not value:
         return ""
     try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).strftime("%b %d").replace(" 0", " ")
+        return _fromiso(value).strftime("%b %d").replace(" 0", " ")
     except ValueError:
         return value
 
@@ -593,12 +598,4 @@ def job_triage(job_id):
 @bp.post("/<path:job_id>/triage-cancel")
 @admin_required
 def job_triage_cancel(job_id):
-    try:
-        if _validate_csrf(request.form.get("csrf_token")):
-            _api("POST", _job_path(job_id, "/triage/cancel"), {})
-            flash("Request withdrawn.", "success")
-        else:
-            flash("Invalid or missing CSRF token.", "error")
-    except JobBotError as error:
-        flash(error.message, "error")
-    return redirect(_back(url_for("jobbot.job_detail", job_id=job_id) + "#triage"))
+    return _action(job_id, "triage/cancel", {}, "Request withdrawn.", anchor="#triage")
