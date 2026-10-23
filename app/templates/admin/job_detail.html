@@ -101,11 +101,14 @@
       </div>
     {% endif %}
     {#- Auto-submit that didn't go ahead: triage held it, or it no longer applied. Either way it is yours. -#}
-    {% if approval.status in ("held", "dropped") and job.status == "dry_run_ok" and not sub.status and mode not in ("working", "code") %}
+    {%- set trial_ok = approval.trial and approval.status == "approved" %}
+    {% if (approval.status in ("held", "dropped") or trial_ok) and job.status == "dry_run_ok" and not sub.status and mode not in ("working", "code") %}
       <div class="jalert{% if approval.status == 'held' %} jalert--error{% endif %}" id="approval-alert">
-        <p class="jalert__title"><span class="jalert__tag">Auto-submit</span>{{ "Triage held this one back" if approval.status == "held" else "Not auto-submitted" }}</p>
+        <p class="jalert__title"><span class="jalert__tag">{{ "Triage test" if approval.trial else "Auto-submit" }}</span>
+          {{- "Triage would submit this" if trial_ok else "Triage held this one back" if approval.status == "held" else "Not auto-submitted" }}</p>
         <p class="jalert__text">
           {%- if approval.reason %}{{ approval.reason }}{% if not approval.reason.endswith(".") %}.{% endif %} {% endif -%}
+          {%- if approval.trial %}This was a test, so nothing was sent. {% endif -%}
           Check the answers below and submit it yourself if they're right.
           {%- if approval.updated_at %} <span class="jalert__when">{{ jobs.at(approval.updated_at) }}</span>{% endif %}</p>
         {%- if approval.summary %}

@@ -107,6 +107,12 @@ def _approval(job):
     return approval if approval.get("current") else {}
 
 
+def _trial_approved(job):
+    """A test of triage (`triage trial`) it would have submitted: nothing was sent, it waits for you."""
+    approval = _approval(job)
+    return approval.get("trial") and approval.get("status") == "approved" and not (job.get("submission") or {}).get("status")
+
+
 def _approving(job):
     """Auto-submit is on for this job's site and triage has yet to check the dry run."""
     return _approval(job).get("status") == "pending" and not (job.get("submission") or {}).get("status")
@@ -372,7 +378,9 @@ def _reason(job):
     if job.get("editing"):
         return "Changing the answers"
     if _approving(job):
-        return "Triage checks it, then submits it"
+        return "Triage checks it (a test: it won't submit)" if _approval(job).get("trial") else "Triage checks it, then submits it"
+    if _trial_approved(job):
+        return "Triage would submit it (a test, so nothing was sent): " + (_approval(job).get("reason") or "it looked right")
     if _approval(job).get("status") == "held" and not status:
         return "Held by triage: " + (_approval(job).get("reason") or "something was off")
     if _approval(job).get("status") == "dropped" and not status and job["status"] == "dry_run_ok":

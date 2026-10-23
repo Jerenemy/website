@@ -688,6 +688,21 @@ class JobBotPageTests(unittest.TestCase):
         self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": queued})
         self.assertNotIn('id="approval-alert"', self.client.get("/admin/jobs/url:abc123").get_data(as_text=True))
 
+    def test_a_triage_test_it_would_submit_waits_for_you(self):
+        self.login()
+        approval = dict(self.approval("approved", "Every answer matches the profile"), trial=True)
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, approval=approval)})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        alert = page.split('id="approval-alert"')[1].split("</div>\n      </div>")[0]
+        self.assertIn("Triage would submit this", alert)
+        self.assertIn("Every answer matches the profile. This was a test, so nothing was sent.", alert)
+        self.assertIn('action="/admin/jobs/url:abc123/submit"', page)  # yours to send
+
+        job = dict(JOB, id="t1", company="Tested", ats="workday", approval=approval)
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": [job], "auto_submit": {"ats": ["workday"], "choices": ["workday"]}})
+        rows = self.view(self.client.get("/admin/jobs/?view=auto").get_data(as_text=True))
+        self.assertIn("Triage would submit", rows)
+
 
 if __name__ == "__main__":
     unittest.main()
