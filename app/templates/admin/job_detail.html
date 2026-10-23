@@ -108,6 +108,9 @@
           {%- if approval.reason %}{{ approval.reason }}{% if not approval.reason.endswith(".") %}.{% endif %} {% endif -%}
           Check the answers below and submit it yourself if they're right.
           {%- if approval.updated_at %} <span class="jalert__when">{{ jobs.at(approval.updated_at) }}</span>{% endif %}</p>
+        {%- if approval.summary %}
+        <div class="jalert__why"><p class="jalert__label">Why it wasn't approved</p><p class="jalert__summary">{{ approval.summary }}</p></div>
+        {%- endif %}
         {%- if approval.pr %}
         <div class="jalert__act jactions"><a class="jbtn jbtn--ghost" href="{{ approval.pr }}" target="_blank" rel="noopener">Open the fix<span class="sr"> (opens in a new tab)</span> ↗</a></div>
         {%- endif %}

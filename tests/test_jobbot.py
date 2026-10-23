@@ -621,8 +621,8 @@ class JobBotPageTests(unittest.TestCase):
         self.assertNotIn('id="triage-alert"', page)
         self.assertIn("The job ran again", page)
 
-    def approval(self, status, reason=None, pr=None, current=True):
-        return {"status": status, "reason": reason, "pr": pr, "created_at": "2026-10-22T09:00:00+00:00",
+    def approval(self, status, reason=None, pr=None, current=True, summary=None):
+        return {"status": status, "reason": reason, "summary": summary, "pr": pr, "created_at": "2026-10-22T09:00:00+00:00",
                 "updated_at": "2026-10-22T09:30:00+00:00", "current": current}
 
     def test_auto_submit_view_lists_the_sites_and_what_triage_did(self):
@@ -672,12 +672,16 @@ class JobBotPageTests(unittest.TestCase):
         self.assertIn('data-watching="true"', page)  # the page updates when triage decides
         self.assertIn('action="/admin/jobs/url:abc123/submit"', page)  # you can still send it yourself
 
-        held = dict(DETAIL, approval=self.approval("held", "The salary is wrong", pr="https://github.com/x/y/pull/9"))
+        why = "Desired salary: answered 90000, but the posting's range is 120k-150k.\nFixed so it uses the range."
+        held = dict(DETAIL, approval=self.approval("held", "The salary is wrong", pr="https://github.com/x/y/pull/9",
+                                                   summary=why))
         self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": held})
         page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
         alert = page.split('id="approval-alert"')[1].split("</div>\n      </div>")[0]
         self.assertIn("Triage held this one back", alert)
         self.assertIn("The salary is wrong.", alert)
+        self.assertIn("Why it wasn't approved", alert)
+        self.assertIn("answered 90000, but the posting&#39;s range is 120k-150k.\nFixed", alert)
         self.assertIn('href="https://github.com/x/y/pull/9"', alert)
 
         queued = dict(held, submission={"status": "queued"})

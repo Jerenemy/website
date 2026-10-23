@@ -96,7 +96,7 @@ def _signature(job):
         parts.append(f"{triage.get('id')}:{triage.get('status')}")
     approval = job.get("approval")
     if approval:
-        parts.append(f"approval:{approval.get('status')}")
+        parts.append(f"approval:{approval.get('status')}:{approval.get('updated_at')}")
     return "|".join(parts)
 
 
