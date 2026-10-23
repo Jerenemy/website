@@ -22,6 +22,10 @@
       <div class="jhead__what">
         <h1 class="jhead__title">{{ company }}</h1>
         <p class="jhead__line">{{ job.title or "Untitled role" }}</p>
+        {%- set about = job | jobbot_about %}
+        {%- if about %}
+        <p class="jhead__about">{{ about }}</p>
+        {%- endif %}
         <p class="jhead__facts">
           {%- if mode == "tracked" %}<span class="jobs__badge jobs__badge--stage-{{ st.key }}">{{ st.label }}</span>
           {%- elif mode == "code" %}<span class="jobs__badge jobs__badge--needs_code">Code needed</span>

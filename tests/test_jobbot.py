@@ -703,6 +703,21 @@ class JobBotPageTests(unittest.TestCase):
         rows = self.view(self.client.get("/admin/jobs/?view=auto").get_data(as_text=True))
         self.assertIn("Triage would submit", rows)
 
+    def test_the_job_page_says_what_kind_of_company_and_where(self):
+        self.login()
+        job = dict(DETAIL, about="Large aerospace and defense manufacturer",
+                   locations=["Tucson, AZ", "El Segundo, CA", "Remote (US)", "Dallas, TX"])
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": job})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn('<p class="jhead__about">Large aerospace and defense manufacturer · Tucson, AZ; El Segundo, CA; '
+                      'Remote (US) and 1 more</p>', page)
+
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, locations=["Boston, MA"])})
+        self.assertIn('<p class="jhead__about">Boston, MA</p>', self.client.get("/admin/jobs/url:abc123").get_data(as_text=True))
+        # A bot that doesn't send them yet: no line.
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": DETAIL})
+        self.assertNotIn("jhead__about", self.client.get("/admin/jobs/url:abc123").get_data(as_text=True))
+
 
 if __name__ == "__main__":
     unittest.main()

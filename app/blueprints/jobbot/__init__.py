@@ -217,6 +217,14 @@ def jobbot_approval(value):
     return APPROVALS.get(value, str(value or "").capitalize())
 
 
+@bp.app_template_filter("jobbot_about")
+def jobbot_about(job):
+    """The job page's one line: what kind of company it is and where the job is ("" when the bot has neither)."""
+    locations = [loc for loc in job.get("locations") or [] if loc]
+    where = "; ".join(locations[:3]) + (f" and {len(locations) - 3} more" if len(locations) > 3 else "")
+    return " · ".join(part for part in ((job.get("about") or "").strip(), where) if part)
+
+
 @bp.app_template_filter("jobbot_ats")
 def jobbot_ats(value):
     return ATS_NAMES.get(value, str(value or "").capitalize())
