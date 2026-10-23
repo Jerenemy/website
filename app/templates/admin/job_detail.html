@@ -22,6 +22,10 @@
       <div class="jhead__what">
         <h1 class="jhead__title">{{ company }}</h1>
         <p class="jhead__line">{{ job.title or "Untitled role" }}</p>
+        {%- set about = job | jobbot_about %}
+        {%- if about %}
+        <p class="jhead__about">{{ about }}</p>
+        {%- endif %}
         <p class="jhead__facts">
           {%- if mode == "tracked" %}<span class="jobs__badge jobs__badge--stage-{{ st.key }}">{{ st.label }}</span>
           {%- elif mode == "code" %}<span class="jobs__badge jobs__badge--needs_code">Code needed</span>
@@ -116,6 +120,22 @@
         {%- endif %}
         {%- if approval.pr %}
         <div class="jalert__act jactions"><a class="jbtn jbtn--ghost" href="{{ approval.pr }}" target="_blank" rel="noopener">Open the fix<span class="sr"> (opens in a new tab)</span> ↗</a></div>
+        {%- endif %}
+      </div>
+    {% endif %}
+    {#- Triage held an earlier run and reran the job after its fix: why it held it, so you can check the new answers. -#}
+    {% if earlier_hold and job.status == "dry_run_ok" and mode not in ("working", "code") %}
+      <div class="jalert" id="approval-alert">
+        <p class="jalert__title"><span class="jalert__tag">{{ "Triage test" if earlier_hold.trial else "Auto-submit" }}</span>Triage held the earlier run</p>
+        <p class="jalert__text">
+          {%- if earlier_hold.reason %}{{ earlier_hold.reason }}{% if not earlier_hold.reason.endswith(".") %}.{% endif %} {% endif -%}
+          The answers below are from a newer run. Check whether it fixed this, then submit it yourself if they're right.
+          {%- if earlier_hold.updated_at %} <span class="jalert__when">{{ jobs.at(earlier_hold.updated_at) }}</span>{% endif %}</p>
+        {%- if earlier_hold.summary %}
+        <div class="jalert__why"><p class="jalert__label">Why it wasn't approved</p><p class="jalert__summary">{{ earlier_hold.summary }}</p></div>
+        {%- endif %}
+        {%- if earlier_hold.pr %}
+        <div class="jalert__act jactions"><a class="jbtn jbtn--ghost" href="{{ earlier_hold.pr }}" target="_blank" rel="noopener">Open the fix<span class="sr"> (opens in a new tab)</span> ↗</a></div>
         {%- endif %}
       </div>
     {% endif %}

@@ -703,6 +703,36 @@ class JobBotPageTests(unittest.TestCase):
         rows = self.view(self.client.get("/admin/jobs/?view=auto").get_data(as_text=True))
         self.assertIn("Triage would submit", rows)
 
+    def test_a_hold_on_an_earlier_run_stays_on_the_job_page(self):
+        self.login()
+        approval = self.approval("held", "Signature box got Yes", pr="https://github.com/x/y/pull/9", current=False,
+                                 summary="The signature box got 'Yes' instead of your name.")
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, approval=approval)})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        alert = page.split('id="approval-alert"')[1].split("</div>\n      </div>")[0]
+        self.assertIn("Triage held the earlier run", alert)
+        self.assertIn("instead of your name.", alert)
+        self.assertIn('href="https://github.com/x/y/pull/9"', alert)
+
+        submitted = dict(DETAIL, approval=approval, submission={"status": "queued"})
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": submitted})
+        self.assertNotIn("Triage held the earlier run", self.client.get("/admin/jobs/url:abc123").get_data(as_text=True))
+
+    def test_the_job_page_says_what_kind_of_company_and_where(self):
+        self.login()
+        job = dict(DETAIL, about="Large aerospace and defense manufacturer",
+                   locations=["Tucson, AZ", "El Segundo, CA", "Remote (US)", "Dallas, TX"])
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": job})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn('<p class="jhead__about">Large aerospace and defense manufacturer · Tucson, AZ; El Segundo, CA; '
+                      'Remote (US) and 1 more</p>', page)
+
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, locations=["Boston, MA"])})
+        self.assertIn('<p class="jhead__about">Boston, MA</p>', self.client.get("/admin/jobs/url:abc123").get_data(as_text=True))
+        # A bot that doesn't send them yet: no line.
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": DETAIL})
+        self.assertNotIn("jhead__about", self.client.get("/admin/jobs/url:abc123").get_data(as_text=True))
+
 
 if __name__ == "__main__":
     unittest.main()

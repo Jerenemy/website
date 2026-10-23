@@ -113,6 +113,15 @@ def _trial_approved(job):
     return approval.get("trial") and approval.get("status") == "approved" and not (job.get("submission") or {}).get("status")
 
 
+def _earlier_hold(job):
+    """Triage held an earlier run of this job (then fixed the cause and reran it): its why stays on the job page
+    until the job is submitted."""
+    approval = job.get("approval") or {}
+    if approval.get("current") or approval.get("status") != "held" or (job.get("submission") or {}).get("status"):
+        return {}
+    return approval
+
+
 def _approving(job):
     """Auto-submit is on for this job's site and triage has yet to check the dry run."""
     return _approval(job).get("status") == "pending" and not (job.get("submission") or {}).get("status")
@@ -215,6 +224,14 @@ ATS_NAMES = {"workday": "Workday", "greenhouse": "Greenhouse", "lever": "Lever",
 @bp.app_template_filter("jobbot_approval")
 def jobbot_approval(value):
     return APPROVALS.get(value, str(value or "").capitalize())
+
+
+@bp.app_template_filter("jobbot_about")
+def jobbot_about(job):
+    """The job page's one line: what kind of company it is and where the job is ("" when the bot has neither)."""
+    locations = [loc for loc in job.get("locations") or [] if loc]
+    where = "; ".join(locations[:3]) + (f" and {len(locations) - 3} more" if len(locations) > 3 else "")
+    return " · ".join(part for part in ((job.get("about") or "").strip(), where) if part)
 
 
 @bp.app_template_filter("jobbot_ats")
@@ -504,6 +521,7 @@ def job_detail(job_id):
                            mode=_mode(job, sub, editing), tally=tally, reason=_reason(job),
                            triage=triage, triage_actions=TRIAGE_ACTIONS, can_ask_triage=can_ask_triage,
                            watching=_triage_waiting(job) or _approving(job), approval=_approval(job),
+                           earlier_hold=_earlier_hold(job),
                            can_submit=can_submit, can_chat=can_chat, edits=edits, edited=edited,
                            signature=_signature(job), needs_force=sub.get("status") == "unconfirmed",
                            csrf_token=_csrf_token())
