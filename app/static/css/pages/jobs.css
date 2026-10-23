@@ -217,6 +217,12 @@ a.jrow__mail:hover, a.jrow__mail:focus-visible { color: var(--ink); text-decorat
 .jobs__stage-form--rejected select { color: var(--ink-3); }
 
 /* ---------------------------------------------------------------- emails to sort */
+/* Auto-submit: which sites the bot submits to once triage approves, above the jobs it touched. */
+.jauto { margin: var(--s2) 0 var(--s4); padding-bottom: var(--s3); border-bottom: 1px solid var(--rule); }
+.jauto__sites { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); margin: 0; padding: 0; border: 0; }
+.jauto__legend { width: 100%; margin-bottom: var(--s1); padding: 0; color: var(--ink-2); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jauto__site { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; }
+.jauto .jmain__hint { margin-bottom: var(--s2); }
 .jsort { margin: var(--s2) 0 0; padding: 0; list-style: none; }
 .jsort__item { padding: var(--s3) 0; border-bottom: 1px solid var(--rule); }
 .jsort__what { display: flex; gap: var(--s2); align-items: baseline; }

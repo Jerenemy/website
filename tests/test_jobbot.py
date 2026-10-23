@@ -621,6 +621,69 @@ class JobBotPageTests(unittest.TestCase):
         self.assertNotIn('id="triage-alert"', page)
         self.assertIn("The job ran again", page)
 
+    def approval(self, status, reason=None, pr=None, current=True):
+        return {"status": status, "reason": reason, "pr": pr, "created_at": "2026-10-22T09:00:00+00:00",
+                "updated_at": "2026-10-22T09:30:00+00:00", "current": current}
+
+    def test_auto_submit_view_lists_the_sites_and_what_triage_did(self):
+        self.login()
+        pending = dict(JOB, id="p1", company="Pending", ats="workday", approval=self.approval("pending"))
+        held = dict(JOB, id="h1", company="Held", ats="workday", approval=self.approval("held", "The salary is wrong"))
+        old = dict(JOB, id="o1", company="Older", approval=self.approval("held", "stale", current=False))
+        auto = {"ats": ["workday"], "choices": ["greenhouse", "lever", "ashby", "workday", "pinpoint"]}
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": [held, pending, old], "auto_submit": auto})
+        rows = self.view(self.client.get("/admin/jobs/?view=auto").get_data(as_text=True))
+        self.assertIn('value="workday" checked', rows)
+        self.assertIn('value="greenhouse">', rows)
+        self.assertLess(rows.index(">Pending<"), rows.index(">Held<"))  # the ones triage still checks come first
+        self.assertIn("Held by triage: The salary is wrong", rows)
+        self.assertNotIn(">Older<", rows)  # held on an earlier run: the job ran again since
+        # A dry run triage still checks is the bot's, not yours; a held one is back in review.
+        rows = self.view(self.client.get("/admin/jobs/?view=active").get_data(as_text=True))
+        self.assertIn(">Pending<", rows)
+        self.assertIn("Triage checks it, then submits it", rows)
+        rows = self.view(self.client.get("/admin/jobs/?view=review").get_data(as_text=True))
+        self.assertIn(">Held<", rows)
+        self.assertNotIn(">Pending<", rows)
+
+    def test_auto_submit_view_with_an_older_bot(self):
+        self.login()
+        self.responses[("GET", "/api/jobs?limit=500")] = FakeResponse(payload={"jobs": [dict(JOB)]})
+        rows = self.view(self.client.get("/admin/jobs/?view=auto").get_data(as_text=True))
+        self.assertIn("can't auto-submit after a triage check", rows)
+
+    def test_saving_the_auto_submit_sites(self):
+        self.login()
+        self.responses[("POST", "/api/auto-submit")] = FakeResponse(payload={"ats": ["workday"], "choices": []})
+        response = self.client.post("/admin/jobs/auto-submit", data={"ats": ["workday"]})
+        self.assertEqual([c for c in self.calls if c[0] == "POST"], [])  # no CSRF token: nothing sent
+        response = self.client.post("/admin/jobs/auto-submit", data={"csrf_token": "csrf", "ats": ["workday", "lever"]})
+        self.assertTrue(response.headers["Location"].endswith("/admin/jobs/?view=auto"))
+        self.assertEqual(self.calls[-1][:3], ("POST", "http://bot.test/api/auto-submit", {"ats": ["workday", "lever"]}))
+        self.client.post("/admin/jobs/auto-submit", data={"csrf_token": "csrf"})
+        self.assertEqual(self.calls[-1][2], {"ats": []})  # nothing ticked: off
+
+    def test_detail_says_what_auto_submit_did(self):
+        self.login()
+        pending = dict(DETAIL, ats="workday", approval=self.approval("pending"))
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": pending})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        self.assertIn("Triage checks this dry run, then submits it", page)
+        self.assertIn('data-watching="true"', page)  # the page updates when triage decides
+        self.assertIn('action="/admin/jobs/url:abc123/submit"', page)  # you can still send it yourself
+
+        held = dict(DETAIL, approval=self.approval("held", "The salary is wrong", pr="https://github.com/x/y/pull/9"))
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": held})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        alert = page.split('id="approval-alert"')[1].split("</div>\n      </div>")[0]
+        self.assertIn("Triage held this one back", alert)
+        self.assertIn("The salary is wrong.", alert)
+        self.assertIn('href="https://github.com/x/y/pull/9"', alert)
+
+        queued = dict(held, submission={"status": "queued"})
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": queued})
+        self.assertNotIn('id="approval-alert"', self.client.get("/admin/jobs/url:abc123").get_data(as_text=True))
+
 
 if __name__ == "__main__":
     unittest.main()

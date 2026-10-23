@@ -26,6 +26,7 @@
           {%- if mode == "tracked" %}<span class="jobs__badge jobs__badge--stage-{{ st.key }}">{{ st.label }}</span>
           {%- elif mode == "code" %}<span class="jobs__badge jobs__badge--needs_code">Code needed</span>
           {%- elif mode == "working" %}<span class="jobs__badge jobs__badge--running">{{ "Updating answers" if editing else sub.status | jobbot_status }}</span>
+          {%- elif mode == "approving" %}<span class="jobs__badge jobs__badge--queued">Triage checks it</span>
           {%- elif mode == "review" %}<span class="jobs__badge jobs__badge--review">Ready to submit</span>
           {%- elif mode == "attention" %}<span class="jobs__badge jobs__badge--attention">{{ sub.status | jobbot_status if sub.status in ("failed", "unconfirmed") else "Needs attention" }}</span>
           {%- elif mode == "blocked" %}<span class="jobs__badge jobs__badge--blocked">Apply yourself</span>
@@ -74,6 +75,11 @@
           {%- else %}Queued to submit{% endif %}</p>
         <p class="jalert__text">This page updates by itself when it's done.</p>
       </div>
+    {% elif mode == "approving" %}
+      <div class="jalert jalert--busy" role="status">
+        <p class="jalert__title"><span class="jspin" aria-hidden="true"></span>Triage checks this dry run, then submits it</p>
+        <p class="jalert__text">Auto-submit is on for {{ job.ats | jobbot_ats }}. If triage finds a problem, it fixes the bot and leaves the job for you. You can still submit it yourself now.</p>
+      </div>
     {% elif mode in ("attention", "retry", "blocked", "closed") or (mode == "other" and job.note) %}
       <div class="jalert{% if mode in ('attention', 'blocked') %} jalert--error{% endif %}">
         <p class="jalert__title">
@@ -91,6 +97,19 @@
           {%- else %}{{ job.note }}{% endif %}</p>
         {%- if problem.detail and problem.detail != problem.title %}
           <details class="jalert__more"><summary>Details</summary><pre>{{ problem.detail }}</pre></details>
+        {%- endif %}
+      </div>
+    {% endif %}
+    {#- Auto-submit that didn't go ahead: triage held it, or it no longer applied. Either way it is yours. -#}
+    {% if approval.status in ("held", "dropped") and job.status == "dry_run_ok" and not sub.status and mode not in ("working", "code") %}
+      <div class="jalert{% if approval.status == 'held' %} jalert--error{% endif %}" id="approval-alert">
+        <p class="jalert__title"><span class="jalert__tag">Auto-submit</span>{{ "Triage held this one back" if approval.status == "held" else "Not auto-submitted" }}</p>
+        <p class="jalert__text">
+          {%- if approval.reason %}{{ approval.reason }}{% if not approval.reason.endswith(".") %}.{% endif %} {% endif -%}
+          Check the answers below and submit it yourself if they're right.
+          {%- if approval.updated_at %} <span class="jalert__when">{{ jobs.at(approval.updated_at) }}</span>{% endif %}</p>
+        {%- if approval.pr %}
+        <div class="jalert__act jactions"><a class="jbtn jbtn--ghost" href="{{ approval.pr }}" target="_blank" rel="noopener">Open the fix<span class="sr"> (opens in a new tab)</span> ↗</a></div>
         {%- endif %}
       </div>
     {% endif %}

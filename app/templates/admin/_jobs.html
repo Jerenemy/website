@@ -32,6 +32,8 @@
 {%- elif job.category == "blocked" %}<span class="jobs__badge jobs__badge--blocked">Apply yourself</span>
 {%- elif sub.status %}<span class="jobs__badge jobs__badge--{{ sub.status }}">{{ sub.status | jobbot_status }}</span>
 {%- elif job.editing %}<span class="jobs__badge jobs__badge--running">Updating</span>
+{%- elif (job.approval or {}).current and job.approval.status == "pending" %}<span class="jobs__badge jobs__badge--queued">Triage checks it</span>
+{%- elif (job.approval or {}).current and job.approval.status == "held" and job.status == "dry_run_ok" %}<span class="jobs__badge jobs__badge--attention">Held by triage</span>
 {%- elif job.status == "dry_run_ok" %}<span class="jobs__badge jobs__badge--review">Ready to submit</span>
 {%- else %}<span class="jobs__badge jobs__badge--{{ job.status }}">{{ job.status | jobbot_status }}</span>{% endif -%}
 {%- endmacro %}

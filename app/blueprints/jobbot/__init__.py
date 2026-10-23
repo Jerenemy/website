@@ -39,6 +39,7 @@ VIEWS = {
     "rejected": ("Rejected", "sent"),
     "sent": ("All sent", "sent"),
     "active": ("In progress", "bot"),
+    "auto": ("Auto-submit", "bot"),
     "closed": ("Closed", "bot"),
     "skipped": ("Skipped", "bot"),
     "all": ("Every dry run", "bot"),
@@ -93,7 +94,22 @@ def _signature(job):
     triage = job.get("triage")
     if triage:
         parts.append(f"{triage.get('id')}:{triage.get('status')}")
+    approval = job.get("approval")
+    if approval:
+        parts.append(f"approval:{approval.get('status')}")
     return "|".join(parts)
+
+
+def _approval(job):
+    """Where the job's auto-submit stands, if it is about the job's latest run (a bot without auto-submit sends
+    no `approval`)."""
+    approval = job.get("approval") or {}
+    return approval if approval.get("current") else {}
+
+
+def _approving(job):
+    """Auto-submit is on for this job's site and triage has yet to check the dry run."""
+    return _approval(job).get("status") == "pending" and not (job.get("submission") or {}).get("status")
 
 
 def _triage_waiting(job):
@@ -120,8 +136,8 @@ def _category(job):
     sub = job.get("submission") or {}
     if job["status"] == "applied" or sub.get("status") == "applied":
         return "applied"
-    if sub.get("status") in ACTIVE or job.get("editing") or job["status"] == "retry":
-        return "active"  # the bot is on it (a `retry` job is tried again on its own)
+    if sub.get("status") in ACTIVE or job.get("editing") or job["status"] == "retry" or _approving(job):
+        return "active"  # the bot is on it (a `retry` job is tried again on its own; triage checks an auto-submit)
     # Nothing to fix: the posting no longer takes applications. (`problem` covers bots without `closed`.)
     if job.get("closed") or (sub.get("problem") or {}).get("kind") == "closed":
         return "closed"
@@ -178,6 +194,26 @@ EMAIL_KINDS = {
     "offer": "Offer",
     "company": "From the company",
 }
+
+
+# Where a job's auto-submit stands (its `approval`), in the order the Auto-submit view lists them.
+APPROVALS = {
+    "pending": "Triage checks it",
+    "held": "Held by triage",
+    "approved": "Approved by triage",
+    "dropped": "Not auto-submitted",
+}
+ATS_NAMES = {"workday": "Workday", "greenhouse": "Greenhouse", "lever": "Lever", "ashby": "Ashby", "pinpoint": "Pinpoint"}
+
+
+@bp.app_template_filter("jobbot_approval")
+def jobbot_approval(value):
+    return APPROVALS.get(value, str(value or "").capitalize())
+
+
+@bp.app_template_filter("jobbot_ats")
+def jobbot_ats(value):
+    return ATS_NAMES.get(value, str(value or "").capitalize())
 
 
 # How the triage agent's look at a job ended (its `outcome`), in a few words.
@@ -335,6 +371,12 @@ def _reason(job):
         return "Submitting now" if status == "running" else "Queued to submit"
     if job.get("editing"):
         return "Changing the answers"
+    if _approving(job):
+        return "Triage checks it, then submits it"
+    if _approval(job).get("status") == "held" and not status:
+        return "Held by triage: " + (_approval(job).get("reason") or "something was off")
+    if _approval(job).get("status") == "dropped" and not status and job["status"] == "dry_run_ok":
+        return "Not auto-submitted: " + (_approval(job).get("reason") or "it waits for you")
     if triage.get("action") in TRIAGE_ACTIONS:
         return TRIAGE_ACTIONS[triage["action"]]
     if triage.get("status") == "working":
@@ -390,6 +432,10 @@ def job_list():
     for key in ("review", "attention", "blocked", "active", "closed", "skipped"):
         members[key] = [job for job in queue if job["category"] == key]
     members["triage"] = [job for job in jobs if (job.get("triage") or {}).get("action")]
+    # Every job auto-submit touched, the ones waiting on triage first.
+    auto = [job for job in jobs if _approval(job)]
+    members["auto"] = sorted(auto, key=lambda job: list(APPROVALS).index(_approval(job)["status"])
+                             if _approval(job)["status"] in APPROVALS else len(APPROVALS))
     for key in STAGES:
         members[key] = [job for job in tracked if job["stage"]["key"] == key]
     counts = {key: len(members[key]) for key in VIEWS}
@@ -398,7 +444,8 @@ def job_list():
     else:
         view = next((key for key in DEFAULT_VIEWS if counts[key]), "sent" if tracked else "all")
     return render_template("admin/jobs.html", error=None, view=view, rows=members[view], counts=counts,
-                           waiting=waiting, unsorted=unsorted, last_pass=data.get("last_pass"), **context)
+                           waiting=waiting, unsorted=unsorted, last_pass=data.get("last_pass"),
+                           auto_submit=data.get("auto_submit"), **context)
 
 
 def _mode(job, sub, editing):
@@ -411,6 +458,8 @@ def _mode(job, sub, editing):
         return "tracked"
     if job["status"] == "retry":
         return "retry"
+    if _approving(job):
+        return "approving"
     category = _category(job)
     return category if category in ("review", "attention", "blocked", "closed") else "other"
 
@@ -446,7 +495,7 @@ def job_detail(job_id):
     return render_template("admin/job_detail.html", job=job, sub=sub, active=busy, editing=editing, stages=STAGES,
                            mode=_mode(job, sub, editing), tally=tally, reason=_reason(job),
                            triage=triage, triage_actions=TRIAGE_ACTIONS, can_ask_triage=can_ask_triage,
-                           watching=_triage_waiting(job),
+                           watching=_triage_waiting(job) or _approving(job), approval=_approval(job),
                            can_submit=can_submit, can_chat=can_chat, edits=edits, edited=edited,
                            signature=_signature(job), needs_force=sub.get("status") == "unconfirmed",
                            csrf_token=_csrf_token())
@@ -505,6 +554,25 @@ def _back(default):
     if target.startswith(url_for("jobbot.job_list")) and "//" not in target and "\\" not in target:
         return target
     return default
+
+
+@bp.post("/auto-submit")
+@admin_required
+def auto_submit():
+    """Which sites the bot submits to by itself once triage approves the dry run."""
+    back = url_for("jobbot.job_list", view="auto")
+    if not _validate_csrf(request.form.get("csrf_token")):
+        flash("Invalid or missing CSRF token.", "error")
+        return redirect(back)
+    chosen = request.form.getlist("ats")
+    try:
+        _api("POST", "/api/auto-submit", {"ats": chosen})
+        names = ", ".join(jobbot_ats(a) for a in sorted(chosen))
+        flash(f"Auto-submit is on for {names}." if chosen else "Auto-submit is off. Every dry run waits for you.",
+              "success")
+    except JobBotError as error:
+        flash(error.message, "error")
+    return redirect(back)
 
 
 @bp.post("/emails/assign")
