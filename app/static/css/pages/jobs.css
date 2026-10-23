@@ -60,6 +60,9 @@
 .jalert__title { grid-column: 1; display: flex; align-items: baseline; gap: var(--s2); color: var(--ink); font-size: var(--text-size); line-height: var(--text-lead); }
 .jalert__text { grid-column: 1; color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); overflow-wrap: anywhere; }
 .jalert__act { grid-column: 2; grid-row: 1 / span 3; }
+.jalert__why { grid-column: 1; margin-top: var(--s1); }
+.jalert__label { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.jalert__summary { margin-top: 2px; color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); white-space: pre-wrap; overflow-wrap: anywhere; }
 .jalert__tag {
   flex: none; padding: 0 6px; border: 1px solid var(--ink); color: var(--ink);
   font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
