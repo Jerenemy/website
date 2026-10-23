@@ -109,6 +109,25 @@
           {% endif %}
         </div>
 
+        {% if view == "auto" %}
+          {#- Which sites the bot submits to by itself. Triage checks every dry run there first. -#}
+          {% if auto_submit %}
+            <form class="jauto" method="post" action="{{ url_for('jobbot.auto_submit') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <fieldset class="jauto__sites">
+                <legend class="jauto__legend">Submit by itself on</legend>
+                {% for ats in auto_submit.choices %}
+                  <label class="jauto__site"><input type="checkbox" name="ats" value="{{ ats }}"{% if ats in auto_submit.ats %} checked{% endif %}> {{ ats | jobbot_ats }}</label>
+                {% endfor %}
+              </fieldset>
+              <p class="jmain__hint">When a dry run on one of these reaches Submit cleanly, the triage agent checks every answer against your profile, your resume and the posting. If it all looks right, the bot submits it. If anything is off, triage fixes the bot, runs the job again and leaves it here for you to submit.</p>
+              <button class="jbtn jbtn--primary" type="submit">Save</button>
+            </form>
+          {% else %}
+            <p class="jmain__hint">This version of the bot can't auto-submit after a triage check. Deploy the latest one first.</p>
+          {% endif %}
+        {% endif %}
+
         {% if view == "sort" %}
           {#- Emails the bot could not place for sure: you say which application each is about. -#}
           {% if rows %}
@@ -166,6 +185,7 @@
             {%- if view == "review" %}Nothing to review. New dry runs land here.
             {%- elif view == "attention" %}Nothing has gone wrong.
             {%- elif view == "codes" %}No submission is waiting for a code.
+            {%- elif view == "auto" %}Nothing yet. Dry runs on the sites above show up here once triage gets them.
             {%- elif view == "skipped" %}Nothing skipped. A job you skip waits here; Rerun on its page puts it back.
             {%- elif view in ("sent", "offer", "interviewing", "waiting", "rejected") and not counts.sent %}No applications sent yet. Once one goes out, it moves along here as the company writes back.
             {%- else %}None right now.{% endif -%}

@@ -190,6 +190,10 @@ private. If the bot is not running, the page says so instead of failing. Code li
 `app/blueprints/jobbot/`, `app/templates/admin/jobs.html`, `app/templates/admin/job_detail.html` and
 `app/static/css/pages/jobs.css`; tests in `tests/test_jobbot.py`.
 
+The Auto-submit view (under Bot) picks the sites the bot submits to by itself (`POST /api/auto-submit` on
+the bot). The triage agent checks each dry run there first, then submits it or holds it for you. That view
+lists the jobs it touched, and each job's page says whether triage is still checking it, held it, or sent it.
+
 ## WTT Email Signup
 
 - Public form: `https://jeremyzay.com/wtt` (also accepts `/wtt/`). Collects emails only; no email is sent.
