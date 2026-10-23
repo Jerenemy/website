@@ -703,6 +703,21 @@ class JobBotPageTests(unittest.TestCase):
         rows = self.view(self.client.get("/admin/jobs/?view=auto").get_data(as_text=True))
         self.assertIn("Triage would submit", rows)
 
+    def test_a_hold_on_an_earlier_run_stays_on_the_job_page(self):
+        self.login()
+        approval = self.approval("held", "Signature box got Yes", pr="https://github.com/x/y/pull/9", current=False,
+                                 summary="The signature box got 'Yes' instead of your name.")
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": dict(DETAIL, approval=approval)})
+        page = self.client.get("/admin/jobs/url:abc123").get_data(as_text=True)
+        alert = page.split('id="approval-alert"')[1].split("</div>\n      </div>")[0]
+        self.assertIn("Triage held the earlier run", alert)
+        self.assertIn("instead of your name.", alert)
+        self.assertIn('href="https://github.com/x/y/pull/9"', alert)
+
+        submitted = dict(DETAIL, approval=approval, submission={"status": "queued"})
+        self.responses[("GET", "/api/jobs/url%3Aabc123")] = FakeResponse(payload={"job": submitted})
+        self.assertNotIn("Triage held the earlier run", self.client.get("/admin/jobs/url:abc123").get_data(as_text=True))
+
     def test_the_job_page_says_what_kind_of_company_and_where(self):
         self.login()
         job = dict(DETAIL, about="Large aerospace and defense manufacturer",
