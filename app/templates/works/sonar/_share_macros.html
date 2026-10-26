@@ -12,3 +12,27 @@
       {% if photo %}<span class="avatar avatar--photo {{ classes }}" aria-hidden="true"><img src="{{ photo }}" alt="" referrerpolicy="no-referrer"></span>
       {%- else %}<span class="avatar {{ classes }}" aria-hidden="true" style="--a1: {{ info.top }}; --a2: {{ info.bottom }}">{{ info.initial }}</span>{% endif %}
     {%- endmacro %}
+
+    {#- A badge's amber glyph (fill: currentColor). The app draws these with SF Symbols, which
+        can't be used on the web, so these are Sonar's own: a flag for Founder, the app's own
+        pen nib and ping for Core Designer, a mic for Creator, a ladybug for Tester and a
+        sunrise for Early adopter. With a label it's an image; without, the text beside it says
+        what it is. -#}
+    {% macro _glyph_role(label) -%}
+      {% if label %}role="img" aria-label="{{ label }}"{% else %}aria-hidden="true"{% endif %}
+    {%- endmacro %}
+
+    {% macro badge_glyph(kind, label=None) -%}
+      {%- set attributes = _glyph_role(label) -%}
+      {%- if kind == "core_designer" -%}
+        <svg class="badge-glyph" viewBox="-2 -82 94 94" {{ attributes }}><path d="M35.88,-26.29 C37.51,-34.42 42.39,-60.44 46.45,-67.76 C48.89,-71.83 52.96,-72.64 57.02,-71.83 L62.71,-71.01 L80.6,-53.12 L81.42,-47.43 C82.23,-43.36 81.42,-39.3 77.35,-36.86 C70.03,-32.79 44.01,-27.91 35.88,-26.29Z M54.12,-46.8 L38.4,-31.09 L40.68,-28.81 L56.4,-44.53 C58.62,-43.42 61.31,-44.09 62.76,-46.1 C64.2,-48.12 63.98,-50.88 62.23,-52.63 C60.47,-54.39 57.71,-54.61 55.69,-53.16 C53.68,-51.72 53.01,-49.02 54.12,-46.8Z M70.85,-79.14 L88.74,-61.25 C89.82,-60.17 89.82,-59.09 88.74,-58 L86.7,-55.97 C85.62,-54.88 84.53,-54.88 83.45,-55.97 L65.56,-73.86 C64.48,-74.94 64.48,-76.03 65.56,-77.11 L67.59,-79.14 C68.68,-80.23 69.76,-80.23 70.85,-79.14Z M32.24,-5.62 C23.55,-7.15 16.74,-13.95 15.21,-22.64 C14.85,-24.68 16.21,-26.61 18.24,-26.97 C20.28,-27.33 22.21,-25.97 22.57,-23.94 C23.56,-18.35 27.94,-13.97 33.53,-12.98 C35.57,-12.62 36.92,-10.68 36.57,-8.65 C36.21,-6.62 34.27,-5.26 32.24,-5.62Z M34.63,9.63 C15.76,8.97 0.62,-6.17 -0.04,-25.03 C-0.11,-27.1 1.51,-28.83 3.57,-28.9 C5.63,-28.97 7.36,-27.36 7.43,-25.29 C7.96,-10.35 19.95,1.64 34.89,2.16 C36.95,2.23 38.56,3.96 38.49,6.02 C38.42,8.09 36.69,9.7 34.63,9.63Z"/></svg>
+      {%- elif kind == "founder" -%}
+        <svg class="badge-glyph" viewBox="0 0 24 24" {{ attributes }}><path d="M5.25 2.5c.7 0 1.25.56 1.25 1.25v16.5a1.25 1.25 0 0 1-2.5 0V3.75c0-.69.56-1.25 1.25-1.25Z"/><path d="M8 3.9c2.45-1.3 4.7-1.3 7 0 1.95 1.1 3.75 1.2 5.6.35.5-.23 1.05.13 1.05.68v8.95c0 .4-.23.76-.6.93-2.3 1.05-4.55.95-6.95-.4-2.05-1.15-3.95-1.15-6.1 0Z"/></svg>
+      {%- elif kind == "creator" -%}
+        <svg class="badge-glyph" viewBox="0 0 24 24" {{ attributes }}><rect x="8" y="1.75" width="8" height="13" rx="4"/><path d="M5.5 10.25c.6 0 1.1.5 1.1 1.1a5.4 5.4 0 0 0 10.8 0 1.1 1.1 0 0 1 2.2 0 7.6 7.6 0 0 1-6.5 7.52v1.83h2.6a1.1 1.1 0 0 1 0 2.2H8.3a1.1 1.1 0 0 1 0-2.2h2.6v-1.83a7.6 7.6 0 0 1-6.5-7.52c0-.6.5-1.1 1.1-1.1Z"/></svg>
+      {%- elif kind == "tester" -%}
+        <svg class="badge-glyph" viewBox="0 0 24 24" {{ attributes }}><path d="M8.6 2.4a1 1 0 0 1 1.4.2l.95 1.35a4.2 4.2 0 0 1 2.1 0L14 2.6a1 1 0 1 1 1.6 1.2l-.85 1.2A3.9 3.9 0 0 1 16 7.6H8a3.9 3.9 0 0 1 1.25-2.6l-.85-1.2a1 1 0 0 1 .2-1.4Z"/><path fill-rule="evenodd" d="M11.35 8.9C7.9 9.25 5 12.2 5 15.5c0 3.6 3.1 6.25 6.35 6.5Zm1.3 0V22c3.25-.25 6.35-2.9 6.35-6.5 0-3.3-2.9-6.25-6.35-6.6ZM8.6 12.1a1.35 1.35 0 1 0 0 2.7 1.35 1.35 0 0 0 0-2.7Zm6.8 0a1.35 1.35 0 1 0 0 2.7 1.35 1.35 0 0 0 0-2.7ZM9.1 16.6a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Zm5.8 0a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z"/></svg>
+      {%- elif kind == "early_adopter" -%}
+        <svg class="badge-glyph" viewBox="0 0 24 24" {{ attributes }}><path d="M6 17.25a6 6 0 0 1 12 0Z"/><rect x="2" y="18.75" width="20" height="2.2" rx="1.1"/><path d="M12 5.25v3M5.9 9.15l1.8 1.8M18.1 9.15l-1.8 1.8M2.75 14.6h2.4M18.85 14.6h2.4" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>
+      {%- endif -%}
+    {%- endmacro %}

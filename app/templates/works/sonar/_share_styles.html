@@ -11,6 +11,7 @@
       --hairline: rgba(243, 245, 247, 0.08);
       --teal: #2FCBBD;
       --love: #FF5C7A;
+      --amber: #FFB347;
       --rounded: ui-rounded, "SF Pro Rounded", "Nunito", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     }
     * { box-sizing: border-box; }
@@ -76,6 +77,21 @@
     .avatar--large { width: 96px; height: 96px; font-size: 40px; margin: 8px auto 0; }
     .byline strong { color: var(--label); font-weight: 600; }
     .center { text-align: center; }
+
+    /* Badges: an amber glyph (amber means achievement), never a checkmark or a pill. */
+    .badge-glyph { width: 1em; height: 1em; flex: none; fill: currentColor; color: var(--amber); }
+    .name-badge { display: inline-block; margin-left: 0.3em; line-height: 1; }
+    .name-badge .badge-glyph { width: 0.8em; height: 0.8em; vertical-align: -0.04em; }
+    .badges {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px;
+      margin: 8px 0 0; padding: 0; list-style: none;
+      color: var(--text-2); font-size: 14px; font-weight: 500;
+    }
+    .badges li { display: inline-flex; align-items: center; gap: 5px; }
+    .badges a { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; padding: 2px 0; }
+    .badges a:hover span { text-decoration: underline; text-underline-offset: 2px; }
+    .badges strong { color: var(--label); font-weight: 600; }
+    .badges--shows { flex-direction: column; align-items: center; gap: 2px; margin-top: 4px; }
     .center .eyebrow { margin-top: 10px; }
     .description { margin-top: 14px; color: var(--text-2); font-size: 15px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 
@@ -158,6 +174,7 @@
     /* Recap: a "wrapped"-style month or year. */
     .recap__who { display: flex; align-items: center; gap: 10px; color: var(--text-2); font-size: 15px; }
     .recap__who strong { color: var(--label); font-weight: 600; }
+    .recap__who .name-badge { margin-right: 0.12em; }  /* a hair clear of the "'s" after it */
     .recap__period { margin: 18px 0 0; font: 800 clamp(44px, 14vw, 64px)/1 var(--rounded); letter-spacing: -0.02em; overflow-wrap: anywhere; }
     .recap__lede { margin: 6px 0 0; color: var(--teal); font: 600 22px/1.2 var(--rounded); }
     .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 26px 0 0; padding: 0; list-style: none; }

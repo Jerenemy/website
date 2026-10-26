@@ -59,6 +59,8 @@ class Review:
     created_at: Optional[str] = None
     episode_id: Optional[str] = None
     podcast_id: Optional[str] = None
+    avatar_url: Optional[str] = None  # the author's photo, where the page shows the author
+    badge: Optional[str] = None       # the badge beside the author's name (name_badge)
 
     @property
     def path(self) -> str:
@@ -115,6 +117,9 @@ class SonarList:
     username: Optional[str] = None
     item_count: int = 0
     items: list = field(default_factory=list)  # the first LIST_PREVIEW_ITEMS ListItems
+    user_id: Optional[str] = None
+    avatar_url: Optional[str] = None  # the owner's photo
+    badge: Optional[str] = None       # the badge beside the owner's name
 
 
 LIST_PREVIEW_ITEMS = 12
@@ -241,6 +246,7 @@ def review(log_id: str) -> Optional[Review]:
         usernames = _usernames([row.get("user_id")])
         item = _review_from_row(row, usernames)
         item.episode = episode(item.episode_id or "", item.podcast_id or "")
+        _add_people([item])
         return item
 
     return _cached(("review", log_id), load)
@@ -343,14 +349,17 @@ def sonar_list(list_id: str) -> Optional[SonarList]:
             and (item.get("kind") == "podcast" or NUMERIC_RE.match(str(item.get("episode_id") or "")))
         ]
         _resolve_items(items)
-        return SonarList(
+        result = SonarList(
             id=list_id,
             title=(row.get("title") or "").strip() or "A list",
             description=(row.get("description") or "").strip() or None,
             username=username,
             item_count=int(total) if total.isdigit() else len(item_rows),
             items=items,
+            user_id=row.get("user_id"),
         )
+        _add_people([result])
+        return result
 
     return _cached(("list", list_id.lower()), load)
 
@@ -404,10 +413,16 @@ class ProfilePage:
     favorites: Optional[list] = None      # ListItems; None: unreadable
     recent_reviews: Optional[list] = None  # Reviews
     lists: Optional[list] = None          # ListSummaries
+    badges: list = field(default_factory=list)         # BADGE_KINDS they have, in order
+    creator_shows: list = field(default_factory=list)  # Podcasts they make, for "Makes <show>"
 
     @property
     def username(self) -> str:
         return self.profile.username
+
+    @property
+    def name_badge(self) -> Optional[str]:
+        return name_badge(self.badges)
 
     @property
     def artwork(self) -> list:
@@ -455,8 +470,13 @@ def _parallel(functions):
         return list(pool.map(run, functions))
 
 
+def _user_ids(user_ids) -> list:
+    """Distinct, well-formed user ids, sorted (so a set of people caches under one key)."""
+    return sorted({str(user_id) for user_id in user_ids if user_id and UUID_RE.match(str(user_id))})
+
+
 def _usernames(user_ids) -> dict:
-    ids = sorted({str(user_id) for user_id in user_ids if user_id and UUID_RE.match(str(user_id))})
+    ids = _user_ids(user_ids)
     if not ids:
         return {}
     rows = _rows(_optional("profiles", {"id": f"in.({','.join(ids)})", "select": "id,username", "limit": len(ids)}))
@@ -532,6 +552,7 @@ def episode_reviews(episode_id: str, limit: int = EPISODE_TOP_REVIEWS) -> list:
             "limit": limit * 2,
         }))
         items = [item for item in _reviews(rows, resolve=False) if item.text][:limit]
+        _add_people(items)
         return items
 
     return _cached(("episode_reviews", episode_id, limit), load) or []
@@ -545,14 +566,108 @@ def avatar_url(user_id: str) -> Optional[str]:
     rows = _rows(_optional("profile_details", {
         "user_id": f"eq.{user_id}", "select": "avatar_path,avatar_updated_at", "limit": 1,
     }))
-    if not rows or not rows[0].get("avatar_path"):
+    return _photo_url(base, user_id, rows[0]) if rows else None
+
+
+def avatar_urls(user_ids) -> dict:
+    """Photo URLs by user id for the people on one page (an episode's reviewers): one read."""
+    base = current_app.config.get("SONAR_SUPABASE_URL")
+    ids = _user_ids(user_ids)
+    if not base or not ids:
+        return {}
+    rows = _rows(_optional("profile_details", {
+        "user_id": f"in.({','.join(ids)})", "select": "user_id,avatar_path,avatar_updated_at", "limit": len(ids),
+    }))
+    photos = {}
+    for row in rows or []:
+        url = _photo_url(base, row.get("user_id"), row) if row.get("user_id") in ids else None
+        if url:
+            photos[row["user_id"]] = url
+    return photos
+
+
+def _photo_url(base, user_id, row) -> Optional[str]:
+    path = row.get("avatar_path")
+    if not path or path != f"{str(user_id).lower()}/avatar.jpg":  # the table's own check; never trust more
         return None
-    path = rows[0]["avatar_path"]
-    if path != f"{str(user_id).lower()}/avatar.jpg":  # the table's own check; never trust more
-        return None
-    version = re.sub(r"[^0-9A-Za-z]", "", str(rows[0].get("avatar_updated_at") or ""))[:32]
+    version = re.sub(r"[^0-9A-Za-z]", "", str(row.get("avatar_updated_at") or ""))[:32]
     url = f"{base.rstrip('/')}/storage/v1/object/public/avatars/{path}"
     return f"{url}?v={version}" if version else url
+
+
+# --- Badges --------------------------------------------------------------------------------
+#
+# The marks the app shows for a person (ProfileBadgeKind in Sonar/Models/ProfileBadge.swift):
+# every badge under the name on a profile, and one of them beside the name everywhere else.
+# The anon key can read them once Sonar's 20261114_public_badges_web_read.sql is applied;
+# before that nobody has any here and the pages look as they did.
+
+BADGE_KINDS = ("founder", "core_designer", "creator", "tester", "early_adopter")  # the app's order
+# Worth a glyph beside a name. Tester and Early adopter stay on the profile, so the mark keeps
+# meaning something.
+NAME_BADGES = ("founder", "core_designer", "creator")
+# Titles and what each means, word for word from the app.
+BADGE_TITLES = {
+    "founder": "Founder",
+    "core_designer": "Core Designer",
+    "creator": "Creator",
+    "tester": "Tester",
+    "early_adopter": "Early adopter",
+}
+BADGE_EXPLANATIONS = {
+    "founder": "Built Sonar.",
+    "core_designer": "Shapes how Sonar looks and feels.",
+    "creator": "Makes a show on Sonar, confirmed through the show's own feed.",
+    "tester": "Helped test Sonar before release.",
+    "early_adopter": "Joined Sonar before 2027 and helped shape it.",
+}
+CREATOR_SHOW_LINKS = 3
+
+
+def badges(user_ids) -> dict:
+    """Badges by user id, in the app's order. People without any are left out."""
+    ids = _user_ids(user_ids)
+    if not ids:
+        return {}
+
+    def load():
+        rows = _rows(_optional("profile_badges", {
+            "user_id": f"in.({','.join(ids)})", "select": "user_id,kind", "limit": len(ids) * len(BADGE_KINDS),
+        }))
+        found = {}
+        for row in rows or []:
+            if row.get("user_id") in ids and row.get("kind") in BADGE_KINDS:
+                found.setdefault(row["user_id"], set()).add(row["kind"])
+        return {user_id: [kind for kind in BADGE_KINDS if kind in kinds] for user_id, kinds in found.items()}
+
+    return _cached(("badges", *ids), load) or {}
+
+
+def name_badge(kinds) -> Optional[str]:
+    """The one badge shown beside a name: Founder, else Core Designer, else Creator."""
+    return next((kind for kind in NAME_BADGES if kind in (kinds or ())), None)
+
+
+def creator_shows(user_id) -> list:
+    """The shows a creator proved are theirs, oldest first, as on their profile in the app."""
+    if not user_id or not UUID_RE.match(str(user_id)):
+        return []
+    rows = _rows(_optional("creator_shows", {
+        "user_id": f"eq.{user_id}", "select": "podcast_id", "order": "verified_at.asc", "limit": CREATOR_SHOW_LINKS,
+    }))
+    ids = [str(row["podcast_id"]) for row in rows or [] if NUMERIC_RE.match(str(row.get("podcast_id") or ""))]
+    return [show for show in _parallel([(lambda pid=pid: podcast(pid)) for pid in ids]) if show]
+
+
+def _add_people(items):
+    """Fills in each item's author photo and name badge (reviews, a list): two reads for all."""
+    ids = [item.user_id for item in items if item.user_id]
+    if not ids:
+        return
+    photos, kinds = _parallel([lambda: avatar_urls(ids), lambda: badges(ids)])
+    for item in items:
+        item.avatar_url = photos.get(item.user_id)
+        item.badge = name_badge(kinds.get(item.user_id))
 
 
 def _favorites(user_id) -> Optional[list]:
@@ -620,20 +735,22 @@ def profile_page(username: str) -> Optional[ProfilePage]:
 
     def load():
         user_id = base.id
-        avatar, followers, following, favorites, recent, lists = _parallel([
+        avatar, followers, following, favorites, recent, lists, kinds = _parallel([
             lambda: avatar_url(user_id),
             lambda: _follow_count("following_id", user_id),
             lambda: _follow_count("follower_id", user_id),
             lambda: _favorites(user_id),
             lambda: _recent_reviews(user_id, base.username),
             lambda: _public_lists(user_id),
+            lambda: badges([user_id]).get(user_id, []),
         ])
         if not followers and not following:
             # Zero on both sides can also be RLS quietly returning no rows: show nothing
             # rather than a possibly wrong "0 followers".
             followers = following = None
         return ProfilePage(profile=base, avatar_url=avatar, followers=followers, following=following,
-                           favorites=favorites, recent_reviews=recent, lists=lists)
+                           favorites=favorites, recent_reviews=recent, lists=lists, badges=kinds,
+                           creator_shows=creator_shows(user_id) if "creator" in kinds else [])
 
     return _cached(("profile_page", username.lower()), load)
 
@@ -929,6 +1046,7 @@ class Recap:
     top_podcasts: list = field(default_factory=list)  # TopPodcasts
     best: Optional[Review] = None  # the highest-rated log
     avatar_url: Optional[str] = None
+    badge: Optional[str] = None  # the badge beside their name
     truncated: bool = False
 
     @property
@@ -1006,12 +1124,14 @@ def recap(username: str, period: Period) -> Optional[Recap]:
         if result.best is not None:
             jobs.append(lambda: episode(result.best.episode_id or "", result.best.podcast_id or ""))
         jobs.append(lambda: avatar_url(base.id))
+        jobs.append(lambda: badges([base.id]).get(base.id))
         resolved = _parallel(jobs)
         for top, show in zip(result.top_podcasts, resolved):
             top.podcast = show
         if result.best is not None:
             result.best.episode = resolved[len(result.top_podcasts)]
-        result.avatar_url = resolved[-1]
+        result.avatar_url = resolved[-2]
+        result.badge = name_badge(resolved[-1])
         return result
 
     return _cached(("recap", username.lower(), period.key), load)
