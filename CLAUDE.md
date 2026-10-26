@@ -20,3 +20,13 @@ Exceptions:
 it. Edit `app/data/portfolio.seed.json` instead. After deploying, a change to a work's words
 reaches the live site only through `flask --app app portfolio-copy`, run on the server. Order and
 publishing are changed in the admin.
+
+## Deploying
+
+Merging to `main` deploys. `.github/workflows/deploy.yml` runs on every push to `main`: it SSHes
+into the server, fast-forwards `/home/jzay/personal_website` to `origin/main` and restarts
+`personal_website` (and `ear_service` or `attack_target_network` when their folder changed and
+they were running). There is no manual pull step; check the run with
+`gh run list --workflow deploy.yml`. A deploy stops untouched if the fast-forward would clash. It
+does not run `flask portfolio-copy`, install dependencies, or change nginx; those are still
+manual (see "Portfolio data" above and the README).
