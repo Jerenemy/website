@@ -100,6 +100,17 @@ def _signature(job):
     return "|".join(parts)
 
 
+def _submission_status(job):
+    """The status of the job's submission (None when it has none)."""
+    return (job.get("submission") or {}).get("status")
+
+
+def _rank(value, order):
+    """Where `value` sorts in `order` (anything not in it goes last)."""
+    order = list(order)
+    return order.index(value) if value in order else len(order)
+
+
 def _approval(job):
     """Where the job's auto-submit stands, if it is about the job's latest run (a bot without auto-submit sends
     no `approval`)."""
@@ -110,21 +121,21 @@ def _approval(job):
 def _trial_approved(job):
     """A test of triage (`triage trial`) it would have submitted: nothing was sent, it waits for you."""
     approval = _approval(job)
-    return approval.get("trial") and approval.get("status") == "approved" and not (job.get("submission") or {}).get("status")
+    return approval.get("trial") and approval.get("status") == "approved" and not _submission_status(job)
 
 
 def _earlier_hold(job):
     """Triage held an earlier run of this job (then fixed the cause and reran it): its why stays on the job page
     until the job is submitted."""
     approval = job.get("approval") or {}
-    if approval.get("current") or approval.get("status") != "held" or (job.get("submission") or {}).get("status"):
+    if approval.get("current") or approval.get("status") != "held" or _submission_status(job):
         return {}
     return approval
 
 
 def _approving(job):
     """Auto-submit is on for this job's site and triage has yet to check the dry run."""
-    return _approval(job).get("status") == "pending" and not (job.get("submission") or {}).get("status")
+    return _approval(job).get("status") == "pending" and not _submission_status(job)
 
 
 def _triage_waiting(job):
@@ -388,6 +399,7 @@ def _reason(job):
     status = sub.get("status")
     problem = sub.get("problem") or job.get("problem") or {}
     triage = job.get("triage") or {}
+    approval = _approval(job)
     if status == "needs_code":
         return "Waiting for the code the company emailed you"
     if status in ("queued", "running"):
@@ -395,13 +407,13 @@ def _reason(job):
     if job.get("editing"):
         return "Changing the answers"
     if _approving(job):
-        return "Triage checks it (a test: it won't submit)" if _approval(job).get("trial") else "Triage checks it, then submits it"
+        return "Triage checks it (a test: it won't submit)" if approval.get("trial") else "Triage checks it, then submits it"
     if _trial_approved(job):
-        return "Triage would submit it (a test, so nothing was sent): " + (_approval(job).get("reason") or "it looked right")
-    if _approval(job).get("status") == "held" and not status:
-        return "Held by triage: " + (_approval(job).get("reason") or "something was off")
-    if _approval(job).get("status") == "dropped" and not status and job["status"] == "dry_run_ok":
-        return "Not auto-submitted: " + (_approval(job).get("reason") or "it waits for you")
+        return "Triage would submit it (a test, so nothing was sent): " + (approval.get("reason") or "it looked right")
+    if approval.get("status") == "held" and not status:
+        return "Held by triage: " + (approval.get("reason") or "something was off")
+    if approval.get("status") == "dropped" and not status and job["status"] == "dry_run_ok":
+        return "Not auto-submitted: " + (approval.get("reason") or "it waits for you")
     if triage.get("action") in TRIAGE_ACTIONS:
         return TRIAGE_ACTIONS[triage["action"]]
     if triage.get("status") == "working":
@@ -448,19 +460,17 @@ def job_list():
         job["reason"] = _reason(job)
     queue = [job for job in jobs if not job["stage"]]  # a sent application (or one you track) is in the tracker
     tracked = [job for job in jobs if job["stage"]]
-    order = list(STAGES)
     tracked.sort(key=_latest, reverse=True)  # newest news first within each stage
-    tracked.sort(key=lambda job: order.index(job["stage"]["key"]) if job["stage"]["key"] in order else len(order))
+    tracked.sort(key=lambda job: _rank(job["stage"]["key"], STAGES))
     unsorted = data.get("unsorted") or []
-    waiting = [job for job in jobs if (job.get("submission") or {}).get("status") == "needs_code"]
+    waiting = [job for job in jobs if _submission_status(job) == "needs_code"]
     members = {"codes": waiting, "sort": unsorted, "sent": tracked, "all": queue}
     for key in ("review", "attention", "blocked", "active", "closed", "skipped"):
         members[key] = [job for job in queue if job["category"] == key]
     members["triage"] = [job for job in jobs if (job.get("triage") or {}).get("action")]
     # Every job auto-submit touched, the ones waiting on triage first.
     auto = [job for job in jobs if _approval(job)]
-    members["auto"] = sorted(auto, key=lambda job: list(APPROVALS).index(_approval(job)["status"])
-                             if _approval(job)["status"] in APPROVALS else len(APPROVALS))
+    members["auto"] = sorted(auto, key=lambda job: _rank(_approval(job)["status"], APPROVALS))
     for key in STAGES:
         members[key] = [job for job in tracked if job["stage"]["key"] == key]
     counts = {key: len(members[key]) for key in VIEWS}
