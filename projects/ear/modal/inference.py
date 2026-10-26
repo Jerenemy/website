@@ -51,6 +51,11 @@ audio_proj.eval()
 index = torch.load(os.path.join(BASE_DIR, "indexed_db.pt"), map_location="cpu")
 DB_METADATA = index["metadata"]
 DB_TENSOR = index["tensor"]
+# Positions of each modality in the index. Results are ranked within each one: an audio query
+# scores far higher against other audio than against any image, so one ranking over the whole
+# index never reached the images.
+DB_ROWS = {kind: torch.tensor([i for i, m in enumerate(DB_METADATA) if m["type"] == kind])
+           for kind in ("image", "audio")}
 
 
 @torch.no_grad()
@@ -122,14 +127,15 @@ def query():
     finally:
         os.remove(path)
 
-    scores, indices = torch.topk((emb @ DB_TENSOR.T).squeeze(0), min(100, len(DB_METADATA)))
-    same, cross = [], []
-    for score, i in zip(scores, indices):
-        item = DB_METADATA[i.item()]
-        bucket = same if item["type"] == query_type else cross
-        if len(bucket) < 5:
-            bucket.append({"type": item["type"], "url": media_url(item["url"]),
-                           "label": item["label"], "score": round(score.item(), 3)})
-        if len(same) >= 5 and len(cross) >= 5:
-            break
+    sims = (emb @ DB_TENSOR.T).squeeze(0)
+
+    def top(kind, k=5):
+        rows = DB_ROWS[kind]
+        scores, picks = torch.topk(sims[rows], min(k, len(rows)))
+        return [{"type": kind, "url": media_url(DB_METADATA[i]["url"]),
+                 "label": DB_METADATA[i]["label"], "score": round(s.item(), 3)}
+                for s, i in zip(scores, rows[picks].tolist())]
+
+    other = "audio" if query_type == "image" else "image"
+    same, cross = top(query_type), top(other)
     return jsonify(query_type=query_type, same_modality=same, cross_modality=cross)
