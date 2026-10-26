@@ -83,6 +83,7 @@
 .admin-table__actions > * { display: inline-flex; vertical-align: baseline; }
 .admin-table__actions > * + * { margin-left: var(--s3); }
 .admin-table__actions form { margin: 0; }
+.admin-table .field input[type="number"] { width: var(--s8); }
 
 @media (max-width: 640px) {
   .admin-table thead { display: none; }

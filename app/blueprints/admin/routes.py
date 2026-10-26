@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 from . import bp
 from ...portfolio import get_portfolio_store
 from ...portfolio.store import KINDS
+from ...design import hidden_themes, site_theme, theme_names
 from ...site_settings import get_site_settings_store
 
 LINE_MAX = 72   # characters: the homepage caption wraps it over two or three short lines
@@ -101,6 +102,24 @@ def site_settings():
         else:
             updates["home_description"] = home_description
 
+        names = theme_names(current_app.static_folder, settings.get("theme_order") or ())
+        default = request.form.get("theme_default", "").strip()
+        if default:
+            if default in names:
+                updates["theme_default"] = default
+            else:
+                errors.append("That theme does not exist.")
+
+        def position(entry):
+            index, name = entry
+            try:
+                return (int(request.form.get(f"theme_order_{name}", "")), index)
+            except ValueError:
+                return (index + 1, index)
+
+        if any(f"theme_order_{name}" in request.form for name in names):
+            updates["theme_order"] = [name for _, name in sorted(enumerate(names), key=position)]
+
         resume_upload = request.files.get("resume_file")
         if resume_upload and resume_upload.filename:
             try:
@@ -117,6 +136,7 @@ def site_settings():
             return render_template(
                 "admin/site_settings.html",
                 settings=form_settings,
+                themes=_theme_rows(settings),
                 csrf_token=_csrf_token(),
                 **_upload_context(),
             )
@@ -128,9 +148,19 @@ def site_settings():
     return render_template(
         "admin/site_settings.html",
         settings=settings,
+        themes=_theme_rows(settings),
         csrf_token=_csrf_token(),
         **_upload_context(),
     )
+
+
+def _theme_rows(settings: dict) -> list[dict]:
+    """The settings page's theme table: every theme in the switcher's order, the default marked."""
+    static_folder = current_app.static_folder
+    default = site_theme(static_folder, settings)
+    hidden = hidden_themes(static_folder)
+    return [{"name": name, "default": name == default, "hidden": name in hidden}
+            for name in theme_names(static_folder, settings.get("theme_order") or ())]
 
 
 @bp.route("/login", methods=["GET", "POST"])

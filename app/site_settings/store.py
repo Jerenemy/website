@@ -19,6 +19,8 @@ def _default_settings() -> dict:
     return {
         "home_description": DEFAULT_HOME_DESCRIPTION,
         "resume_filename": "resume.pdf",
+        "theme_default": "",   # empty: the SITE_THEME setting (app/design.py)
+        "theme_order": [],     # the switcher's order; themes left out follow (app/design.py)
     }
 
 
@@ -34,6 +36,14 @@ def _merge_defaults(data: dict) -> dict:
     resume_filename = data.get("resume_filename")
     if isinstance(resume_filename, str) and resume_filename.strip():
         merged["resume_filename"] = resume_filename
+
+    theme_default = data.get("theme_default")
+    if isinstance(theme_default, str):
+        merged["theme_default"] = theme_default.strip()
+
+    theme_order = data.get("theme_order")
+    if isinstance(theme_order, list):
+        merged["theme_order"] = [name for name in theme_order if isinstance(name, str)]
 
     updated_at = data.get("updated_at")
     if isinstance(updated_at, str) and updated_at.strip():
@@ -59,6 +69,10 @@ class SiteSettingsStore:
                 current["home_description"] = str(updates["home_description"])
             if "resume_filename" in updates and updates["resume_filename"] is not None:
                 current["resume_filename"] = str(updates["resume_filename"])
+            if "theme_default" in updates and updates["theme_default"] is not None:
+                current["theme_default"] = str(updates["theme_default"])
+            if "theme_order" in updates and updates["theme_order"] is not None:
+                current["theme_order"] = [str(name) for name in updates["theme_order"]]
 
             current["updated_at"] = _timestamp()
             self._write(current)
