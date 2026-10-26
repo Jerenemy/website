@@ -162,10 +162,13 @@ class HomeTests(unittest.TestCase):
             self.assertIn(f'id="{element_id}"', html, element_id)
         self.assertEqual(page.importmap, {"imports": {"three": "/static/home/vendor/three-r186/three.module.min.js"}})
         self.assertIn({"type": "module", "src": "/static/home/src/main.js"}, page.scripts)
-        # Every module is preloaded (the bundle, then main.js first), except the test hook probe.js.
+        # Every module is preloaded (the bundle, then main.js first), except the test hook probe.js;
+        # the theme's scene module, when it has one, last.
         modules = sorted(p.name for p in (HOME_STATIC / "src").glob("*.js") if p.name != "probe.js")
         self.assertEqual(page.preloads[:2], ["/static/home/vendor/three-r186/three.module.min.js", "/static/home/src/main.js"])
-        self.assertEqual(sorted(page.preloads[1:]), [f"/static/home/src/{m}" for m in modules])
+        own = [href for href in page.preloads[1:] if href.startswith("/static/home/src/")]
+        self.assertEqual(sorted(own), [f"/static/home/src/{m}" for m in modules])
+        self.assertTrue(all(href.startswith("/static/site/themes/") for href in page.preloads[1 + len(own):]))
         self.assertNotIn("/static/home/src/probe.js", html)
         # No HTML comment reaches the visitor (the template's notes are Jinja comments).
         self.assertNotIn("<!--", html)
@@ -446,6 +449,20 @@ class AdminTests(unittest.TestCase):
         form.update(fields)
         return self.client.post(path, data=form)
 
+    def test_settings_choose_the_default_theme_and_the_order(self):
+        html = self.client.get("/admin/settings").text
+        self.assertIn('name="theme_default" value="chalk" checked', html)
+        form = {"csrf_token": "token", "home_description": "Hello.", "theme_default": "wood",
+                "theme_order_void": "3", "theme_order_chalk": "2", "theme_order_wood": "1", "theme_order_minecraft": "x"}
+        self.assertEqual(self.client.post("/admin/settings", data=form).status_code, 302)
+        saved = json.loads(Path(self.app.config["SITE_SETTINGS_PATH"]).read_text())
+        self.assertEqual(saved["theme_default"], "wood")
+        self.assertEqual(saved["theme_order"][:3], ["wood", "chalk", "void"])
+        self.assertIn('data-theme="wood"', self.client.get("/").text)
+        form["theme_default"] = "../tokens"
+        self.client.post("/admin/settings", data=form)
+        self.assertEqual(json.loads(Path(self.app.config["SITE_SETTINGS_PATH"]).read_text())["theme_default"], "wood")
+
     def test_form_offers_the_new_fields(self):
         html = self.client.get("/admin/portfolio/new").text
         for kind in KINDS:
@@ -560,10 +577,36 @@ class ThemeTests(unittest.TestCase):
                     self.assertIn("export default", source)
                     self.assertNotRegex(source, r"^import ", "a scene module stands alone: no imports")
 
-    def test_default_is_the_void_with_no_theme_files(self):
+    def test_default_is_chalk(self):
+        html = self.client.get("/").text
+        self.assertIn('<html lang="en" data-theme="chalk"', html)
+        self.assertIn('href="/static/site/themes/chalk/theme.css"', html)
+        self.assertIn('<meta name="color-scheme" content="light">', html)       # the browser's chrome follows the theme
+        self.assertIn('<meta name="theme-color" content="#f4f4f4">', html)
+
+    def test_void_is_tokens_alone_with_no_theme_files(self):
+        self.app.config["SITE_THEME"] = "void"
         html = self.client.get("/").text
         self.assertIn('<html lang="en" data-theme="void">', html)
         self.assertNotIn("/themes/", html.split("<body")[0].replace("_themes", ""))   # no theme.css, no scene.js
+        self.assertIn('<meta name="color-scheme" content="dark">', html)
+        self.assertIn('<meta name="theme-color" content="#050505">', html)
+
+    def save_settings(self, **settings):
+        Path(self.app.config["SITE_SETTINGS_PATH"]).write_text(json.dumps(settings))
+
+    def test_admin_settings_choose_the_default_over_site_theme(self):
+        self.save_settings(theme_default="wood")
+        self.assertIn('data-theme="wood"', self.client.get("/").text)
+        self.assertIn("theme=;", self.client.get("/?theme=wood").headers.get("Set-Cookie", ""))   # the site's own: cleared
+        self.save_settings(theme_default="nope")                                   # not on disk: SITE_THEME
+        self.assertIn('data-theme="chalk"', self.client.get("/").text)
+
+    def test_admin_settings_order_the_switcher(self):
+        self.save_settings(theme_order=["wood", "nope", "void"])
+        names = re.findall(r'<a href="\?theme=([a-z0-9-]+)"', self.client.get("/").text)
+        rest = [name for name in self.listed() if name != "wood"]
+        self.assertEqual(names, ["wood", "void"] + rest)
 
     def test_query_switches_the_theme_and_the_cookie_keeps_it(self):
         response = self.client.get("/?theme=wood")
@@ -571,13 +614,17 @@ class ThemeTests(unittest.TestCase):
         self.assertIn('href="/static/site/themes/wood/theme.css"', response.text)
         self.assertIn("theme=wood", response.headers.get("Set-Cookie", ""))
         self.assertIn('data-theme="wood"', self.client.get("/contact").text)   # kept for the visit
-        response = self.client.get("/?theme=void")
+        response = self.client.get("/?theme=void")                              # not the site's: kept too
         self.assertIn('data-theme="void"', response.text)
-        self.assertIn("theme=;", response.headers.get("Set-Cookie", ""))        # cleared
+        self.assertIn("theme=void", response.headers.get("Set-Cookie", ""))
+        self.assertIn('data-theme="void"', self.client.get("/contact").text)
+        response = self.client.get("/?theme=chalk")                             # the site's own: cleared
+        self.assertIn('data-theme="chalk"', response.text)
+        self.assertIn("theme=;", response.headers.get("Set-Cookie", ""))
 
     def test_unknown_theme_is_ignored(self):
-        self.assertIn('data-theme="void"', self.client.get("/?theme=nope").text)
-        self.assertIn('data-theme="void"', self.client.get("/?theme=../tokens").text)
+        self.assertIn('data-theme="chalk"', self.client.get("/?theme=nope").text)
+        self.assertIn('data-theme="chalk"', self.client.get("/?theme=../tokens").text)
 
     def test_scene_module_is_handed_to_the_homepage_only_when_the_theme_has_one(self):
         for name in self.themes():
@@ -610,7 +657,7 @@ class ThemeTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(names, expected)
                 current = re.findall(r'<a href="\?theme=([a-z0-9-]+)" aria-current="true"', html)
-                self.assertEqual(current, ["wood" if "theme=wood" in path else "void"])
+                self.assertEqual(current, ["wood" if "theme=wood" in path else "chalk"])
 
     def test_every_theme_renders_its_pages(self):
         for name in self.themes():

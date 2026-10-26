@@ -29,6 +29,27 @@
         <input type="file" id="resume_file" name="resume_file" accept="application/pdf,.pdf">
         <p class="note">The new file is served at /resume.</p>
       </div>
+    {% endcall %}
+
+    {% call ui.sect("03", "Themes", wide=True) %}
+      <div class="table admin-table">
+        <table>
+          <thead>
+            <tr><th>Default</th><th>Theme</th><th>Order</th><th>Switcher</th></tr>
+          </thead>
+          <tbody>
+            {% for t in themes %}
+              <tr>
+                <td data-label="Default"><label class="check"><input type="radio" name="theme_default" value="{{ t.name }}"{% if t.default %} checked{% endif %} aria-label="Make {{ t.name }} the default"></label></td>
+                <td data-label="Theme" class="admin-table__lead">{{ t.name }}</td>
+                <td data-label="Order"><div class="field"><input type="number" name="theme_order_{{ t.name }}" value="{{ loop.index }}" min="1" aria-label="Position of {{ t.name }}"></div></td>
+                <td data-label="Switcher">{{ "Hidden" if t.hidden else "Shown" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Visitors see the default until they pick another theme. Lower numbers come first in the switcher. Hidden themes stay out of the switcher, and their <code>?theme=name</code> links still work.</p>
       <div class="send">{{ admin.button("Save settings") }}</div>
     {% endcall %}
 

@@ -21,10 +21,11 @@ boxes, numbers for order, and **one point of colour per page that means "you are
 
 ### Themes
 
-* Default: `SITE_THEME` in the environment (`void` = `tokens.css` alone, and the scene's own world).
+* Default: `SITE_THEME` in the environment, `chalk` when unset (`void` = `tokens.css` alone, and the
+  scene's own world).
 * Switching: the switcher in every page's frame, or `?theme=<name>` on any URL; a cookie keeps it for
-  the visit, `?theme=void` clears it. The standalone demo (`design/homepage-demo`) takes the same
-  `?theme=<name>`.
+  the visit, and choosing the site's own theme clears it. The standalone demo (`design/homepage-demo`)
+  takes the same `?theme=<name>` (without one it shows the void).
 * New theme: a folder `themes/<name>/` with a `theme.css` whose `:root { … }` overrides only what
   changes; it appears in the switcher at once (an empty file named `hidden` beside it keeps it
   out of the switcher while `?theme=<name>` still shows it). The homepage's interface is drawn in `--world-*`
