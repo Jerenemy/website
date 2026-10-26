@@ -83,6 +83,8 @@ def _render(kind, *, track, title, description, og_image, deep_link, status=200,
         json_ld=json_ld,
         dots_for=_dots,
         avatar_for=_avatar,
+        badge_titles=data.BADGE_TITLES,
+        badge_explanations=data.BADGE_EXPLANATIONS,
         noindex=kind == "missing" if noindex is None else noindex,
         **context,
     )

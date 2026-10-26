@@ -170,6 +170,7 @@ app/blog/*.pyc
 !tests/test_sonar_share.py
 !tests/test_sonar_attribution.py
 !tests/test_sonar_creators_recap.py
+!tests/test_sonar_badges.py
 
 # macOS folder metadata, wherever an allowlist above reaches
 .DS_Store

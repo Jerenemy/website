@@ -1,5 +1,5 @@
 <!doctype html>
-{% from "works/sonar/_share_macros.html" import rating_dots, avatar_tag %}
+{% from "works/sonar/_share_macros.html" import rating_dots, avatar_tag, badge_glyph %}
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -40,15 +40,20 @@
     {% include "works/sonar/_share_brand.html" %}
 
 
+    {#- The amber glyph beside a person's name (Founder, Core Designer or Creator), as in the app. -#}
+    {% macro name_badge(kind) -%}
+      {% if kind %}<span class="name-badge" title="{{ badge_titles[kind] }}">{{ badge_glyph(kind, badge_titles[kind]) }}</span>{% endif %}
+    {%- endmacro %}
+
     {#- One review in a list: the episode's art (or the reviewer, on an episode page), title, dots, words. -#}
     {% macro review_row(item, by_person=False) -%}
       <li>
         <a class="rv" href="{{ item.path }}">
-          {% if by_person %}{{ avatar_tag(avatar_for(item.username)) }}
+          {% if by_person %}{{ avatar_tag(avatar_for(item.username), "", item.avatar_url) }}
           {% elif item.episode and item.episode.artwork %}<img src="{{ item.episode.artwork }}" alt="" width="56" height="56" loading="lazy" decoding="async">
           {% else %}<span class="ph" aria-hidden="true"></span>{% endif %}
           <span class="rv__text">
-            {% if by_person %}<span class="rv__title">@{{ item.username or "someone" }}</span>
+            {% if by_person %}<span class="rv__title">@{{ item.username or "someone" }}{{ name_badge(item.badge) }}</span>
             {% else %}<span class="rv__title">{{ item.episode.title if item.episode else "A podcast episode" }}</span>
             {% if item.episode and item.episode.podcast %}<span class="rv__sub">{{ item.episode.podcast.name }}</span>{% endif %}{% endif %}
             {% if item.rating or item.is_loved %}<span class="rv__meta">{{ rating_dots(dots_for(item.rating), item.is_loved) }}</span>{% endif %}
@@ -100,8 +105,8 @@
         {% if dots or review.is_loved %}<div class="meta">{{ rating_dots(dots, review.is_loved) }}</div>{% endif %}
         {% if review.text %}<blockquote>{{ review.text }}</blockquote>{% endif %}
         <div class="byline">
-          {{ avatar_tag(avatar) }}
-          <span><strong>@{{ review.username or "someone" }}</strong> on Sonar</span>
+          {{ avatar_tag(avatar, "", review.avatar_url) }}
+          <span><strong>@{{ review.username or "someone" }}</strong>{{ name_badge(review.badge) }} on Sonar</span>
         </div>
         {% if review.like_count or review.reply_count %}
           <p class="social">
@@ -140,6 +145,21 @@
         <div class="center">
           {{ avatar_tag(avatar, "avatar--large", page.avatar_url) }}
           <h1 style="margin-top: 18px">@{{ profile.username }}</h1>
+          {#- Every badge under the name, like the app's profile: a creator's shows say what they make. -#}
+          {% if page.badges %}
+            <ul class="badges">
+              {% for kind in page.badges if not (kind == "creator" and page.creator_shows) %}
+                <li title="{{ badge_explanations[kind] }}">{{ badge_glyph(kind) }}{{ badge_titles[kind] }}</li>
+              {% endfor %}
+            </ul>
+            {% if page.creator_shows %}
+              <ul class="badges badges--shows">
+                {% for show in page.creator_shows %}
+                  <li><a href="{{ url_for('sonar_share.shared_podcast', podcast_id=show.id) }}" title="{{ badge_explanations['creator'] }}">{{ badge_glyph("creator") }}<span>Makes <strong>{{ show.name }}</strong></span></a></li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          {% endif %}
           {% if page.followers is not none or page.following is not none %}
             <ul class="stats">
               {% if profile.logged_count is not none %}<li><strong>{{ "{:,}".format(profile.logged_count) }}</strong><span>logged</span></li>{% endif %}
@@ -156,7 +176,7 @@
         <div class="invite-head">
           {% if inviter %}
             {{ avatar_tag(avatar, "avatar--large", page.avatar_url) }}
-            <h1>@{{ inviter }}</h1>
+            <h1>@{{ inviter }}{{ name_badge(page.name_badge) }}</h1>
             <p class="lede">invited you to Sonar</p>
           {% else %}
             <img class="art art--small" style="margin: 8px auto 0" src="{{ url_for('static', filename='sonar/img/app-icon.png') }}" alt="" width="132" height="132">
@@ -173,7 +193,7 @@
       {% elif kind == "recap" %}
         <div class="recap__who">
           {{ avatar_tag(avatar, "avatar--small", recap.avatar_url) }}
-          <span><strong>@{{ recap.username }}</strong>'s {{ recap.period.noun }} in podcasts</span>
+          <span><strong>@{{ recap.username }}</strong>{{ name_badge(recap.badge) }}'s {{ recap.period.noun }} in podcasts</span>
         </div>
         <h1 class="recap__period">{{ recap.period.label }}</h1>
         <p class="recap__lede">on Sonar</p>
@@ -223,8 +243,8 @@
 
       {% elif kind == "list" %}
         <div class="byline byline--top">
-          {{ avatar_tag(avatar, "avatar--small") }}
-          <span>A list by <strong>@{{ sonar_list.username or "someone" }}</strong></span>
+          {{ avatar_tag(avatar, "avatar--small", sonar_list.avatar_url) }}
+          <span>A list by <strong>@{{ sonar_list.username or "someone" }}</strong>{{ name_badge(sonar_list.badge) }}</span>
         </div>
         <h1>{{ sonar_list.title }}</h1>
         {% if sonar_list.description %}<p class="description">{{ sonar_list.description }}</p>{% endif %}
