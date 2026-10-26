@@ -297,39 +297,35 @@ def query_endpoint():
 
         # 2. Similarity Search
         similarities = (query_emb @ DB_TENSOR.T).squeeze(0)
-        topk_scores, topk_indices = torch.topk(similarities, min(100, len(DB_METADATA)))
         
-        same_modality_results = []
-        cross_modality_results = []
-        
-        # 3. Filter into buckets
-        for score, idx in zip(topk_scores, topk_indices):
-            item = DB_METADATA[idx.item()]
-            
-            # Helper to fix URLs for the frontend
-            clean_url = item['url']
-            if not clean_url.startswith('/ear/data'):
-                # Strip old prefix if any and prepend correct one
-                if '/data/' in clean_url:
-                    rel = clean_url.split('/data/')[-1]
-                    clean_url = f"/ear/data/{rel}"
-            
-            result_obj = {
-                "type": item['type'],
-                "url": clean_url,
-                "label": item['label'],
-                "score": round(score.item(), 3)
-            }
-            
-            if item['type'] == query_type:
-                if len(same_modality_results) < 5:
-                    same_modality_results.append(result_obj)
-            else:
-                if len(cross_modality_results) < 5:
-                    cross_modality_results.append(result_obj)
-            
-            if len(same_modality_results) >= 5 and len(cross_modality_results) >= 5:
-                break
+        # 3. Rank each modality on its own: an audio query scores far higher against other
+        # audio than against any image, so one ranking over the whole index never reached them
+        def top_results(kind, k=5):
+            rows = [i for i, m in enumerate(DB_METADATA) if m['type'] == kind]
+            scores, picks = torch.topk(similarities[rows], min(k, len(rows)))
+            results = []
+            for score, pick in zip(scores, picks):
+                item = DB_METADATA[rows[pick.item()]]
+                
+                # Helper to fix URLs for the frontend
+                clean_url = item['url']
+                if not clean_url.startswith('/ear/data'):
+                    # Strip old prefix if any and prepend correct one
+                    if '/data/' in clean_url:
+                        rel = clean_url.split('/data/')[-1]
+                        clean_url = f"/ear/data/{rel}"
+                
+                results.append({
+                    "type": item['type'],
+                    "url": clean_url,
+                    "label": item['label'],
+                    "score": round(score.item(), 3)
+                })
+            return results
+
+        other_type = "audio" if query_type == "image" else "image"
+        same_modality_results = top_results(query_type)
+        cross_modality_results = top_results(other_type)
 
         return jsonify({
             "query_type": query_type,
