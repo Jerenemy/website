@@ -322,11 +322,12 @@ const fragmentShader = ({ phantoms, count, pass }) => /* glsl */ `
     // face the light rises toward its nearest point and falls away from it: no ring, no rim. A face
     // changing hands (the light passing on) gives up the key's grey before the red arrives, or the
     // red before the grey returns, over a tenth of the hold: at the light's speed a frame of dark,
-    // never of rose.
+    // never of rose. A theme whose hall is bright keeps SHADING.heldKeep of the grey under the red:
+    // there the hall still lights the face, and white stone must not go black.
     float keyOn = 1.0 - smoothstep(0.4, 0.5, vOwn);
     float redOn = smoothstep(0.5, 0.6, vOwn);
     vec3 glow = shoulder(uAccent * (redOn * lantern)) + vec3(${LIFT}) * (keyOn * lantern);
-    tone *= keyOn;
+    tone *= keyOn + ${SHADING.heldKeep.toFixed(3)} * (1.0 - keyOn);
 
     // --- the door's spill --------------------------------------------------------------------
     // The tread in front of the door's riser takes light out of the opening: the light's own,

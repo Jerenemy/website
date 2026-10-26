@@ -1,0 +1,37 @@
+/* THEME: chalk. The void turned inside out: the same neutral greys, run from white down instead
+   of from black up, and the same vermilion. Loaded after static/site/tokens.css, it overrides
+   only what it changes; see that file for the contract. The world (pale chalk blocks drawn with
+   dark arrises, a white hall with grey mist pooled at the foot, the light an opaque vermilion
+   bead) is scene.js beside this file.
+
+   The homepage's interface is drawn in --world-* over the scene's air: that air is bright, so
+   the interface here is dark. */
+:root {
+  color-scheme: light;
+
+  --bg: #f4f4f4;
+  --surface: #ebebeb;
+  --surface-2: #e2e2e2;
+
+  --ink: #1e1e1e;
+  --ink-2: #4e4e4e;
+  --ink-3: #6b6b6b;       /* 4.9:1 on --bg */
+  --tick: #a3a3a3;
+
+  --hair: rgba(30, 30, 30, 0.3);
+  --rule: rgba(30, 30, 30, 0.11);
+
+  --select-bg: var(--ink);
+  --select-ink: var(--bg);
+
+  /* Over the scene's white air: dark ink, dark marks. */
+  --world-bg: #e9e9e9;   /* the air's middle: what the canvas fades from and to */
+  --world-ink: #1e1e1e;
+  --world-ink-2: #4a4a4a;
+  --world-ink-3: #606060;
+  --world-tick: #7a7a7a;
+  --world-hair: rgba(30, 30, 30, 0.34);
+  --world-rule: rgba(30, 30, 30, 0.13);
+
+  --shadow-device: 0 40px 100px -50px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--rule);
+}

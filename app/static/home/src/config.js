@@ -101,6 +101,8 @@ export const SHADING = {
   dimSelected: 0.42,             // how far the rest of the monument recedes when a work is selected
   lanternWhite: [0.17, 0.15, 0.14], // linear, per unit of the light's red: what it adds to a face it does not hold, a
                                  // warm white (sRGB saturation 0.09, under any tint that reads as a colour)
+  heldKeep: 0,                   // share of the key's grey a face the light holds keeps (0: lit by the light alone,
+                                 // falling to deep red; a theme with a bright hall keeps some, or white stone goes black)
   lanternEdge: 0.35,             // a free arris or worn edge catches this much more of the light
   lanternHold: [0.11, 0.16],     // beams: it holds a face while its foot on the face's plane lies within the first of
                                  // the face, and lets it go by the second (src/hold.js)...
