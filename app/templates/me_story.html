@@ -2,7 +2,8 @@
 {% import "partials/_ui.html" as ui with context %}
 {#- Where he comes from: the personal pages behind /me, reached only from its last section. The
     words are Jeremy's own and live here. The photos are static/img/me*.jpeg, drawn at a
-    snapshot's size (.figure--inset); the year under each is the date in the photo's own file. #}
+    snapshot's size (.figure--inset); the year under each is the date in the photo's own file.
+    The senior project talk is a YouTube embed (.figure--video) at the same size. #}
 {% block title %}Background · {{ frame.name }}{% endblock %}
 {% block description %}Jeremy Zay, in his own words: a childhood without screens, a Waldorf school, an Asteroids clone, Wesleyan, art and computer science.{% endblock %}
 {% block head %}<meta name="robots" content="noindex">{% endblock %}
@@ -23,6 +24,10 @@
       <p>At school we learned cursive, string games, and to identify skunk cabbage in the woods. We played capture the flag, but my friend and I hid the flag too well which kinda broke the game. We slept in a teepee and woke up at sunrise to milk the cows across the street. We snuck out and hid from our teacher chaperone under the piano in the Eurythmy room.</p>
       <p>Phones were banned in high school, so was typing notes, and there were certainly no CS classes offered. Math sufficed. For my independent senior project I decided to teach myself to harness this magic, until it was demystified and materialized into an Asteroids clone built in Python. Before ChatGPT, this was an accomplishment.</p>
     </div>
+    <figure class="figure figure--plain figure--inset figure--video">
+      <iframe src="https://www.youtube-nocookie.com/embed/qXi1EadX0Tk" title="Jeremy's senior project presentation: coding a video game" width="320" height="180" loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      <figcaption><span class="no">Fig 02</span><span class="t">2022</span></figcaption>
+    </figure>
   {% endcall %}
 
   {% call ui.sect("02", "Wesleyan") %}
@@ -31,13 +36,14 @@
     </div>
     <figure class="figure figure--plain figure--inset">
       <img src="{{ url_for('static', filename='img/me-drawing.jpeg') }}" alt="Jeremy at a kitchen table, drawing a face in a sketchbook" width="1200" height="1600" loading="lazy" decoding="async">
-      <figcaption><span class="no">Fig 02</span><span class="t">2026</span></figcaption>
+      <figcaption><span class="no">Fig 03</span><span class="t">2026</span></figcaption>
     </figure>
     <figure class="figure figure--plain figure--inset">
       <img src="{{ url_for('static', filename='img/me.jpeg') }}" alt="Jeremy Zay in a red graduation cap, looking down" width="1920" height="1280" loading="lazy" decoding="async">
-      <figcaption><span class="no">Fig 03</span><span class="t">2026</span></figcaption>
+      <figcaption><span class="no">Fig 04</span><span class="t">2026</span></figcaption>
     </figure>
     <div class="prose">
+      <p>My version of doomscrolling is building and automating things with claude. There should be a word for this…doomvibing? My job-bot automatically finds and submits swe applications for me, my social media bot automatically directs and edits instagram reels for me to market sonar (linkedin posts coming soon), my cc routine automatically sorts and summarizes my emails each evening. I’ve started to look at tasks in real life and my first instinct is “how can this be automated with ai?” but sadly an llm can’t clean my room for me (yet).</p>
       <p>Enjoy this calm, non-technical alcove of my website.</p>
     </div>
   {% endcall %}

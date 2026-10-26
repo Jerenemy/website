@@ -214,6 +214,8 @@ details.index__item .index__answer > * + * { margin-top: var(--s2); }
 .figure--photo img { max-width: min(100%, (100svh - 2 * var(--s8)) * var(--ratio, 1)); }
 /* An inset photograph sits in the reading column at a snapshot's size, not the screen's. */
 .figure--inset img { max-width: min(100%, var(--inset)); }
+/* A video set into reading text plays in place at the same snapshot size. */
+.figure--video iframe { display: block; width: min(100%, var(--inset)); height: auto; aspect-ratio: 16 / 9; border: 1px solid var(--rule); }
 
 .device--window { overflow: hidden; border-radius: var(--radius-window); background: var(--surface); box-shadow: var(--shadow-device); }
 .device--window::before {
