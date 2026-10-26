@@ -82,7 +82,7 @@ sudo supervisorctl status ear_service
 curl -s -o /dev/null -w '%{http_code}\n' https://jeremyzay.com/ear/   # 200: publish EAR in /admin/portfolio after the deploy
 ```
 
-2. nginx first: gzip for CSS/JS/JSON/SVG, a year's cache for the versioned three.js, five minutes for the rest of `/static/`, and HTTP/2. The current app runs unchanged under it. The live file is the one in `sites-enabled` that serves jeremyzay.com (`projects/attack_target_network/docs` edits `/etc/nginx/sites-enabled/personal_website`); `readlink` follows it to `sites-available` if it is a link. It is replaced only if it is exactly the repository's current copy; otherwise the change is printed, to be made by hand.
+2. nginx first: gzip for CSS/JS/JSON/SVG, a year's cache for the versioned three.js, revalidation on every load (`no-cache`, cheap 304s) for the rest of `/static/`, and HTTP/2. The current app runs unchanged under it. The live file is the one in `sites-enabled` that serves jeremyzay.com (`projects/attack_target_network/docs` edits `/etc/nginx/sites-enabled/personal_website`); `readlink` follows it to `sites-available` if it is a link. It is replaced only if it is exactly the repository's current copy; otherwise the change is printed, to be made by hand.
 
 ```bash
 grep -l 'server_name jeremyzay.com' /etc/nginx/sites-enabled/*         # must list exactly one file
@@ -117,7 +117,7 @@ for f in app/static/home/src/*.js app/static/home/*.css app/static/home/vendor/t
 curl -s -o /dev/null -D - -H 'Accept-Encoding: gzip' https://jeremyzay.com/static/home/vendor/three-r186/three.module.min.js | grep -iE 'content-encoding|cache-control|vary'
 #   content-encoding: gzip / cache-control: public, max-age=31536000, immutable / vary: Accept-Encoding
 curl -s -o /dev/null -D - -H 'Accept-Encoding: gzip' https://jeremyzay.com/static/home/src/main.js | grep -iE 'content-encoding|cache-control'
-#   content-encoding: gzip / cache-control: public, max-age=300
+#   content-encoding: gzip / cache-control: no-cache
 curl -s -o /dev/null -D - https://jeremyzay.com/ | grep -ci cache-control      # 0: pages are not cached
 curl -s -o /dev/null -D - https://jeremyzay.com/wtt | grep -i cache-control    # exactly one line: no-store
 ```
@@ -168,6 +168,18 @@ jzay ALL=(root) NOPASSWD: /usr/bin/supervisorctl restart personal_website, /usr/
 ```
 
 3. In GitHub, Settings → Secrets and variables → Actions, add `DEPLOY_HOST` (the server's address), `DEPLOY_USER` (`jzay`), `DEPLOY_SSH_KEY` (the contents of `~/.ssh/github_deploy`) and, if SSH is not on 22, `DEPLOY_PORT`.
+
+The workflow never touches nginx. After a merge that changes `deploy/nginx/personal_website.conf`, apply it on the server by hand. Look at the difference first, since Certbot or a hand edit may have changed the live file; copy the repository's file over it only if that difference is just this change, otherwise make the edit by hand:
+
+```bash
+CONF=$(readlink -f "$(grep -l 'server_name jeremyzay.com' /etc/nginx/sites-enabled/* | head -1)"); sudo diff -u "$CONF" /home/jzay/personal_website/deploy/nginx/personal_website.conf
+```
+
+```bash
+BAK=~/nginx-personal_website.$(date +%Y%m%d-%H%M).bak; sudo cp "$CONF" "$BAK" && sudo cp /home/jzay/personal_website/deploy/nginx/personal_website.conf "$CONF" && { sudo nginx -t && sudo systemctl reload nginx || { sudo cp "$BAK" "$CONF"; echo "nginx -t failed: old config restored"; }; }
+```
+
+`curl -sI https://jeremyzay.com/static/home/src/main.js | grep -i cache-control` then prints `no-cache`, and the same for `/static/home/vendor/three-r186/three.module.min.js` prints `public, max-age=31536000, immutable`.
 
 ## Job Application Review
 
