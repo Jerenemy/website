@@ -1,17 +1,9 @@
 import os
-import glob
-import soundfile as sf
 import subprocess
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision as tvm
-import torchaudio
-import gc
 import logging
-from flask import Flask, request, jsonify, send_from_directory, render_template, url_for as flask_url_for
+import requests
+from flask import Flask, Response, request, jsonify, send_from_directory, render_template, url_for as flask_url_for
 from werkzeug.utils import secure_filename
-from PIL import Image
 
 # --- CONFIGURATION ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -22,8 +14,16 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 CACHE_PATH = os.path.join(BASE_DIR, 'indexed_db.pt')
 MODEL_PATH = os.path.join(BASE_DIR, 'pretrained_models', 'best_audio_visual_clip.pt')
 
-# CRITICAL: Limit threads to prevent VPS crash
-torch.set_num_threads(1)
+# Set on the server, in projects/ear/.env (untracked): the model runs on Modal
+# (modal/modal_app.py), so this process never imports torch and only renders the page, serves
+# /data and forwards /query. Unset, the model loads here, which is for local development.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(BASE_DIR, '.env'))
+except ImportError:
+    pass
+INFERENCE_URL = os.environ.get('EAR_INFERENCE_URL', '').rstrip('/')
+INFERENCE_KEY = os.environ.get('EAR_KEY', '')
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -73,122 +73,134 @@ def site_frame():
         site_theme_css=None,
     )
 
-# Force CPU
-device = "cpu"
+if not INFERENCE_URL:
+    import soundfile as sf
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    import torchvision as tvm
+    import torchaudio
+    from PIL import Image
 
-# --- 1. MODEL ARCHITECTURE ---
+    # CRITICAL: Limit threads to prevent VPS crash
+    torch.set_num_threads(1)
 
-class AudioEncoder(nn.Module):
-    def __init__(self, model, sample_rate, embed_dim):
-        super().__init__()
-        self.model = model
-        self.sample_rate = sample_rate
-        self.embed_dim = embed_dim
+    # Force CPU
+    device = "cpu"
 
-    def forward(self, wav, sr):
-        if isinstance(sr, torch.Tensor):
-            sr = sr.item()
-        if sr != self.sample_rate: 
-            wav = torchaudio.functional.resample(wav, sr, self.sample_rate)
-        if wav.dim() == 1:
-            wav = wav.unsqueeze(0) 
+    # --- 1. MODEL ARCHITECTURE ---
+
+    class AudioEncoder(nn.Module):
+        def __init__(self, model, sample_rate, embed_dim):
+            super().__init__()
+            self.model = model
+            self.sample_rate = sample_rate
+            self.embed_dim = embed_dim
+
+        def forward(self, wav, sr):
+            if isinstance(sr, torch.Tensor):
+                sr = sr.item()
+            if sr != self.sample_rate: 
+                wav = torchaudio.functional.resample(wav, sr, self.sample_rate)
+            if wav.dim() == 1:
+                wav = wav.unsqueeze(0) 
         
-        with torch.no_grad():
-            feats, _ = self.model.extract_features(wav)
-            x = feats[-1].mean(dim=1) 
-        return x
+            with torch.no_grad():
+                feats, _ = self.model.extract_features(wav)
+                x = feats[-1].mean(dim=1) 
+            return x
 
-class ProjectionHead(nn.Module):
-    def __init__(self, in_dim, embed_dim):
-        super().__init__()
-        self.proj = nn.Linear(in_dim, embed_dim)
+    class ProjectionHead(nn.Module):
+        def __init__(self, in_dim, embed_dim):
+            super().__init__()
+            self.proj = nn.Linear(in_dim, embed_dim)
 
-    def forward(self, x):
-        return F.normalize(self.proj(x), dim=-1)
+        def forward(self, x):
+            return F.normalize(self.proj(x), dim=-1)
 
-class AudioVisualCLIP(nn.Module):
-    def __init__(self, image_encoder, audio_encoder, img_dim=2048, audio_dim=768, embed_dim=512):
-        super().__init__()
-        self.image_encoder = image_encoder
-        self.audio_encoder = audio_encoder
-        self.image_proj = ProjectionHead(img_dim, embed_dim)
-        self.audio_proj = ProjectionHead(audio_dim, embed_dim)
-        self.logit_scale = nn.Parameter(torch.tensor((1 / 0.07)).log())
+    class AudioVisualCLIP(nn.Module):
+        def __init__(self, image_encoder, audio_encoder, img_dim=2048, audio_dim=768, embed_dim=512):
+            super().__init__()
+            self.image_encoder = image_encoder
+            self.audio_encoder = audio_encoder
+            self.image_proj = ProjectionHead(img_dim, embed_dim)
+            self.audio_proj = ProjectionHead(audio_dim, embed_dim)
+            self.logit_scale = nn.Parameter(torch.tensor((1 / 0.07)).log())
 
-    def encode_image(self, images):
-        with torch.no_grad():
-            feats = self.image_encoder(images)
-        return self.image_proj(feats)
+        def encode_image(self, images):
+            with torch.no_grad():
+                feats = self.image_encoder(images)
+            return self.image_proj(feats)
 
-    def encode_audio(self, audio, sr):
-        audio_feats = self.audio_encoder(audio, sr)
-        return self.audio_proj(audio_feats)
+        def encode_audio(self, audio, sr):
+            audio_feats = self.audio_encoder(audio, sr)
+            return self.audio_proj(audio_feats)
 
 
-# --- 2. INITIALIZATION ---
+    # --- 2. INITIALIZATION ---
 
-logger.info("Initializing model architecture...")
+    logger.info("Initializing model architecture...")
 
-# Load ResNet
-resnet_weights = tvm.models.ResNet50_Weights.IMAGENET1K_V2
-resnet = tvm.models.resnet50(weights=resnet_weights).eval()
-image_encoder = torch.nn.Sequential(*(list(resnet.children())[:-1]), torch.nn.Flatten(1))
-img_transforms = resnet_weights.transforms()
+    # Load ResNet
+    resnet_weights = tvm.models.ResNet50_Weights.IMAGENET1K_V2
+    resnet = tvm.models.resnet50(weights=resnet_weights).eval()
+    image_encoder = torch.nn.Sequential(*(list(resnet.children())[:-1]), torch.nn.Flatten(1))
+    img_transforms = resnet_weights.transforms()
 
-# Load Wav2Vec2
-bundle = torchaudio.pipelines.WAV2VEC2_BASE
-w2v = bundle.get_model().eval()
-with torch.no_grad():
-    dummy = torch.zeros(1, bundle.sample_rate)
-    feats, _ = w2v.extract_features(dummy)
-    d_a = feats[-1].shape[-1]
-audio_encoder = AudioEncoder(w2v, bundle.sample_rate, d_a)
+    # Load Wav2Vec2
+    bundle = torchaudio.pipelines.WAV2VEC2_BASE
+    w2v = bundle.get_model().eval()
+    with torch.no_grad():
+        dummy = torch.zeros(1, bundle.sample_rate)
+        feats, _ = w2v.extract_features(dummy)
+        d_a = feats[-1].shape[-1]
+    audio_encoder = AudioEncoder(w2v, bundle.sample_rate, d_a)
 
-# Assemble Model
-model = AudioVisualCLIP(image_encoder, audio_encoder, audio_dim=d_a, embed_dim=512)
-model.to(device)
+    # Assemble Model
+    model = AudioVisualCLIP(image_encoder, audio_encoder, audio_dim=d_a, embed_dim=512)
+    model.to(device)
 
-# Load Weights
-if os.path.exists(MODEL_PATH):
-    logger.info(f"Loading weights from {MODEL_PATH}")
-    state_dict = torch.load(MODEL_PATH, map_location=device)
-    model.load_state_dict(state_dict)
-    model.eval()
-else:
-    logger.error(f"Model file not found at {MODEL_PATH}")
-    # We don't exit, so the service stays up, but it won't work well.
-    
-# --- 3. DATASET INDEXING (STRICT LOAD) ---
-
-DB_METADATA = []
-DB_TENSOR = None
-MAX_AUDIO_SEC = 10
-
-def load_index():
-    global DB_METADATA, DB_TENSOR
-    
-    if os.path.exists(CACHE_PATH):
-        logger.info(f"Loading cached database from {CACHE_PATH}")
-        try:
-            # Force map_location to CPU to avoid CUDA errors
-            cache_data = torch.load(CACHE_PATH, map_location="cpu")
-            DB_METADATA = cache_data['metadata']
-            DB_TENSOR = cache_data['tensor']
-            
-            # Ensure tensor is on correct device (CPU)
-            if hasattr(DB_TENSOR, 'to'):
-                DB_TENSOR = DB_TENSOR.to(device)
-                
-            logger.info(f"Success! Loaded {len(DB_METADATA)} items.")
-        except Exception as e:
-            logger.error(f"Failed to load cache: {e}")
-            DB_METADATA = []
-            DB_TENSOR = None
+    # Load Weights
+    if os.path.exists(MODEL_PATH):
+        logger.info(f"Loading weights from {MODEL_PATH}")
+        state_dict = torch.load(MODEL_PATH, map_location=device)
+        model.load_state_dict(state_dict)
+        model.eval()
     else:
-        logger.warning(f"No cache file found at {CACHE_PATH}. Please upload 'indexed_db.pt'.")
+        logger.error(f"Model file not found at {MODEL_PATH}")
+        # We don't exit, so the service stays up, but it won't work well.
+    
+    # --- 3. DATASET INDEXING (STRICT LOAD) ---
 
-# Load immediately on startup
-load_index()
+    DB_METADATA = []
+    DB_TENSOR = None
+    MAX_AUDIO_SEC = 10
+
+    def load_index():
+        global DB_METADATA, DB_TENSOR
+    
+        if os.path.exists(CACHE_PATH):
+            logger.info(f"Loading cached database from {CACHE_PATH}")
+            try:
+                # Force map_location to CPU to avoid CUDA errors
+                cache_data = torch.load(CACHE_PATH, map_location="cpu")
+                DB_METADATA = cache_data['metadata']
+                DB_TENSOR = cache_data['tensor']
+            
+                # Ensure tensor is on correct device (CPU)
+                if hasattr(DB_TENSOR, 'to'):
+                    DB_TENSOR = DB_TENSOR.to(device)
+                
+                logger.info(f"Success! Loaded {len(DB_METADATA)} items.")
+            except Exception as e:
+                logger.error(f"Failed to load cache: {e}")
+                DB_METADATA = []
+                DB_TENSOR = None
+        else:
+            logger.warning(f"No cache file found at {CACHE_PATH}. Please upload 'indexed_db.pt'.")
+
+    # Load immediately on startup
+    load_index()
 
 
 # --- 5. ROUTES ---
@@ -217,6 +229,9 @@ def query_endpoint():
     if 'file' not in request.files: return jsonify({'error': 'No file'}), 400
     file = request.files['file']
     if file.filename == '': return jsonify({'error': 'No file'}), 400
+
+    if INFERENCE_URL:
+        return forward_query(file)
     
     # Check if DB is loaded
     if DB_TENSOR is None or len(DB_METADATA) == 0:
@@ -328,6 +343,20 @@ def query_endpoint():
     finally:
         if os.path.exists(filepath):
             os.remove(filepath)
+
+def forward_query(file):
+    """Sends the upload to the Modal service and returns its answer as it is."""
+    try:
+        r = requests.post(
+            f"{INFERENCE_URL}/query",
+            files={'file': (secure_filename(file.filename), file.stream, file.mimetype)},
+            headers={'X-Ear-Key': INFERENCE_KEY},
+            timeout=110,
+        )
+    except requests.RequestException:
+        logger.exception("Inference service unreachable")
+        return jsonify({'error': 'The model is waking up. Try again in a moment.'}), 503
+    return Response(r.content, status=r.status_code, content_type=r.headers.get('Content-Type', 'application/json'))
 
 if __name__ == '__main__':
     # Local testing
