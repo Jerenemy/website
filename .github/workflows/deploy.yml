@@ -37,8 +37,7 @@ jobs:
 
             # The site restarts on every deploy (or a manual run); the two side services only
             # when their own folder changed AND they are already running. `restart` starts a
-            # stopped program, and ear_service is stopped on purpose (it runs the server out of
-            # memory), so a deploy must never bring it back.
+            # stopped program, so a program left stopped on purpose must stay stopped.
             # status exits 3 when any program is down: capture it, report only.
             STATUS=$(sudo supervisorctl status || true)
             sudo supervisorctl restart personal_website

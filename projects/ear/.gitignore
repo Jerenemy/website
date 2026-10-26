@@ -5,3 +5,5 @@
 !docu/*
 !templates
 !templates/*
+!modal/
+!modal/*.py
