@@ -1,8 +1,7 @@
 /* THEME: chalk. The void turned inside out: the same neutral greys, run from white down instead
-   of from black up, and the same vermilion. Loaded after static/site/tokens.css, it overrides
+   of from black up, and the void's vermilion inverted too: a cyan-blue. Loaded after static/site/tokens.css, it overrides
    only what it changes; see that file for the contract. The world (pale chalk blocks drawn with
-   dark arrises, a white hall with grey mist pooled at the foot, the light an opaque vermilion
-   bead) is scene.js beside this file.
+   dark arrises, a white hall with grey mist pooled at the foot, the light an opaque blue bead) is scene.js beside this file.
 
    The homepage's interface is drawn in --world-* over the scene's air: that air is bright, so
    the interface here is dark. */
@@ -20,6 +19,9 @@
 
   --hair: rgba(30, 30, 30, 0.3);
   --rule: rgba(30, 30, 30, 0.11);
+
+  /* The void's #ff4a1c, inverted. Red light on white stone reads as pink; blue reads as light. */
+  --accent: #00b5e3;
 
   --select-bg: var(--ink);
   --select-ink: var(--bg);

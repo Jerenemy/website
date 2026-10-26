@@ -1,6 +1,6 @@
 // THEME: chalk. The void's world inverted: the blocks are pale chalk, matte, their free arrises
 // drawn darker instead of catching the light; the air a white hall, falling to grey where the
-// mist pools under the monument; the light a vermilion bead drawn over the frame (on white a
+// mist pools under the monument; the light a blue bead (the void's vermilion inverted) drawn over the frame (on white a
 // screened glow would vanish); the dust faint grey. A plain module (no imports) of the shape
 // static/home/src/theme.js describes: `config` over src/config.js, `glsl` the hooks.
 
@@ -19,7 +19,7 @@ const AIR = /* glsl */ `
 `;
 
 const LIGHT = /* glsl */ `
-  // A bead of vermilion: an opaque core, lit a little on its upper side (part 1, over everything), and a
+  // A bead of the accent: an opaque core, lit a little on its upper side (part 1, over everything), and a
   // soft tinted shadow of light on the air under the stone (part 0).
   float lightCover(LightIn l) {
     if (l.part < 0.5) return exp(-l.r * l.r / 0.12) * 0.35 * min(l.power, 1.5);
@@ -32,7 +32,7 @@ const LIGHT = /* glsl */ `
     if (l.part < 0.5) return uAccent * cover;
     // beams across the quad: LANTERN.haloSize / 2 = 1.2
     float lit = smoothstep(0.06, 0.0, length(l.uv * 1.2 - vec2(-0.02, 0.025)));
-    vec3 c = mix(uAccent, vec3(1.0, 0.6, 0.45), lit * 0.45);
+    vec3 c = mix(uAccent, vec3(1.0), lit * 0.45);
     return c * cover;
   }
 `;
@@ -66,8 +66,8 @@ export default {
       speckle: 0.02,
       blockVariance: 0.03,
       mistFloor: 1.0,         // nothing fades to dark far from the focus
-      lanternWhite: [0.1, 0.08, 0.07],
-      heldKeep: 0.75,         // a held face is the stone's grey with the red over it: the hall is white, so
+      lanternWhite: [0.07, 0.09, 0.1],   // what the light adds to a face it does not hold: a cool white
+      heldKeep: 0.75,         // a held face is the stone's grey with the blue over it: the hall is white, so
                               // the far end of the face stays pale, never black
     },
     LANTERN: {
