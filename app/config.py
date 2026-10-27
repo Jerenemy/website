@@ -30,6 +30,9 @@ class Config:
     # Job application bot (getmeajob `serve`): private API on the same machine, same token as its REVIEW_API_TOKEN.
     JOBBOT_API_URL = os.getenv("JOBBOT_API_URL", "http://127.0.0.1:5003")
     JOBBOT_API_TOKEN = os.getenv("JOBBOT_API_TOKEN")
+    # What the phone shortcut that forwards companies' text messages sends (POST /admin/jobs/texts). It can
+    # only file texts, so the phone never holds the admin login or the bot's own token.
+    JOBBOT_TEXT_TOKEN = os.getenv("JOBBOT_TEXT_TOKEN")
 
     # Sonar share pages (/sonar/r/..., see blueprints/sonar_share). All optional: without them
     # the pages fall back to a generic "Open in Sonar" card. The Supabase anon key is the same

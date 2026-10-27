@@ -202,6 +202,29 @@ private. If the bot is not running, the page says so instead of failing. Code li
 `app/blueprints/jobbot/`, `app/templates/admin/jobs.html`, `app/templates/admin/job_detail.html` and
 `app/static/css/pages/jobs.css`; tests in `tests/test_jobbot.py`.
 
+### Texts from companies
+
+Some companies text instead of emailing (Humana sent its assessment by text). An iPhone Shortcuts automation
+forwards those texts to `POST /admin/jobs/texts`, and the bot files each one under the application it is
+about, the same way it files emails: an assessment or interview invite moves the job to "Moving forward".
+The route needs no admin login; it takes its own token, which can only file texts. Add to the server's
+`.env` (any long random value, e.g. `python -c 'import secrets; print(secrets.token_urlsafe(32))'`):
+
+```dotenv
+JOBBOT_TEXT_TOKEN=<long random value>
+```
+
+On the iPhone: Shortcuts → Automation → New Automation → **Message**, "Message Contains" a word recruiters
+use (make one automation each for `application`, `assessment`, `interview`), **Run Immediately**. Its one
+shortcut:
+
+1. **Get Contents of URL** `https://<your site>/admin/jobs/texts`, Method POST, Headers
+   `Authorization: Bearer <JOBBOT_TEXT_TOKEN>`, Request Body JSON with `body` = Shortcut Input's Content,
+   `from` = Shortcut Input's Sender, `at` = Current Date (ISO 8601).
+2. **Get Dictionary Value** `summary` from it, then **Show Notification** with that value.
+
+Only texts with those words leave the phone, and the bot ignores any that name none of your applications.
+
 The Auto-submit view (under Bot) picks the sites the bot submits to by itself (`POST /api/auto-submit` on
 the bot). The triage agent checks each dry run there first, then submits it or holds it for you. That view
 lists the jobs it touched, and each job's page says whether triage is still checking it, held it, or sent it.
