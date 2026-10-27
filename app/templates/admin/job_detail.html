@@ -196,7 +196,7 @@
                 <li class="jmail jmail--{{ email.direction }}">
                   <p class="jmail__meta">
                     <span class="jobs__badge jobs__badge--kind-{{ email.kind }}">{{ email.kind | jobbot_email_kind }}</span>
-                    <span>{{ "Sent by the bot" if email.direction == "sent" else "Received" }}</span>
+                    <span>{{ "Sent by the bot" if email.direction == "sent" else ("Text received" if email.text else "Received") }}</span>
                     <span title="{{ email.at | jobbot_time }}">{{ email.at | jobbot_time }}</span>
                   </p>
                   <p class="jmail__subject">

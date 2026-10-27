@@ -4,6 +4,7 @@ The bot runs `getmeajob serve`, a private API on localhost. These admin-only vie
 server with a shared token, so the browser never talks to the bot directly and its screenshots
 (which show your phone number and address) are never in /static.
 """
+import hmac
 import re
 from datetime import datetime, timezone
 from urllib.parse import quote
@@ -609,6 +610,31 @@ def auto_submit():
     except JobBotError as error:
         flash(error.message, "error")
     return redirect(back)
+
+
+@bp.post("/texts")
+def text_message():
+    """A text a company sent you (an assessment link, an interview invite), forwarded by a phone shortcut and
+    filed by the bot under the application it is about, like an email (README: "Texts from companies").
+    No admin login: the shortcut sends `Authorization: Bearer <JOBBOT_TEXT_TOKEN>`, which only files texts."""
+    expected = current_app.config.get("JOBBOT_TEXT_TOKEN") or ""
+    given = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    if not expected or not hmac.compare_digest(given.encode(), expected.encode()):
+        return jsonify(error="unauthorized"), 401
+    data = request.get_json(silent=True) or {}
+    payload = {"from": str(data.get("from") or ""), "body": str(data.get("body") or ""), "at": data.get("at") or None}
+    try:
+        result = _api("POST", "/api/texts", payload).json()
+    except JobBotError as error:
+        return jsonify(error=error.message), error.status
+    filed = result.get("filed") or []
+    if not filed:
+        summary = "Not about any application you sent."
+    elif any(f.get("match") == "guess" for f in filed):
+        summary = f"Could be about {len(filed)} applications at {filed[0].get('company')}: sort it on the jobs page."
+    else:
+        summary = "; ".join(f"{f.get('company')}: {f.get('title')} ({f.get('kind')})" for f in filed)
+    return jsonify(dict(result, summary=summary))
 
 
 @bp.post("/emails/assign")

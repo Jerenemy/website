@@ -72,6 +72,26 @@ class JobBotPageTests(unittest.TestCase):
             self.assertIn("/admin/login", response.headers["Location"])
         self.assertEqual(self.calls, [])
 
+    def test_a_phone_shortcut_forwards_a_text_with_its_own_token(self):
+        self.app.config["JOBBOT_TEXT_TOKEN"] = "sms-token"
+        filed = [{"job_id": "j1", "company": "Humana", "title": "Software Engineer 2", "kind": "assessment", "match": "sure"}]
+        self.responses[("POST", "/api/texts")] = FakeResponse(payload={"message_id": "<sms-1@getmeajob>", "filed": filed})
+        text = {"from": "+15025550100", "body": "Humana: complete your assessment", "at": "2026-10-27T10:00:00Z"}
+        for token in (None, "tok", "wrong"):  # no token, the bot's own token, a wrong one
+            headers = {"Authorization": f"Bearer {token}"} if token else {}
+            self.assertEqual(self.client.post("/admin/jobs/texts", json=text, headers=headers).status_code, 401)
+        self.assertEqual(self.calls, [])
+        response = self.client.post("/admin/jobs/texts", json=text, headers={"Authorization": "Bearer sms-token"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["summary"], "Humana: Software Engineer 2 (assessment)")
+        method, url, payload, headers = self.calls[0]
+        self.assertEqual((method, url, payload), ("POST", "http://bot.test/api/texts", text))
+        self.assertEqual(headers, {"Authorization": "Bearer tok"})  # the bot gets its own token, not the phone's
+
+    def test_text_forwarding_is_off_without_its_token(self):
+        response = self.client.post("/admin/jobs/texts", json={"body": "hi"}, headers={"Authorization": "Bearer "})
+        self.assertEqual(response.status_code, 401)
+
     def view(self, page):
         """The list's open view: its rows, after the sidebar."""
         return page.split('id="view-name"', 1)[1]
