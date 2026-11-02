@@ -1,8 +1,8 @@
 /* THE PRIVATE PAGES (templates/admin/). They are the site's own pages, built from layout.html and
    the pieces in static/site/site.css; this file only adds what the public pages never need (the
    admin's tabs, wide tables, the fields a form for the site needs) and, like site.css, holds no
-   values of its own: everything comes from static/site/tokens.css. jobs.css adds the application
-   pages. Macros: templates/admin/_admin.html. */
+   values of its own: everything comes from static/site/tokens.css.
+   Macros: templates/admin/_admin.html. */
 
 /* ---------------------------------------------------------------- the admin's tabs
    The site's tabs, with logging out set apart at the end of the row. */
