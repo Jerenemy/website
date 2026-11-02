@@ -141,6 +141,8 @@ app/blog/*.pyc
 !tests/test_home.py
 !deploy/systemd/
 !deploy/systemd/*
+!deploy/backup/
+!deploy/backup/*
 
 # Versioned portfolio content
 !app/data/

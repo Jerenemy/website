@@ -481,3 +481,31 @@ Recent logs are finite. Daily syncing cannot guarantee every match is captured. 
 Use SQLite's backup API, as in the WTT backup instructions, with source `CLASH_ROYALE_DATABASE_PATH` and a private destination such as `/home/jzay/personal_website_data/clash-backup.sqlite3`. Copy backups off-server. Stop both the timer and website before restoring; restore ownership, then restart both. Initialization preserves existing players and scores.
 
 Run `.venv/bin/python -m unittest discover -s tests -v`. After deployment, verify the exact starting matrix, activate tracking and baseline, play a new friendly between two registered accounts, and click Sync Now. Only the winner's cell should increment. After the cooldown, repeat the sync and confirm it does not increment again. Check mobile horizontal scrolling, keyboard form access, duplicate-tag handling, scheduler status, and the journal for failures.
+
+## Backups
+
+`deploy/backup/backup.sh` runs nightly from `site-backup.timer`. It writes one encrypted archive to `/home/jzay/personal_website_data/backups` (7 days kept) and copies it to Cloudflare R2 (30 days kept). The archive holds the SQLite databases, `.env` files, the admin's JSON, résumés, uploads and the Zaychess downloads. `projects/ear/ear_data` is left out for its size. KArchive, `tran_website` and getmeajob aren't covered.
+
+**Setup, once, on the server:**
+
+```bash
+sudo apt install rclone
+mkdir -p ~/.config/site-backup && chmod 700 ~/.config/site-backup
+openssl rand -base64 32 > ~/.config/site-backup/passphrase
+chmod 600 ~/.config/site-backup/passphrase
+rclone config   # create a remote named r2 (S3 provider: Cloudflare) with an R2 API token
+sudo cp deploy/systemd/site-backup.service deploy/systemd/site-backup.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now site-backup.timer
+sudo systemctl start site-backup.service
+```
+
+Keep a copy of the passphrase in your password manager. Without it the archives can't be opened.
+
+**Restore:**
+
+```bash
+gpg --batch --pinentry-mode loopback --passphrase-file ~/.config/site-backup/passphrase -d site-<time>.tar.gz.gpg | tar -xzf - -C /tmp/restore
+```
+
+Stop the site, copy the files back to the same paths under `/home/jzay/personal_website`, and start it again.
