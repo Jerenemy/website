@@ -184,7 +184,7 @@ BAK=~/nginx-personal_website.$(date +%Y%m%d-%H%M).bak; sudo cp "$CONF" "$BAK" &&
 ## Job Application Review
 
 The job application bot's pages moved to Sisyphus, its own app and repo (Jerenemy/sisyphus), at https://sisyphus.fail.
-`/sisyphus` and old `/admin/jobs` addresses redirect there, including links in emails already sent. What stays here
+Old `/admin/jobs` addresses redirect there, including links in emails already sent. What stays here
 is `app/blueprints/jobbot/`: those redirects and the route below. The server's `.env` still needs:
 
 ```dotenv

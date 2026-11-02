@@ -11,7 +11,6 @@ import requests
 from flask import Blueprint, current_app, jsonify, redirect, request
 
 bp = Blueprint("jobbot", __name__, url_prefix="/admin/jobs")
-short = Blueprint("sisyphus", __name__)
 SISYPHUS = "https://sisyphus.fail"
 
 
@@ -81,12 +80,3 @@ def text_message():
     else:
         summary = "; ".join(f"{f.get('company')}: {f.get('title')} ({f.get('kind')})" for f in filed)
     return jsonify(dict(result, summary=summary))
-
-
-@short.get("/sisyphus", defaults={"rest": ""})
-@short.get("/sisyphus/<path:rest>")
-@short.get("/proxy", defaults={"rest": ""})
-@short.get("/proxy/<path:rest>")
-def sisyphus(rest):
-    """jeremyzay.com/sisyphus, wherever it is typed or linked."""
-    return redirect(f"{SISYPHUS}/{quote(rest)}", code=301)

@@ -49,12 +49,6 @@ class JobBotPageTests(unittest.TestCase):
             self.assertEqual(response.headers["Location"], target)
         self.assertEqual(self.calls, [])
 
-    def test_the_short_addresses_go_to_sisyphus(self):
-        for path, target in (("/sisyphus", "https://sisyphus.fail/"), ("/proxy/jobs", "https://sisyphus.fail/jobs")):
-            response = self.client.get(path)
-            self.assertEqual(response.status_code, 301, path)
-            self.assertEqual(response.headers["Location"], target)
-
     def test_a_phone_shortcut_forwards_a_text_with_its_own_token(self):
         self.app.config["JOBBOT_TEXT_TOKEN"] = "sms-token"
         filed = [{"job_id": "j1", "company": "Humana", "title": "Software Engineer 2", "kind": "assessment", "match": "sure"}]
