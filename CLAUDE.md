@@ -23,7 +23,8 @@ publishing are changed in the admin.
 
 ## Deploying
 
-Merging to `main` deploys. `.github/workflows/deploy.yml` runs on every push to `main`: it SSHes
+Merging to `main` deploys. `.github/workflows/deploy.yml` runs the tests on every pull request and
+push, and only a passing push to `main` deploys. It rolls back if `/health` stops answering. It SSHes
 into the server, fast-forwards `/home/jzay/personal_website` to `origin/main` and restarts
 `personal_website` (and `ear_service` or `attack_target_network` when their folder changed and
 they were running). There is no manual pull step; check the run with
