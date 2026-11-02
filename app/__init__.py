@@ -38,7 +38,7 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(ear_bp, url_prefix="/ear")
     app.register_blueprint(wtt_bp)          # /wtt and /admin/wtt
-    app.register_blueprint(jobbot_bp)       # /admin/jobs, a client of the getmeajob API
+    app.register_blueprint(jobbot_bp)       # /admin/jobs: redirects to Proxy, and texts from companies
     app.register_blueprint(clash_bp)        # /will-sucks
     app.register_blueprint(sonar_share_bp)  # /sonar/{r,e,p,u}/... share pages + apple-app-site-association
     for command in (init_wtt_command, init_command, sync_command, verify_command, portfolio_copy_command):

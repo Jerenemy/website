@@ -183,24 +183,14 @@ BAK=~/nginx-personal_website.$(date +%Y%m%d-%H%M).bak; sudo cp "$CONF" "$BAK" &&
 
 ## Job Application Review
 
-Admin-only pages at `/admin/jobs` for the getmeajob bot: every application the bot filled and stopped
-at the Submit button, with its screenshot and each question's answer, a **Submit** button that has the
-bot really submit it, a box for emailed verification codes, and Skip/Cancel. The bot's email alerts
-link straight to `/admin/jobs/<job id>`.
-
-The pages call the bot's private API (`getmeajob serve`, localhost:5003) from the server; the browser
-never reaches the bot, and screenshots (which show personal details) are proxied behind the admin
-login instead of living in `/static`. Add to the server's `.env`:
+The job application bot's pages moved to Proxy, its own app and repo (Jerenemy/proxy), served at `/proxy` by
+Nginx from `127.0.0.1:5004`. Old `/admin/jobs` addresses redirect there, including links in emails already sent.
+What stays here is `app/blueprints/jobbot/`: those redirects and the route below. The server's `.env` still needs:
 
 ```dotenv
 JOBBOT_API_URL=http://127.0.0.1:5003      # the default
 JOBBOT_API_TOKEN=<same value as REVIEW_API_TOKEN in the bot's .env>
 ```
-
-Then `sudo supervisorctl restart personal_website`. No Nginx change: the bot's port must stay
-private. If the bot is not running, the page says so instead of failing. Code lives in
-`app/blueprints/jobbot/`, `app/templates/admin/jobs.html`, `app/templates/admin/job_detail.html` and
-`app/static/css/pages/jobs.css`; tests in `tests/test_jobbot.py`.
 
 ### Texts from companies
 
@@ -224,10 +214,6 @@ shortcut:
 2. **Get Dictionary Value** `summary` from it, then **Show Notification** with that value.
 
 Only texts with those words leave the phone, and the bot ignores any that name none of your applications.
-
-The Auto-submit view (under Bot) picks the sites the bot submits to by itself (`POST /api/auto-submit` on
-the bot). The triage agent checks each dry run there first, then submits it or holds it for you. That view
-lists the jobs it touched, and each job's page says whether triage is still checking it, held it, or sent it.
 
 ## WTT Email Signup
 
@@ -381,7 +367,7 @@ app/
     admin/               login, portfolio CRUD, site settings
     ear/                 /ear proxy to the separate ear service (projects/ear)
     wtt/                 /wtt email signup + /admin/wtt export
-    jobbot/              /admin/jobs: review pages, a client of the getmeajob API
+    jobbot/              /admin/jobs: redirects to Proxy, and the texts route
     clash_royale/        /will-sucks table + its sync CLI commands
   blog/  portfolio/  site_settings/    the stores (markdown posts, JSON files)
   blog_posts/            the posts, one .md each
