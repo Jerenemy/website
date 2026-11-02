@@ -1,0 +1,12 @@
+[Unit]
+Description=Encrypted backup of the website's data
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=jzay
+WorkingDirectory=/home/jzay/personal_website
+ExecStart=/home/jzay/personal_website/deploy/backup/backup.sh
+TimeoutStartSec=30min
+UMask=0077

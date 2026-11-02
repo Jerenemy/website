@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly website backup
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 America/New_York
+Persistent=true
+Unit=site-backup.service
+
+[Install]
+WantedBy=timers.target
