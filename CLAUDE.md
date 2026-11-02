@@ -30,3 +30,9 @@ they were running). There is no manual pull step; check the run with
 `gh run list --workflow deploy.yml`. A deploy stops untouched if the fast-forward would clash. It
 does not run `flask portfolio-copy`, install dependencies, or change nginx; those are still
 manual (see "Portfolio data" above and the README).
+
+## Server
+
+Connect with `ssh jzay@jeremyzay.com`. It runs this site, KArchive, `tran_website`, the job bot and
+EAR, and has 2 GB of RAM, so check `ss -ltnp` before picking a port. `sudo` needs a password except
+for the commands in its NOPASSWD list.
