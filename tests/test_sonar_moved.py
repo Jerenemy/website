@@ -62,7 +62,7 @@ class SonarMovedTests(unittest.TestCase):
     def test_stats_page_reads_the_sonar_site_with_the_token(self):
         with mock.patch.object(sonar_share.requests, "get", return_value=FakeResponse()) as get:
             response = self._admin_get()
-        self.assertEqual(get.call_args.args[0], "http://127.0.0.1:8001/internal/stats")
+        self.assertEqual(get.call_args.args[0], "http://127.0.0.1:8002/internal/stats")
         self.assertEqual(get.call_args.kwargs["headers"]["Authorization"], "Bearer secret")
         html = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)

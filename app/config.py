@@ -35,7 +35,7 @@ class Config:
     JOBBOT_TEXT_TOKEN = os.getenv("JOBBOT_TEXT_TOKEN")
 
     # Sonar's own site on this server (sonar.show); /admin/sonar reads its share counts with the token.
-    SONAR_SITE_URL = os.getenv("SONAR_SITE_URL", "http://127.0.0.1:8001")
+    SONAR_SITE_URL = os.getenv("SONAR_SITE_URL", "http://127.0.0.1:8002")
     SONAR_STATS_TOKEN = os.getenv("SONAR_STATS_TOKEN")
 
     SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(32).hex())
