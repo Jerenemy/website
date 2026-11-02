@@ -127,6 +127,12 @@ class HomeTests(unittest.TestCase):
     def published(self):
         return PortfolioStore(str(self.portfolio)).list_items()
 
+    def test_health_answers_ok_and_is_never_cached(self):
+        response = self.client.get("/health")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json, {"status": "ok"})
+        self.assertEqual(response.headers["Cache-Control"], "no-store")
+
     def test_home_renders_every_published_work_in_rail_order(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)

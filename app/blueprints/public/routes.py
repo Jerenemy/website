@@ -81,6 +81,15 @@ def index():
                            home_modules=_home_modules(current_app.static_folder))
 
 
+@bp.get("/health")
+def health():
+    """For the deploy's check and uptime monitors: it reads the homepage's data, so a site that
+    can't read its portfolio or settings answers 500 here too."""
+    _home_works()
+    get_site_settings_store().get_settings()
+    return {"status": "ok"}, 200, {"Cache-Control": "no-store"}
+
+
 @bp.get("/contact", strict_slashes=False)
 def contact():
     return render_template("contact.html", person=_home_person(), site_settings=get_site_settings_store().get_settings(),
