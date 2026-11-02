@@ -1,8 +1,9 @@
 name: Deploy
 
-# Every push to main fast-forwards the server's checkout and restarts the supervisor programs
-# whose code changed. What the admin pages write (portfolio.json, site_settings.json, résumé PDFs)
-# is untracked, so pulls never meet it; --ff-only stops the deploy, untouched, if one would clash.
+# Every push to main runs bin/deploy from the private Jerenemy/server repo on the server: it
+# fast-forwards this checkout, restarts what changed and rolls back if /health stops answering.
+# What the admin pages write (portfolio.json, site_settings.json, résumé PDFs) is untracked, so
+# pulls never meet it.
 # The tests run first, on pull requests too, and a failure stops the deploy. pyproject.toml stays
 # per machine, so the job installs what the site imports by name, without the ML packages.
 on:
@@ -40,51 +41,4 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
-          script: |
-            set -eu
-            cd /home/jzay/personal_website
-            OLD=$(git rev-parse HEAD)
-            git fetch origin main
-            git checkout main
-            git merge --ff-only origin/main
-            NEW=$(git rev-parse HEAD)
-            CHANGED=$(git diff --name-only "$OLD" "$NEW")
-            echo "Deployed $OLD -> $NEW"
-            echo "$CHANGED"
-
-            # The site restarts on every deploy (or a manual run); the two side services only
-            # when their own folder changed AND they are already running. `restart` starts a
-            # stopped program, so a program left stopped on purpose must stay stopped.
-            # status exits 3 when any program is down: capture it, report only.
-            STATUS=$(sudo supervisorctl status || true)
-            sudo supervisorctl restart personal_website
-
-            # A site that doesn't answer /health within 30 seconds goes back to the commit it was
-            # on, and the run fails. reset --hard touches tracked files only, so nothing the admin
-            # wrote is at risk.
-            HEALTHY=
-            for TRY in 1 2 3 4 5 6 7 8 9 10; do
-              if curl -fsS --max-time 3 http://127.0.0.1:8000/health; then
-                HEALTHY=1
-                break
-              fi
-              sleep 3
-            done
-            if [ -z "$HEALTHY" ]; then
-              echo "No answer from /health: rolling back to $OLD"
-              git reset --hard "$OLD"
-              sudo supervisorctl restart personal_website
-              exit 1
-            fi
-
-            for SVC in ear_service attack_target_network; do
-              DIR=projects/${SVC%_service}/
-              if echo "$CHANGED" | grep -q "^$DIR"; then
-                if echo "$STATUS" | grep -qE "^$SVC +RUNNING"; then
-                  sudo supervisorctl restart "$SVC"
-                else
-                  echo "$SVC changed but is not running: left stopped"
-                fi
-              fi
-            done
-            sudo supervisorctl status || true
+          script: ~/server/bin/deploy website

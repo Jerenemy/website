@@ -24,16 +24,18 @@ publishing are changed in the admin.
 ## Deploying
 
 Merging to `main` deploys. `.github/workflows/deploy.yml` runs the tests on every pull request and
-push, and only a passing push to `main` deploys. It rolls back if `/health` stops answering. It SSHes
-into the server, fast-forwards `/home/jzay/personal_website` to `origin/main` and restarts
-`personal_website` (and `ear_service` or `attack_target_network` when their folder changed and
-they were running). There is no manual pull step; check the run with
+push, and a passing push to `main` runs `~/server/bin/deploy website` on the server (from the
+private `Jerenemy/server` repo). That fast-forwards `/home/jzay/personal_website`, restarts
+`personal_website` (and `ear_service` or `attack_target_network` when their folder changed and they
+were running) and rolls back if `/health` stops answering. Check the run with
 `gh run list --workflow deploy.yml`. A deploy stops untouched if the fast-forward would clash. It
-does not run `flask portfolio-copy`, install dependencies, or change nginx; those are still
-manual (see "Portfolio data" above and the README).
+does not run `flask portfolio-copy`, install dependencies, or change nginx; those are still manual
+(see "Portfolio data" above and the README).
 
 ## Server
 
 Connect with `ssh jzay@jeremyzay.com`. It runs this site, KArchive, `tran_website`, the job bot and
 EAR, and has 2 GB of RAM, so check `ss -ltnp` before picking a port. `sudo` needs a password except
 for the commands in its NOPASSWD list.
+
+`Jerenemy/server` is the map of every project, port and domain. Add a row there before using a new port.
