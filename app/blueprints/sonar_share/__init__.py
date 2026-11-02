@@ -1,18 +1,73 @@
-"""Share links for the Sonar iOS app.
-
-Sonar shares https links like ``https://jeremyzay.com/sonar/r/<log id>``. iOS opens them
-straight in the app when it is installed (universal links, declared by
-``/.well-known/apple-app-site-association``); everyone else lands on a small page here that
-previews the shared review, episode, show or profile and links to the App Store. The same
-pages carry Open Graph tags, so pasted links unfurl with artwork in Messages, Slack, etc.
-
-Data comes from Sonar's Supabase project (public anon key, read-only rows) and the Podcast
-Index API. Both are optional: without them, or when a lookup fails, the page still renders
-with an "Open in Sonar" / "Get Sonar" call to action.
+"""Sonar's website moved to sonar.show (the sonar repo, site/). What stays here is what old links
+and released apps need: redirects from /sonar, and the apple-app-site-association file, which must
+keep answering on this host with the old paths so those apps still open their links. /admin/sonar
+reads the share counts from the Sonar site over localhost, the way /admin/jobs reads the job bot.
 """
+import requests
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request
 
-from flask import Blueprint
+from ..admin.routes import _csrf_token, admin_required
 
 bp = Blueprint("sonar_share", __name__)
 
-from . import routes  # noqa: E402,F401
+SONAR_ORIGIN = "https://sonar.show"
+TEAM_ID = "9A9HR6WT4K"
+BUNDLE_ID = "com.jeremyzay.Sonar"
+SHARE_PATHS = ("/sonar/r/*", "/sonar/e/*", "/sonar/p/*", "/sonar/u/*", "/sonar/l/*", "/sonar/i/*")
+
+
+@bp.get("/.well-known/apple-app-site-association")
+@bp.get("/apple-app-site-association")
+def apple_app_site_association():
+    """Lets iOS open Sonar's share links in the app. Served as JSON, never redirected."""
+    response = jsonify(
+        {
+            "applinks": {
+                "details": [
+                    {
+                        "appIDs": [f"{TEAM_ID}.{BUNDLE_ID}"],
+                        "components": [{"/": path} for path in SHARE_PATHS],
+                    }
+                ]
+            }
+        }
+    )
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+@bp.get("/sonar", strict_slashes=False, defaults={"path": ""})
+@bp.get("/sonar/<path:path>")
+def moved(path):
+    query = request.query_string.decode("latin-1")
+    return redirect(f"{SONAR_ORIGIN}/{path}" + (f"?{query}" if query else ""), code=301)
+
+
+def _share_stats():
+    """{"periods": [...], "sources": [...]} from the Sonar site, or None when it can't be read."""
+    try:
+        response = requests.get(
+            f"{current_app.config['SONAR_SITE_URL']}/internal/stats",
+            headers={"Authorization": f"Bearer {current_app.config.get('SONAR_STATS_TOKEN') or ''}"},
+            timeout=5,
+        )
+        response.raise_for_status()
+        return response.json()
+    except (requests.RequestException, ValueError):
+        current_app.logger.exception("Could not read Sonar's share stats")
+        return None
+
+
+@bp.get("/admin/sonar")
+@admin_required
+def share_stats():
+    stats = _share_stats() or {"periods": [None, None], "sources": []}
+    response = current_app.make_response(render_template(
+        "admin/sonar_stats.html",
+        periods=stats["periods"],
+        sources=stats["sources"],
+        csrf_token=_csrf_token(),
+    ))
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return response

@@ -205,15 +205,3 @@ def moinllm():
 @bp.get('/deltalab')
 def deltalab():
     return render_template('works/deltalab.html')
-
-@bp.get('/sonar', strict_slashes=False)
-def sonar():
-    return render_template('works/sonar/sonar.html')
-
-@bp.get('/sonar/support', strict_slashes=False)
-def sonar_support():
-    return render_template('works/sonar/sonar_support.html')
-
-@bp.get('/sonar/privacy', strict_slashes=False)
-def sonar_privacy():
-    return render_template('works/sonar/sonar_privacy.html')

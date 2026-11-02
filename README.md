@@ -376,7 +376,7 @@ app/
   config.py              settings from the environment / .env
   design.py              what every template gets: theme, frame, place in the loop of works
   blueprints/
-    public/              the pages: home, contact, blog, works (zaychess, sonar, eqoscan, ...)
+    public/              the pages: home, contact, blog, works (zaychess, eqoscan, ...)
     api/                 JSON endpoints: contact form, game leaderboard
     admin/               login, portfolio CRUD, site settings
     ear/                 /ear proxy to the separate ear service (projects/ear)
@@ -392,14 +392,14 @@ app/
     contact.html  error.html
     partials/            _ui (the pieces), _theme, _themes, _preview_meta
     blog/                index, post
-    works/               one page per work; works with several pages get a folder (ear/, sonar/, zaychess/)
+    works/               one page per work; works with several pages get a folder (ear/, zaychess/)
     wtt/  clash_royale/  admin/
   static/
     site/                the design system: tokens.css, site.css, site.js, themes/, works/ (see its README)
     home/                the homepage scene: src/ (ES modules), styles.css, vendor/three-r186/
     css/pages/           admin.css, jobs.css (the admin pages)
     js/                  contact.js (contact + support forms), leaderboard.js (game)
-    img/  files/  vendor/pdfjs-*/  zaychess/  sonar/
+    img/  files/  vendor/pdfjs-*/  zaychess/
 projects/                services deployed beside the site (ear, attack_target_network)
 deploy/                  nginx, supervisor and systemd configs
 design/homepage-demo/    the homepage's design record and its regression checks

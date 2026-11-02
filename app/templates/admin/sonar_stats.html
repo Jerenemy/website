@@ -13,7 +13,7 @@
   {% for period in periods %}
   {% call ui.sect("%02d" % loop.index, "Last %d days" % period.days if period else "Unavailable", wide=True) %}
     {% if period is none %}
-      <p>The stats store couldn't be read. Check that SONAR_STATS_DATABASE_PATH is writable.</p>
+      <p>The counts couldn't be read from the Sonar site. Check that it's running and that SONAR_STATS_TOKEN matches.</p>
     {% else %}
     <div class="table admin-table">
       <table>
