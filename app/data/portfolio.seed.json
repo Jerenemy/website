@@ -191,6 +191,34 @@
       "kind": "research",
       "line": "RL-guided molecule generation for p53 Y220C",
       "href": "/poster-rl-2024"
+    },
+    {
+      "id": "thaw",
+      "title": "Thaw",
+      "short_desc": "",
+      "long_desc": "",
+      "image_full": "",
+      "image_thumb": "",
+      "image_alt": "",
+      "sort_order": 13,
+      "is_published": true,
+      "kind": "product",
+      "line": "An iPad notebook that turns chalkboard photos into editable ink",
+      "href": "https://thaw.ink"
+    },
+    {
+      "id": "sisyphus",
+      "title": "Sisyphus",
+      "short_desc": "",
+      "long_desc": "",
+      "image_full": "",
+      "image_thumb": "",
+      "image_alt": "",
+      "sort_order": 14,
+      "is_published": true,
+      "kind": "engineering",
+      "line": "This one's a secret",
+      "href": "https://sisyphus.fail"
     }
   ]
 }
