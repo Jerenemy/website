@@ -34,18 +34,9 @@ class Config:
     # only file texts, so the phone never holds the admin login or the bot's own token.
     JOBBOT_TEXT_TOKEN = os.getenv("JOBBOT_TEXT_TOKEN")
 
-    # Sonar share pages (/sonar/r/..., see blueprints/sonar_share). All optional: without them
-    # the pages fall back to a generic "Open in Sonar" card. The Supabase anon key is the same
-    # public key the iOS app ships with; the Podcast Index pair comes from the Sonar app's Secrets.
-    SONAR_SUPABASE_URL = os.getenv("SONAR_SUPABASE_URL")
-    SONAR_SUPABASE_ANON_KEY = os.getenv("SONAR_SUPABASE_ANON_KEY")
-    PODCASTINDEX_API_KEY = os.getenv("PODCASTINDEX_API_KEY")
-    PODCASTINDEX_API_SECRET = os.getenv("PODCASTINDEX_API_SECRET")
-    # Share-link attribution counts (views and App Store / Open in Sonar taps per kind, source and
-    # day; no visitor data). The process must be able to write this file and its directory.
-    SONAR_STATS_DATABASE_PATH = os.getenv(
-        "SONAR_STATS_DATABASE_PATH", os.path.join(_project_root, "instance", "sonar_stats.sqlite3")
-    )
+    # Sonar's own site on this server (sonar.show); /admin/sonar reads its share counts with the token.
+    SONAR_SITE_URL = os.getenv("SONAR_SITE_URL", "http://127.0.0.1:8002")
+    SONAR_STATS_TOKEN = os.getenv("SONAR_STATS_TOKEN")
 
     SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(32).hex())
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")

@@ -36,7 +36,7 @@
 !app/blueprints/jobbot/__init__.py
 !app/blueprints/clash_royale/
 !app/blueprints/clash_royale/__init__.py
-# Sonar share-link pages and the apple-app-site-association file
+# Sonar redirects, its apple-app-site-association file and the admin stats page
 !app/blueprints/sonar_share/
 !app/blueprints/sonar_share/*.py
 # templates: every folder ships whole (partials/, blog/, works/, admin/, ...)
@@ -86,14 +86,6 @@
 !app/static/img/*
 !app/static/img/projects/*
 !app/static/img/brand/*
-# static sonar
-!app/static/sonar
-!app/static/sonar/*
-!app/static/sonar/img
-!app/static/sonar/img/*
-# Nunito (SIL OFL 1.1, licence beside it): the type in the generated share preview images
-!app/static/sonar/fonts
-!app/static/sonar/fonts/*
 # files
 !app/static/files
 !app/static/files/*
@@ -169,10 +161,7 @@ app/blog/*.pyc
 
 # Job application bot review pages (admin): their tests
 !tests/test_jobbot.py
-!tests/test_sonar_share.py
-!tests/test_sonar_attribution.py
-!tests/test_sonar_creators_recap.py
-!tests/test_sonar_badges.py
+!tests/test_sonar_moved.py
 
 # macOS folder metadata, wherever an allowlist above reaches
 .DS_Store
