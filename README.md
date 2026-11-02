@@ -1,6 +1,7 @@
 # Personal Website
 
 What runs where, and how this deploys: [Jerenemy/server](https://github.com/Jerenemy/server) (private).
+
 A small Flask app for my personal site, serving static pages and a contact API that emails me via Flask-Mail.
 
 
