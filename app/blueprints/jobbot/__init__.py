@@ -1,7 +1,8 @@
-"""What is left here of the job application bot's pages, which moved to Proxy (/proxy, its own app and repo).
+"""What is left here of the job application bot's pages, which moved to Sisyphus (sisyphus.fail, its own app
+and repo).
 
 Old addresses, including the links in emails already sent, go to the same page there. Texts from companies still
-arrive here: the phone shortcut posts to this address, and it needs no login of Proxy's.
+arrive here: the phone shortcut posts to this address, and it needs no login of Sisyphus's.
 """
 import hmac
 from urllib.parse import quote
@@ -10,6 +11,8 @@ import requests
 from flask import Blueprint, current_app, jsonify, redirect, request
 
 bp = Blueprint("jobbot", __name__, url_prefix="/admin/jobs")
+short = Blueprint("sisyphus", __name__)
+SISYPHUS = "https://sisyphus.fail"
 
 
 class JobBotError(Exception):
@@ -47,12 +50,12 @@ def _api(method, path, payload=None, timeout=15):
 @bp.get("/")
 def job_list():
     view = request.args.get("view")
-    return redirect("/proxy/jobs" + (f"?view={quote(view, safe='')}" if view else ""))
+    return redirect(f"{SISYPHUS}/jobs" + (f"?view={quote(view, safe='')}" if view else ""))
 
 
 @bp.get("/<path:job_id>")
 def job_detail(job_id):
-    return redirect(f"/proxy/jobs/{quote(job_id, safe='')}")
+    return redirect(f"{SISYPHUS}/jobs/{quote(job_id, safe='')}")
 
 
 @bp.post("/texts")
@@ -78,3 +81,12 @@ def text_message():
     else:
         summary = "; ".join(f"{f.get('company')}: {f.get('title')} ({f.get('kind')})" for f in filed)
     return jsonify(dict(result, summary=summary))
+
+
+@short.get("/sisyphus", defaults={"rest": ""})
+@short.get("/sisyphus/<path:rest>")
+@short.get("/proxy", defaults={"rest": ""})
+@short.get("/proxy/<path:rest>")
+def sisyphus(rest):
+    """jeremyzay.com/sisyphus, wherever it is typed or linked."""
+    return redirect(f"{SISYPHUS}/{quote(rest)}", code=301)

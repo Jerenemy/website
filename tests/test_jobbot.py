@@ -38,16 +38,22 @@ class JobBotPageTests(unittest.TestCase):
             raise response
         return response or FakeResponse(404, {"error": "no such job"})
 
-    def test_old_addresses_go_to_the_same_page_on_proxy(self):
+    def test_old_addresses_go_to_the_same_page_on_sisyphus(self):
         for path, target in (
-            ("/admin/jobs/", "/proxy/jobs"),
-            ("/admin/jobs/?view=sent", "/proxy/jobs?view=sent"),
-            ("/admin/jobs/url:abc123", "/proxy/jobs/url%3Aabc123"),
+            ("/admin/jobs/", "https://sisyphus.fail/jobs"),
+            ("/admin/jobs/?view=sent", "https://sisyphus.fail/jobs?view=sent"),
+            ("/admin/jobs/url:abc123", "https://sisyphus.fail/jobs/url%3Aabc123"),
         ):
             response = self.client.get(path)
             self.assertEqual(response.status_code, 302, path)
             self.assertEqual(response.headers["Location"], target)
         self.assertEqual(self.calls, [])
+
+    def test_the_short_addresses_go_to_sisyphus(self):
+        for path, target in (("/sisyphus", "https://sisyphus.fail/"), ("/proxy/jobs", "https://sisyphus.fail/jobs")):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 301, path)
+            self.assertEqual(response.headers["Location"], target)
 
     def test_a_phone_shortcut_forwards_a_text_with_its_own_token(self):
         self.app.config["JOBBOT_TEXT_TOKEN"] = "sms-token"

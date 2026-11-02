@@ -183,9 +183,9 @@ BAK=~/nginx-personal_website.$(date +%Y%m%d-%H%M).bak; sudo cp "$CONF" "$BAK" &&
 
 ## Job Application Review
 
-The job application bot's pages moved to Proxy, its own app and repo (Jerenemy/proxy), served at `/proxy` by
-Nginx from `127.0.0.1:5004`. Old `/admin/jobs` addresses redirect there, including links in emails already sent.
-What stays here is `app/blueprints/jobbot/`: those redirects and the route below. The server's `.env` still needs:
+The job application bot's pages moved to Sisyphus, its own app and repo (Jerenemy/sisyphus), at https://sisyphus.fail.
+`/sisyphus` and old `/admin/jobs` addresses redirect there, including links in emails already sent. What stays here
+is `app/blueprints/jobbot/`: those redirects and the route below. The server's `.env` still needs:
 
 ```dotenv
 JOBBOT_API_URL=http://127.0.0.1:5003      # the default
@@ -367,7 +367,7 @@ app/
     admin/               login, portfolio CRUD, site settings
     ear/                 /ear proxy to the separate ear service (projects/ear)
     wtt/                 /wtt email signup + /admin/wtt export
-    jobbot/              /admin/jobs: redirects to Proxy, and the texts route
+    jobbot/              /admin/jobs: redirects to Sisyphus, and the texts route
     clash_royale/        /will-sucks table + its sync CLI commands
   blog/  portfolio/  site_settings/    the stores (markdown posts, JSON files)
   blog_posts/            the posts, one .md each
