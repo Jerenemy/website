@@ -252,7 +252,7 @@ class HomeTests(unittest.TestCase):
         slugs = {p.stem for p in Path(self.app.config["BLOG_POSTS_DIR"]).glob("*.md")}
         hrefs = [w["href"] for w in self.published()] + ["/resume", "/blog", "/contact"]
         for href in hrefs:
-            if href.startswith("https://"):
+            if href.startswith("https://") or href == "/cue":   # /cue: Cue, proxied by nginx to its own server
                 continue
             with self.subTest(href=href):
                 endpoint, args = adapter.match(href)
