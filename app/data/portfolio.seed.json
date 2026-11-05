@@ -219,6 +219,20 @@
       "kind": "engineering",
       "line": "This one's a secret",
       "href": "https://sisyphus.fail"
+    },
+    {
+      "id": "cue",
+      "title": "Cue",
+      "short_desc": "",
+      "long_desc": "",
+      "image_full": "",
+      "image_thumb": "",
+      "image_alt": "",
+      "sort_order": 15,
+      "is_published": true,
+      "kind": "product",
+      "line": "An app that tells small businesses what to film, then edits and posts it",
+      "href": "/cue"
     }
   ]
 }
