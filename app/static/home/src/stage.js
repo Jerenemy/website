@@ -44,8 +44,11 @@ export function createStage(canvas, tribar, { onContextLost, onContextRestored }
   const view = VIEW_AXIS.slice();        // toward the eye, structure space, tilt included
   const pivot = tribar.pivot;
 
-  /** @param reserve portrait: CSS px the interface needs below the light (at least LAYOUT.tall.below) */
-  function resize(reserve = 0) {
+  /**
+   * @param reserve portrait: CSS px the interface needs below the light (at least LAYOUT.tall.below)
+   * @param ceiling portrait: CSS px from the top that the masthead occupies (its lowest row's bottom)
+   */
+  function resize(reserve = 0, ceiling = 0) {
     const width = canvas.clientWidth || window.innerWidth, height = canvas.clientHeight || window.innerHeight;
     const dpr = Math.min(window.devicePixelRatio || 1, LAYOUT.maxDpr);
     const portrait = width / height < LAYOUT.portraitBelow;
@@ -53,10 +56,16 @@ export function createStage(canvas, tribar, { onContextLost, onContextRestored }
     let ppu, restX, restY;
     if (portrait) {
       const L = LAYOUT.tall;
-      const top = Math.max(L.topMin, height * L.topFraction);
-      ppu = Math.min((width - 2 * L.side) / (2 * bound), (height - top - Math.max(L.below, reserve)) / (tribar.rhoMax + bound));
+      const top = Math.max(L.topMin, ceiling + L.topGap);
+      const below = Math.max(L.below, reserve);
+      // The picture turns so the light rests in place: across, it needs its whole circle; above the
+      // light, only as far as it really reaches at any station (src/tribar.js reach).
+      const above = tribar.reach + LAYOUT.roamPad;
+      const across = (width - 2 * L.side) / (2 * bound);
+      ppu = Math.max(across / 4, Math.min(across, (height - top - below) / above));   // a floor for windows too short to hold it
+      const spare = Math.max(0, height - top - below - above * ppu);
       restX = Math.round(width / 2);
-      restY = Math.round(top + (tribar.rhoMax + bound) * ppu);
+      restY = Math.round(top + spare * L.slack + above * ppu);
       layout.restAngle = L.restAngle;
     } else {
       const L = LAYOUT.wide;

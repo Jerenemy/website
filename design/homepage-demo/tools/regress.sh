@@ -22,8 +22,9 @@
 # is followed once and the scene returns; Back from a work page returns to the work left, with the
 # back/forward cache on and off, marked once on the rail, never departs again, and a stopped
 # navigation waits for the visitor's next input (tools/check-back.mjs); the second review's
-# findings (tools/check-input.mjs): no rail box over the stone, the roll never turns back, OPEN
-# clear of the strip on short phones, a double-click under reduced motion is one click, one
+# findings (tools/check-input.mjs): no rail box over the stone, the roll never turns back, on
+# short phones the strip steps aside for a presented work and OPEN stays clear of the links, a
+# double-click under reduced motion is one click, one
 # current mark after a deep link, the strike only for a real tear in the scene, no tilt during
 # the arrival, the seam step's door waits for the seam to shut, a modified click opens beside; the
 # door is lit by the light alone, exactly zero without line of sight (model and GPU, src/probe.js);
@@ -242,7 +243,7 @@ if clean && js 'v[0][0] === "zaybot" && v[0][1] === 0 && v[0][2] === 0 && v[1][0
 if node "$ROOT/tools/check-back.mjs" "$HARNESS" > "$OUT/back.log" 2>&1; then pass 'back: one entry per departure, Back returns to the work left (bfcache on and off), no second departure'; else fail "back: $(grep -A3 '^FAIL' "$OUT/back.log" | tail -3 | tr '\n' ' ' | cut -c1-300) (see shots/wip/regress/back.log)"; fi
 
 # The second review's findings, each the way it was found (tools/check-input.mjs, its own server and Chrome).
-if node "$ROOT/tools/check-input.mjs" "$HARNESS" > "$OUT/input.log" 2>&1; then pass 'input: no rail box over the stone, the roll never turns back, OPEN clear of the strip, calm double-click, one mark, strikes for tears only, no arrival tilt, the seam door waits, modified clicks beside'; else fail "input: $(grep -A12 '^FAIL' "$OUT/input.log" | tail -n +2 | tr '\n' ' ' | cut -c1-400) (see shots/wip/regress/input.log)"; fi
+if node "$ROOT/tools/check-input.mjs" "$HARNESS" > "$OUT/input.log" 2>&1; then pass 'input: no rail box over the stone, the roll never turns back, the strip steps aside on short phones, calm double-click, one mark, strikes for tears only, no arrival tilt, the seam door waits, modified clicks beside'; else fail "input: $(grep -A12 '^FAIL' "$OUT/input.log" | tail -n +2 | tr '\n' ' ' | cut -c1-400) (see shots/wip/regress/input.log)"; fi
 
 # Reflexes: a second click 150 ms after the first is one click (presented, not departed); a click
 # after the caption is readable goes through the door. The caption's title and descriptor are
@@ -278,8 +279,8 @@ if clean && js 'v[0][0] >= 44 && Math.abs(v[0][1] - 71) < 2 && v[1] === "karchiv
 
 # On a phone OPEN is at least 44 px tall and 80 wide; a tap on the descriptor above it keeps the
 # presentation (nothing departs); a tap on the numeral above a tick presents that work.
-run mobile-open --mobile --w 390 --h 844 --query "skipIntro=1&stay=1" --steps "[$READY,{\"wait\":600},{\"eval\":\"window.__demo.goTo('zaychess')\"},{\"waitFor\":\"window.__demo.state().phase === 'idle' && window.__demo.state().settled\"},{\"eval\":\"(r => [r.width, r.height, Math.round(r.left + r.width / 2), Math.round(r.top - 16)])(document.getElementById('cap-open').getBoundingClientRect())\"},{\"eval\":\"(r => { window.__t = [Math.round(r.left + r.width / 2), Math.round(r.top - 16)]; return 1; })(document.getElementById('cap-open').getBoundingClientRect())\"},{\"tap\":[195,574]},{\"wait\":500},{\"eval\":\"[window.__demo.state().selected, window.__demo.state().door.departing, window.__demo.state().door.leaves]\"},{\"eval\":\"(r => [Math.round(r.left + r.width / 2), Math.round(r.top - 6)])(document.querySelector('#rail a[data-index=\\\"5\\\"] .no').getBoundingClientRect())\"},{\"tap\":[212,734]},{\"wait\":500},{\"eval\":\"window.__demo.state().selected\"}]"
-if clean && js 'v[0][0] >= 80 && v[0][1] >= 44 && Math.abs(v[0][2] - 195) < 4 && Math.abs(v[0][3] - 574) < 4 && v[1][0] === "zaychess" && v[1][1] === null && v[1][2] === 0 && Math.abs(v[2][0] - 212) < 4 && Math.abs(v[2][1] - 734) < 6 && v[3] === "zaybot"' "[$(evalN 2),$(evalN 4),$(evalN 5),$(evalN 6)]"; then pass 'mobile: OPEN is 44 px, a tap on the descriptor is inert, the numeral above a tick is part of it'; else fail "mobile open: $(evalN 2) $(evalN 4) $(evalN 5) $(evalN 6)"; fi
+run mobile-open --mobile --w 390 --h 844 --query "skipIntro=1&stay=1" --steps "[$READY,{\"wait\":600},{\"eval\":\"window.__demo.goTo('zaychess')\"},{\"waitFor\":\"window.__demo.state().phase === 'idle' && window.__demo.state().settled\"},{\"eval\":\"(r => [r.width, r.height, Math.round(r.left + r.width / 2), Math.round(r.top - 16)])(document.getElementById('cap-open').getBoundingClientRect())\"},{\"eval\":\"(r => { window.__t = [Math.round(r.left + r.width / 2), Math.round(r.top - 16)]; return 1; })(document.getElementById('cap-open').getBoundingClientRect())\"},{\"tap\":[195,598]},{\"wait\":500},{\"eval\":\"[window.__demo.state().selected, window.__demo.state().door.departing, window.__demo.state().door.leaves]\"},{\"eval\":\"(r => [Math.round(r.left + r.width / 2), Math.round(r.top - 6)])(document.querySelector('#rail a[data-index=\\\"5\\\"] .no').getBoundingClientRect())\"},{\"tap\":[212,734]},{\"wait\":500},{\"eval\":\"window.__demo.state().selected\"}]"
+if clean && js 'v[0][0] >= 80 && v[0][1] >= 44 && Math.abs(v[0][2] - 195) < 4 && Math.abs(v[0][3] - 598) < 4 && v[1][0] === "zaychess" && v[1][1] === null && v[1][2] === 0 && Math.abs(v[2][0] - 212) < 4 && Math.abs(v[2][1] - 734) < 6 && v[3] === "zaybot"' "[$(evalN 2),$(evalN 4),$(evalN 5),$(evalN 6)]"; then pass 'mobile: OPEN is 44 px, a tap on the descriptor is inert, the numeral above a tick is part of it'; else fail "mobile open: $(evalN 2) $(evalN 4) $(evalN 5) $(evalN 6)"; fi
 
 # ---- semantics ------------------------------------------------------------------------------------
 # Tab: the name, then work 01. Enter presents and moves focus to Open, with the two-step said

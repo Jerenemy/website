@@ -273,11 +273,18 @@ export const LAYOUT = {
                           // caption, light and rail stay one reading span instead of spreading to the corners
     railReach: 320,       // px: nor the rail further right of the monument's edge than this
   },
-  // Portrait: the light rests below the monument, plumb above the caption.
+  // Portrait: the light rests below the monument, plumb above the caption, and the monument is as
+  // big as the phone allows: as wide as the screen, or as tall as the room between the masthead
+  // and what must stay free below the light.
   // `below` is the least height kept free under the dock for caption, index and links; the
-  // interface measures what they really need (the tallest caption at this width, the strip with
-  // its numeral zone) and the layout keeps that much when it is more (src/frame.js resize).
-  tall: { restAngle: -Math.PI / 2, topFraction: 0.133, topMin: 64, below: 300, side: 14 },
+  // interface measures what they really need (the head clear of the strip at rest; while a work is
+  // presented, the tallest caption clear of the links, the strip stepping aside on a phone too
+  // short for both) and the layout keeps that much when it is more (src/frame.js resize). The top
+  // is measured too: the monument's farthest reach stays topGap under the masthead's lowest row
+  // (the theme switcher).
+  // Height left over (a tall phone, the site saved to the home screen) goes `slack` above the
+  // monument and the rest below the caption.
+  tall: { restAngle: -Math.PI / 2, topMin: 64, topGap: 14, slack: 0.4, below: 200, side: 6 },
   roamPad: 0.25,
 };
 

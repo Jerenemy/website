@@ -289,6 +289,25 @@ export function buildTribar(stationCount) {
   }
   let rhoMin = Infinity, rhoMax = 0;
   for (let i = 0; i < stepCount; i++) { const r = rho[i * PATH_SAMPLES]; rhoMin = Math.min(rhoMin, r); rhoMax = Math.max(rhoMax, r); }
+  // How far the silhouette reaches from the light, through the centre and out the far side, at any
+  // point of the loop. The stage turns the monument so the light rests in place, so this is the
+  // picture's whole length behind the light along the line it rests on, at every roll. rhoMax +
+  // radius bounds it only at the stations and assumes a corner points straight away from the
+  // light there; from ten works up the real reach is most of a beam less (src/stage.js portrait).
+  const outline = [];
+  for (const blk of blocks) {
+    for (let c = 0; c < 8; c++) {
+      const q = toImage([0, 1, 2].map((ax) => blk.center[ax] + blk.half[ax] * ((c >> ax) & 1 ? 1 : -1)));
+      outline.push(q[0] - centre2[0], q[1] - centre2[1]);
+    }
+  }
+  let reach = 0;
+  for (let m = 0; m < theta.length; m++) {
+    const ux = -Math.cos(theta[m]), uy = -Math.sin(theta[m]);
+    let far = -Infinity;
+    for (let k = 0; k < outline.length; k += 2) far = Math.max(far, outline[k] * ux + outline[k + 1] * uy);
+    reach = Math.max(reach, rho[m] + far);
+  }
 
   const scratch = [0, 0, 0];
   /**
@@ -353,7 +372,7 @@ export function buildTribar(stationCount) {
   });
 
   return {
-    blocks, stations, stepCount, stationCount, counts, gap, pivot, radius, rhoMin, rhoMax,
+    blocks, stations, stepCount, stationCount, counts, gap, pivot, radius, rhoMin, rhoMax, reach,
     pathAt, seamBlend, thetaAt: table(theta, turn), rhoAt: table(rho, 0),
     phantomSources, seamBlocks, sideCentre,
   };

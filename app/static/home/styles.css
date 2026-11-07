@@ -229,11 +229,20 @@ html.gl.is-tall .rail .label { right: auto; left: 50%; top: auto; bottom: 30px; 
 html.gl.is-tall .rail .t { display: none; }
 /* On the strip two numerals would collide: while another tick is pointed at, only it is numbered. */
 html.gl.is-tall .rail ol:has(a.is-focus, a:focus-visible) a[aria-current="true"]:not(.is-focus):not(:focus-visible) .no { opacity: 0; }
+/* A phone too short for the monument, the caption and the strip at once (is-snug, src/interface.js):
+   while a work is presented the strip steps aside, and the caption, which numbers the work, takes
+   the room down to the links. A tap where the strip was lands on the caption or the void. Keyboard
+   focus on a tick brings the strip back. */
+html.gl.is-tall .rail ol { transition: opacity 0.3s var(--ease); }
+html.gl.is-tall.is-snug main:has(> .caption.is-selected) > .rail { pointer-events: none; }
+html.gl.is-tall.is-snug main:has(> .caption.is-selected) > .rail ol:not(:focus-within) { opacity: 0; }
 html.gl.is-tall .caption { left: 0; right: 0; width: auto; top: calc(var(--rest-y) + 72px); text-align: center; }
 html.gl.is-tall .head { transform: none; }
 html.gl.is-tall .head .cap { left: 50%; transform: translateX(-50%); }
 html.gl.is-tall .head .cap.is-on { left: 0; transform: none; }
-html.gl.is-tall .detail { position: relative; top: 0; padding: 12px 40px 0; }
+/* Hung under the head rather than in its flow, so at rest, hidden, it holds no box over the strip. */
+html.gl.is-tall .detail { top: 100%; right: 0; padding: 12px 40px 0; }
+html.gl.is-tall .caption:not(.is-selected) .detail { pointer-events: none; }
 html.gl.is-tall .line { max-width: none; }
 html.gl.is-tall .open { margin: 2px -16px -10px; padding: 14px 16px; }
 html.gl.is-tall .open::after { left: 16px; right: 16px; bottom: 10px; }
