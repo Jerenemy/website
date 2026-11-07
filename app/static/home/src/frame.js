@@ -113,12 +113,14 @@ export function createFrame(parts, hooks) {
 
   // ---- layout ----------------------------------------------------------------------------
   let reserve = 0;   // portrait: what the caption and the strip need below the light (measured)
+  let ceiling = 0;   // portrait: where the masthead ends (measured)
   function resize() {
-    let layout = stage.resize(reserve);
+    let layout = stage.resize(reserve, ceiling);
     ui.setLayout(layout);
     if (layout.portrait) {
-      const need = ui.portraitReserve(layout.height);
-      if (need !== reserve) { reserve = need; layout = stage.resize(reserve); ui.setLayout(layout); }
+      const need = ui.portraitReserve(layout.height), top = ui.portraitCeiling();
+      if (need !== reserve || top !== ceiling) { reserve = need; ceiling = top; layout = stage.resize(reserve, ceiling); }
+      ui.setLayout(layout);   // again, with what was measured: whether the strip must step aside
     }
     dust.uniforms.uExtent.value.set(layout.width / (2 * layout.ppu), layout.height / (2 * layout.ppu));
     dust.uniforms.uPixelRatio.value = layout.dpr;

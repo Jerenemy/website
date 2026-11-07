@@ -113,6 +113,7 @@ export function createInterface({ person, works, scaled, onFocus, onActivate, on
 
   // ---- the rail as one pointer target --------------------------------------------------------
   let centres = null;     // tick centres along the rail's axis; measured when first needed after a layout change
+  let stripRoom = Infinity;   // portrait: CSS px a presented caption needs below the light to keep the strip (portraitReserve)
   function nearest(x, y) {
     if (!centres) centres = anchors.map((a) => { const r = a.getBoundingClientRect(); return tall() ? (r.left + r.right) / 2 : (r.top + r.bottom) / 2; });
     const v = tall() ? x : y;
@@ -235,6 +236,7 @@ export function createInterface({ person, works, scaled, onFocus, onActivate, on
     adopted,
     setLayout(layout) {
       root.classList.toggle('is-tall', layout.portrait);
+      root.classList.toggle('is-snug', layout.portrait && layout.height - layout.restPx.y < stripRoom);
       root.style.setProperty('--rest-x', `${layout.restPx.x}px`);
       root.style.setProperty('--rest-y', `${layout.restPx.y}px`);
       // On a wide monitor the caption and the rail close in on the light and the monument,
@@ -263,10 +265,13 @@ export function createInterface({ person, works, scaled, onFocus, onActivate, on
       swapTimer = setTimeout(later, UI.swapEvery);
     },
     /**
-     * Portrait: the height the caption (with the tallest descriptor of any work, at this width)
-     * and the strip need below the light, in CSS px, so OPEN never lies over the strip's numeral
-     * zone however short the phone. Measured from the laid-out page (call after setLayout);
-     * it does not depend on where the light rests, so one correction settles the layout.
+     * Portrait: the height the caption and the strip need below the light, in CSS px. At rest the
+     * caption is its head, which stays clear of the strip's numeral zone. While a work is
+     * presented, on a phone too short to hold the monument, the caption and the strip at once,
+     * the strip steps aside (is-snug, styles.css), so the caption, with the tallest descriptor of
+     * any work at this width, only has to keep OPEN clear of the links. Measured from the
+     * laid-out page (call after setLayout, and setLayout again after it). It does not depend on
+     * where the light rests, so one correction settles the layout.
      */
     portraitReserve(height) {
       const restY = parseFloat(root.style.getPropertyValue('--rest-y')) || 0;
@@ -280,7 +285,16 @@ export function createInterface({ person, works, scaled, onFocus, onActivate, on
       [capKind.textContent, capLine.textContent] = keep;
       let strip = height;
       for (const a of anchors) strip = Math.min(strip, a.getBoundingClientRect().top);
-      return Math.ceil(drop + tallest + UI.stripGap + (height - strip));
+      const resting = drop + head.offsetHeight + UI.stripGap + (height - strip);
+      const presented = drop + tallest + UI.stripGap;
+      stripRoom = Math.ceil(presented + (height - strip));   // presented with the strip kept
+      return Math.ceil(Math.max(resting, presented + (height - links.getBoundingClientRect().top)));
+    },
+    /** Portrait: the bottom of the masthead's lowest row (the name, the theme switcher, the speaker), in CSS px. */
+    portraitCeiling() {
+      let bottom = 0;
+      for (const node of [masthead, themes, soundToggle]) if (node) bottom = Math.max(bottom, node.getBoundingClientRect().bottom);
+      return Math.ceil(bottom);
     },
     /** @param moveFocus keyboard: focus goes to Open on presenting, back to the rail on dismissing */
     setSelected(i, moveFocus) {

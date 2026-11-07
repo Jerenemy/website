@@ -8,8 +8,9 @@
 //     click on a neighbouring step presents that step and departs nowhere (1024x768);
 //   - the roll: bursts of 2, 6 and 40 forward keys at n = 3, 10, 24 never turn the stone
 //     back (lap shifts excluded), and the 40-key burst seats within 1.6 s of the last key;
-//   - phones under 700 px tall: OPEN's 44 px target stays 8 px clear of the strip's numeral
-//     zone, a tap there presents that tick's work, and the links keep one row at 320 wide;
+//   - phones under 700 px tall: while a work is presented the strip steps aside (is-snug) and
+//     OPEN's 44 px target stays 8 px clear of the links; once dismissed the strip is back and a
+//     tap on its numeral zone presents that tick's work; the links keep one row at 320 wide;
 //   - reduced motion: a real double-click on a step presents that step (the monument has
 //     snapped under the second click);
 //   - one current mark on the rail after a deep link;
@@ -129,8 +130,13 @@ await scenario('phones', async () => {
     await d.page.evaluate("window.__demo.goTo('diffusion')"); await d.idle(); await sleep(400);
     const r = await d.page.evaluate(`(() => { const o = document.getElementById('cap-open').getBoundingClientRect();
       const a = [...document.querySelectorAll('#rail a')].map((x) => x.getBoundingClientRect());
-      return { openBottom: o.bottom, openHeight: o.height, stripTop: Math.min(...a.map((x) => x.top)), tick5: (a[4].left + a[4].right) / 2 }; })()`);
-    check(r.openHeight >= 44 && r.openBottom + 8 <= r.stripTop + 0.5, `phones ${w}x${h}: OPEN (${Math.round(r.openHeight)} px tall) ends at ${Math.round(r.openBottom)}, the strip's numeral zone starts at ${Math.round(r.stripTop)} (want 8 px clear)`);
+      const rail = document.getElementById('rail');
+      return { snug: document.documentElement.classList.contains('is-snug'), openBottom: o.bottom, openHeight: o.height,
+        linksTop: document.getElementById('links').getBoundingClientRect().top, stripTop: Math.min(...a.map((x) => x.top)), tick5: (a[4].left + a[4].right) / 2,
+        stripOpacity: +getComputedStyle(rail).opacity, stripPointer: getComputedStyle(rail.parentElement).pointerEvents }; })()`);
+    check(r.snug && r.stripOpacity < 0.05 && r.stripPointer === 'none', `phones ${w}x${h}: presenting, the strip steps aside (snug ${r.snug}, opacity ${r.stripOpacity}, pointer-events ${r.stripPointer})`);
+    check(r.openHeight >= 44 && r.openBottom + 8 <= r.linksTop + 0.5, `phones ${w}x${h}: OPEN (${Math.round(r.openHeight)} px tall) ends at ${Math.round(r.openBottom)}, the links start at ${Math.round(r.linksTop)} (want 8 px clear)`);
+    await d.page.keyboard.press('Escape'); await sleep(500);
     await d.page.touchscreen.tap(r.tick5, r.stripTop + 8); await sleep(500);
     const s = await d.S();
     check(s.selected === 'zaychess' && s.door.leaves === 0 && s.door.departing === null, `phones ${w}x${h}: a tap on the numeral zone above tick 5 gave selected ${s.selected}, departing ${s.door.departing}, leaves ${s.door.leaves}`);
@@ -250,4 +256,4 @@ if (failures.length) {
   failures.forEach((f) => console.error('  ' + f));
   process.exit(1);
 }
-console.log('\nPASS: no box over the stone; the roll never turns back; OPEN clear of the strip; a calm double-click is one; one mark; strikes only for real tears; no tilt in the arrival; the door waits for the seam; a modified click opens beside.');
+console.log('\nPASS: no box over the stone; the roll never turns back; on short phones the strip steps aside and OPEN stays clear of the links; a calm double-click is one; one mark; strikes only for real tears; no tilt in the arrival; the door waits for the seam; a modified click opens beside.');

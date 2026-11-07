@@ -71,7 +71,7 @@ function abandonScene() {
   const gone = app;
   app = null;
   gone?.dispose();
-  root.classList.remove('gl', 'is-live', 'is-tall', 'is-drawn', 'is-leaving');
+  root.classList.remove('gl', 'is-live', 'is-tall', 'is-snug', 'is-drawn', 'is-leaving');
   ui.reveal();
   resolveReady(true);
 }

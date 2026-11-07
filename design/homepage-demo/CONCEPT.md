@@ -24,6 +24,7 @@ Wheel read by shape and timing; one station per swipe | No runaway flings or fal
 The stone skips whole laps, never backwards | Held keys never leave it cruising
 Caption on the dock's line, cross-faded | Where you are, never blank
 Rail: bare ticks, current numbered, pointed-at named; 24 px rows, 44 px phone strip | No words at rest, no missed clicks
+Phone: the monument fills the width, sized by its true reach; on short phones the strip steps aside for a presented work | Every step a finger target; the world, not the chrome
 Server markup adopted; normal-case names; one live region | Real links first
 Arrival usable at 2 s, inert until seen, untiltable; early taps count | No lost gesture
 Reduced motion: no intro, tilt, travel, beats; no WebGL: the list | Degrades to its own index
