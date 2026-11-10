@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "admin/_outreach.html" as outreach with context %}
+{% block title %}A/B test · Outreach · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+
+{#- One test's table: sent, matured, replies, rate (with bar), positive, meetings. -#}
+{% macro groups_table(groups, label, names=None) -%}
+  {%- set top = groups.values() | map(attribute="rate") | reject("none") | max | default(0) if groups else 0 %}
+  <div class="table admin-table outreach-table">
+    <table>
+      <thead><tr><th>{{ label }}</th><th>Sent</th><th>Matured</th><th>Replies</th><th>Reply rate</th><th>Positive</th><th>Meetings</th></tr></thead>
+      <tbody>
+        {% for name, g in groups.items() %}
+        <tr>
+          <td data-label="{{ label }}" class="admin-table__lead">{{ (names or {}).get(name, name) | replace("/yes", " · with Hi") | replace("/no", " · no Hi") }}</td>
+          <td data-label="Sent" class="num">{{ g.sent }}</td>
+          <td data-label="Matured" class="num">{{ g.mature }}</td>
+          <td data-label="Replies" class="num">{{ g.replies }}</td>
+          <td data-label="Reply rate">{{ outreach.rate(g.rate, top, "%d replies of %d matured sends" % (g.replies, g.mature)) }}</td>
+          <td data-label="Positive" class="num">{{ g.positive }}</td>
+          <td data-label="Meetings" class="num">{{ g.meetings }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{%- endmacro %}
+
+{% block content %}
+  {{ outreach.top("ab", "Which first-email hook, greeting and nudge gets CEOs to write back.") }}
+
+  {% if not stats %}
+    {% call ui.sect("01", "No data", wide=True) %}{{ outreach.synced(synced_at) }}{% endcall %}
+  {% else %}
+  {% set nr = stats.next_run %}
+  {% call ui.sect("01", "Next run", wide=True) %}
+    <dl class="outreach-tiles">
+      {% for hook, n in nr.hooks.items() %}
+      <div class="outreach-tile"><dt>{{ hook }}</dt><dd>{{ n }}<small>of {{ nr.leads }} leads</small></dd></div>
+      {% endfor %}
+      <div class="outreach-tile"><dt>With “Hi”</dt><dd>{{ nr.greeting_yes }}<small>{{ nr.greeting_no }} without</small></dd></div>
+    </dl>
+    <p class="note">{{ nr.why | capitalize }}.{% if stats.p_best %} The split leans toward the likelier winner{% else %} After that it moves toward the hook getting more replies{% endif %}; each hook keeps at least 20%.</p>
+  {% endcall %}
+
+  {% call ui.sect("02", "Hook", wide=True) %}
+    {{ groups_table(stats.hooks, "Hook") }}
+    <p class="note">Matured: sent {{ stats.mature_days }}+ days ago, or already replied. The rate is replies over matured sends, so new emails don't drag it down. Any human reply counts, “no” included.</p>
+  {% endcall %}
+
+  {% call ui.sect("03", "Greeting", wide=True) %}
+    {{ groups_table(stats.greetings, "Greeting", {"yes": "Hi <name>,", "no": "No greeting"}) }}
+  {% endcall %}
+
+  {% call ui.sect("04", "Nudges", wide=True) %}
+    {%- set ntop = stats.nudges | map(attribute="rate") | reject("none") | max | default(0) if stats.nudges else 0 %}
+    <div class="table admin-table outreach-table">
+      <table>
+        <thead><tr><th>Nudge</th><th>Type</th><th>Sent</th><th>Replies after it</th><th>Reply rate</th></tr></thead>
+        <tbody>
+          {% for n in stats.nudges %}
+          <tr>
+            <td data-label="Nudge" class="admin-table__lead">{{ n.nudge }}</td>
+            <td data-label="Type">{{ n.type }}</td>
+            <td data-label="Sent" class="num">{{ n.sent }}</td>
+            <td data-label="Replies after it" class="num">{{ n.replies }}</td>
+            <td data-label="Reply rate">{{ outreach.rate(n.rate, ntop, "%d replies of %d sent" % (n.replies, n.sent)) }}</td>
+          </tr>
+          {% else %}<tr><td colspan="5">No nudges yet.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="note">{{ stats.replied_to_first }} replies came to the first email itself. A reply counts for the last email sent before it. Recent nudges are still waiting, so their rates run low.</p>
+  {% endcall %}
+
+  {% call ui.sect("05", "Hook × greeting", wide=True) %}
+    {{ groups_table(stats.cells, "Cell") }}
+    <p class="note">Small groups: decide from the two tests above, use this only to spot a hook that needs the greeting.</p>
+  {% endcall %}
+
+  {% call ui.sect("06", "Before the test", wide=True) %}
+    {{ groups_table(stats.history, "October", {"quote-v0": "quote (no greeting)", "glaze-v0": "glaze (no greeting)"}) }}
+    <p class="note">October's emails, with a longer first email and no greeting. Reference only; they don't count toward the split.</p>
+    {{ outreach.synced(synced_at) }}
+  {% endcall %}
+  {% endif %}
+{% endblock %}

@@ -110,3 +110,33 @@
 .admin-preview__card h3 { color: var(--ink); font-size: var(--text-size); line-height: var(--text-lead); font-weight: var(--strong-weight); }
 .admin-preview__card p { margin-top: var(--s1); color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); }
 .admin-preview__lightbox .prose { margin-top: var(--s1); font-size: var(--small-size); line-height: var(--small-lead); }
+
+/* ---------------------------------------------------------------- outreach (/admin/outreach) */
+.outreach-tabs { margin-top: var(--s4); }
+.outreach-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: var(--s5) var(--s4); margin: 0; }
+.outreach-tile dt { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.outreach-tile dd { margin: var(--s1) 0 0; color: var(--ink); font-size: var(--h2-size); line-height: var(--h2-lead); font-weight: var(--heading-weight); font-variant-numeric: tabular-nums; }
+.outreach-tile dd small { display: block; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); font-weight: normal; }
+.admin-table td.num { font-variant-numeric: tabular-nums; }
+/* a rate as a thin bar: one series in ink, scaled to the table's best, the number always beside it */
+.outreach-rate { display: flex; align-items: center; gap: var(--s2); min-width: 128px; }
+.outreach-rate__bar { flex: 0 0 72px; height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+.outreach-rate__bar span { display: block; height: 100%; background: var(--ink); border-radius: 0 3px 3px 0; }
+.outreach-rate__n { font-variant-numeric: tabular-nums; color: var(--ink); }
+.outreach-hook { max-width: 52ch; margin-top: 2px; color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+.outreach-tag { display: inline-block; padding: 0 var(--s1); border: 1px solid var(--rule); border-radius: 3px; color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); white-space: nowrap; }
+.outreach-tag--on { border-color: var(--ink); color: var(--ink); }
+/* the voice examples: one card each, its form inside */
+.outreach-example { padding: var(--s5) 0; border-top: 1px solid var(--rule); }
+.outreach-example:first-of-type { border-top: 0; padding-top: 0; }
+.outreach-example .field + .field { margin-top: var(--s4); }
+.outreach-example .field textarea { min-height: 88px; }
+.outreach-example__ceo textarea { color: var(--ink-2); }
+.outreach-example__meta { color: var(--ink-3); font-size: var(--small-size); line-height: var(--small-lead); }
+.outreach-example__actions { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s4); margin-top: var(--s4); }
+.outreach-example__actions form { margin: 0; }
+.outreach-example__delete { padding: 0; background: none; border: 0; color: var(--ink-3); font: inherit; font-size: var(--small-size); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.outreach-example__delete:hover, .outreach-example__delete:focus-visible { color: var(--ink); }
+.outreach-example .admin-flash { margin-bottom: var(--s4); }
+.outreach-table th, .outreach-table td.num, .outreach-table .note { white-space: nowrap; overflow-wrap: normal; }
+.outreach-table .outreach-hook { white-space: normal; }
