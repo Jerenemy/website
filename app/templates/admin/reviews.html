@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "admin/_admin.html" as admin with context %}
+{% block title %}Reviews · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+{% block content %}
+  {% call ui.head("Reviews", where="Admin", line="%d on /scic/reviews. Removing one takes it off the page for good." % (reviews | length)) %}
+    {{ ui.open(url_for('scic.reviews'), "Open the page", quiet=True) }}
+  {% endcall %}
+  {{ admin.nav("reviews") }}
+  {% include "admin/_flash.html" %}
+
+  {% call ui.sect("01", "Reviews", wide=True) %}
+    <div class="table admin-table">
+      <table>
+        <thead><tr><th>Stars</th><th>Name</th><th>Review</th><th>Posted (UTC)</th><th><span class="sr">Actions</span></th></tr></thead>
+        <tbody>
+          {% for review in reviews %}
+          <tr>
+            <td data-label="Stars" class="num">{{ review.rating }}</td>
+            <td data-label="Name" class="admin-table__lead">{{ review.name or 'Anonymous' }}</td>
+            <td data-label="Review">{{ review.text }}</td>
+            <td data-label="Posted (UTC)">{{ review.created_at[:16] | replace('T', ' ') }}</td>
+            <td class="admin-table__actions">
+              <form method="post" action="{{ url_for('scic.review_delete', review_id=review.id) }}" class="js-delete-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                {{ admin.button("Remove", quiet=True) }}
+              </form>
+            </td>
+          </tr>
+          {% else %}<tr><td colspan="5">No reviews yet.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endcall %}
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.querySelectorAll('.js-delete-form').forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        if (!window.confirm('Remove this review? This cannot be undone.')) event.preventDefault();
+      });
+    });
+  </script>
+{% endblock %}

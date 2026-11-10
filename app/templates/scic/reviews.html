@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{%- macro stars(n) -%}
+<span class="stars" aria-hidden="true">{% for i in range(1, 6) %}<span class="stars__star{% if i <= n %} is-on{% endif %}">★</span>{% endfor %}</span><span class="sr">{{ n }} out of 5 stars</span>
+{%- endmacro %}
+{% block title %}Reviews · SCIC · Jeremy Zay{% endblock %}
+{% block description %}Ratings and reviews of Jeremy Zay's tutoring at Wesleyan's Scientific Computing and Informatics Center.{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='site/reviews.css') }}">{% endblock %}
+{% block content %}
+  {% call ui.head("Reviews", line="If I've helped you at the SCIC, rate it out of five and tell me how it went.", where="SCIC") %}
+    {{ ui.open("#write", "Write a review", quiet=True) }}
+  {% endcall %}
+  {{ ui.tabs(scic_tabs('scic.reviews'), label="SCIC pages") }}
+
+  {% call ui.sect("01", "Rating") %}
+    {%- if summary.count %}
+    <div class="rating">
+      <p class="rating__score"><span class="rating__n">{{ '%.1f' % summary.average }}</span>{{ stars(summary.average | round | int) }}</p>
+      <p class="rating__count label">{{ summary.count }} {{ 'review' if summary.count == 1 else 'reviews' }}</p>
+      <ol class="spread" aria-label="Reviews by stars">
+        {%- for row in summary.spread %}
+        <li class="spread__row"><span class="spread__stars label">{{ row.stars }}<span class="sr"> stars</span></span><span class="meter" style="--share: {{ row.share }}%" aria-hidden="true"></span><span class="spread__n">{{ row.count }}</span></li>
+        {%- endfor %}
+      </ol>
+    </div>
+    {%- else %}
+    <p class="note">No reviews yet.</p>
+    {%- endif %}
+  {% endcall %}
+
+  {%- if reviews %}
+  {% call ui.sect("02", "Reviews") %}
+    <ol class="reviews">
+      {%- for review in reviews %}
+      <li class="review">
+        <p class="review__head">{{ stars(review.rating) }}<span class="review__who">{{ review.name or 'Anonymous' }}</span><time class="review__when label" datetime="{{ review.created_at }}">{{ review.created_at[:10] }}</time></p>
+        <p class="review__text">{{ review.text }}</p>
+      </li>
+      {%- endfor %}
+    </ol>
+  {% endcall %}
+  {%- endif %}
+
+  {% call ui.sect("03" if reviews else "02", "Write a review", id="write") %}
+    {%- if posted %}
+    <p class="status" role="status">Thanks. Your review is up.</p>
+    {%- endif %}
+    <form class="form" method="post" action="{{ url_for('scic.reviews') }}#write">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="honeypot" aria-hidden="true">
+        <label for="website">Website</label>
+        <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+      </div>
+      <fieldset class="field star-pick">
+        <legend>Rating</legend>
+        <div class="star-pick__row">
+          {%- for n in range(5, 0, -1) %}
+          <input type="radio" id="rating-{{ n }}" name="rating" value="{{ n }}" required{% if form.get('rating') == n | string %} checked{% endif %}>
+          <label for="rating-{{ n }}" title="{{ n }} {{ 'star' if n == 1 else 'stars' }}"><span aria-hidden="true">★</span><span class="sr">{{ n }} {{ 'star' if n == 1 else 'stars' }}</span></label>
+          {%- endfor %}
+        </div>
+      </fieldset>
+      <p class="field">
+        <label for="name">Name (optional)</label>
+        <input id="name" name="name" type="text" autocomplete="name" maxlength="{{ name_max }}" value="{{ form.get('name', '') }}" placeholder="Shown with your review">
+      </p>
+      <p class="field">
+        <label for="text">Review</label>
+        <textarea id="text" name="text" maxlength="{{ text_max }}" required placeholder="What did we work on, and did it help?"
+                  {% if error %}aria-invalid="true" aria-describedby="error"{% endif %}>{{ form.get('text', '') }}</textarea>
+      </p>
+      {%- if error %}<p id="error" class="status error" role="alert">{{ error }}</p>{% endif %}
+      <button class="open send" type="submit"><span>Post review</span>{{ ui.arrow() }}</button>
+    </form>
+  {% endcall %}
+{% endblock %}

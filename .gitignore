@@ -168,6 +168,7 @@ app/blog/*.pyc
 !tests/test_jobbot.py
 !tests/test_sonar_moved.py
 !tests/test_outreach.py
+!tests/test_scic_reviews.py
 
 # macOS folder metadata, wherever an allowlist above reaches
 .DS_Store

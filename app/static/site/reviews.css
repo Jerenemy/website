@@ -1,0 +1,40 @@
+/* /scic/reviews: the average, how the stars spread, each review, and the form that adds one.
+   Pieces of this page only, built from site.css's voices and from tokens alone: no value here is
+   its own. Stars are drawn in ink, never the accent. Template: templates/scic/reviews.html. */
+
+.stars { display: inline-flex; gap: 2px; color: var(--hair); letter-spacing: 0; }
+.stars__star.is-on { color: var(--ink); }
+
+/* ---------------------------------------------------------------- the rating */
+.rating__score { display: flex; align-items: baseline; gap: var(--s2); }
+.rating__n { color: var(--ink); font-size: var(--title-size); line-height: 1; font-weight: var(--title-weight); letter-spacing: -0.02em; }
+.rating__score .stars { font-size: var(--h2-size); }
+.rating__count { margin-top: var(--s1); color: var(--ink-3); }
+.spread { max-width: 360px; margin: var(--s4) 0 0; padding: 0; list-style: none; }
+.spread__row { display: grid; grid-template-columns: 2ch 1fr 4ch; align-items: center; gap: var(--s2); }
+.spread__row + .spread__row { margin-top: var(--s1); }
+.spread__stars { color: var(--ink-3); }
+.spread__n { text-align: right; color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); }
+.meter { position: relative; display: block; height: 2px; background: var(--rule); }
+.meter::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--share); background: var(--ink); }
+
+/* ---------------------------------------------------------------- the reviews */
+.reviews { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--rule); }
+.review { padding: var(--s3) 0; border-top: 1px solid var(--rule); }
+.review__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s2); }
+.review__who { color: var(--ink); }
+.review__when { margin-left: auto; color: var(--ink-3); }
+.review__text { margin-top: var(--s1); max-width: var(--measure); color: var(--ink-2); white-space: pre-line; overflow-wrap: anywhere; }
+
+/* ---------------------------------------------------------------- the form
+   Five stars to pick from. The radios run 5 to 1 in the markup and the row is reversed, so a
+   star and every star before it light together on hover and once checked, with no script. */
+.star-pick { margin: 0; padding: 0; border: 0; min-width: 0; }
+.star-pick legend { display: block; padding: 0; margin-bottom: var(--s1); color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.star-pick__row { display: inline-flex; flex-direction: row-reverse; gap: var(--s1); }
+.star-pick input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.field.star-pick label { margin: 0; color: var(--hair); font-size: var(--h2-size); line-height: var(--h2-lead); letter-spacing: 0; text-transform: none; cursor: pointer; transition: color var(--t-mid) var(--ease); }
+.star-pick__row:not(:hover) input:checked ~ label,
+.star-pick__row label:hover, .star-pick__row label:hover ~ label { color: var(--ink); }
+.star-pick input:focus-visible + label { outline: 1px solid var(--ink); outline-offset: 2px; }
+.star-pick + .field { margin-top: var(--s4); }
