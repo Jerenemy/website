@@ -14,9 +14,10 @@ from app.blueprints.clash_royale import SEEDS, SCORES, TrackerError, add_account
 
 
 def battle(winner=0, loser=1, timestamp=None, crowns=(1, 0), kind='friendly'):
+    tag = lambda p: p if isinstance(p, str) else SEEDS[p][1]
     return {'type': kind, 'battleTime': datetime.fromtimestamp(timestamp or time.time(), timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ'),
-            'gameMode': {'id': 72000006}, 'team': [{'tag': SEEDS[winner][1], 'crowns': crowns[0]}],
-            'opponent': [{'tag': SEEDS[loser][1], 'crowns': crowns[1]}]}
+            'gameMode': {'id': 72000006}, 'team': [{'tag': tag(winner), 'crowns': crowns[0]}],
+            'opponent': [{'tag': tag(loser), 'crowns': crowns[1]}]}
 
 
 class ClashTests(unittest.TestCase):
@@ -44,13 +45,17 @@ class ClashTests(unittest.TestCase):
             return db.execute('SELECT wins FROM scores WHERE winner=? AND loser=?', (SEEDS[winner][1], SEEDS[loser][1])).fetchone()[0]
 
     def post(self, action, **data):
-        self.client.get('/will-sucks')
+        self.client.get('/scic/clash')
         with self.client.session_transaction() as session:
             data['csrf_token'] = session['csrf_token']
-        return self.client.post('/will-sucks/' + action, data=data, follow_redirects=True)
+        return self.client.post('/scic/clash/' + action, data=data, follow_redirects=True)
 
     def test_seed_persistence_and_page(self):
-        self.assertEqual(self.client.get('/will-sucks/').status_code, 200)
+        self.assertEqual(self.client.get('/scic/clash/').status_code, 200)
+        self.assertEqual(self.client.get('/scic').status_code, 200)
+        old = self.client.get('/will-sucks')
+        self.assertEqual((old.status_code, old.headers['Location']), (301, '/scic/clash'))
+        self.assertEqual(self.client.post('/will-sucks/sync').status_code, 308)
         self.assertEqual(self.app.test_cli_runner().invoke(args=['init-clash-db']).exit_code, 0)
         with database() as db:
             self.assertEqual([(r['name'], r['tag']) for r in db.execute('SELECT * FROM players ORDER BY position')], SEEDS)
@@ -115,7 +120,7 @@ class ClashTests(unittest.TestCase):
         with patch('app.blueprints.clash_royale.api') as fetch:
             add_account(tag, '127.0.0.1')
             fetch.assert_not_called()
-        html = self.client.get('/will-sucks').text
+        html = self.client.get('/scic/clash').text
         self.assertIn('&lt;New&gt;', html)
         with database() as db:
             self.assertEqual(db.execute('SELECT COUNT(*) FROM players').fetchone()[0], 5)
@@ -136,13 +141,13 @@ class ClashTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(*) FROM players').fetchone()[0], 4)
 
     def test_csrf_missing_credentials_cooldown(self):
-        self.assertEqual(self.client.post('/will-sucks/sync').status_code, 400)
+        self.assertEqual(self.client.post('/scic/clash/sync').status_code, 400)
         with patch('app.blueprints.clash_royale.api', return_value=[]):
             sync(manual=True)
             with self.assertRaisesRegex(TrackerError, '60 seconds'):
                 sync(manual=True)
         self.app.config['CLASH_ROYALE_API_TOKEN'] = None
-        self.assertIn('Tracking unavailable', self.client.get('/will-sucks').text)
+        self.assertIn('Tracking is off', self.client.get('/scic/clash').text)
         with self.assertRaisesRegex(TrackerError, 'not configured'):
             sync()
 
@@ -182,6 +187,51 @@ class ClashTests(unittest.TestCase):
         with patch('app.blueprints.clash_royale.api', return_value=[battle()]):
             sync()
         self.assertEqual(self.wins(), 0)
+
+
+    def test_names_follow_the_game(self):
+        self.ready()
+        log = [dict(battle(), team=[{'tag': SEEDS[0][1], 'name': 'Jerenemy', 'crowns': 1}],
+                    opponent=[{'tag': SEEDS[1][1], 'name': '<c7>Helios', 'crowns': 0}])]
+        with patch('app.blueprints.clash_royale.api', return_value=log):
+            sync()
+        with database() as db:
+            names = [r[0] for r in db.execute('SELECT name FROM players ORDER BY position')]
+        self.assertEqual(names[:2], ['Jerenemy', 'Helios'])
+        html = self.client.get('/scic/clash').text
+        self.assertIn('Jerenemy', html)
+        self.assertNotIn('&lt;c7&gt;', html)
+
+    def test_new_player_backfill(self):
+        self.ready()
+        new = '#PPY0289'
+        old = time.time() - 86400 * 5
+        # Three wins and a loss in the new player's own log (one of them shared with Jer's stored
+        # log), one more loss only in Jer's, and a game against an outsider: five count, once each.
+        shared = battle(new, 0, timestamp=old + 30)
+        own = [battle(new, 0, timestamp=old), battle(new, 1, timestamp=old + 10), battle(0, new, timestamp=old + 20), shared,
+               battle(new, '#2PYLQGRJ', timestamp=old + 40)]
+        with database() as db:
+            db.execute('UPDATE players SET log=? WHERE tag=?', (json.dumps([battle(0, new, timestamp=old - 100), shared]), SEEDS[0][1]))
+        with patch('app.blueprints.clash_royale.api', side_effect=[{'name': 'Newbie', 'tag': new}, own]):
+            message = add_account(new, '127.0.0.1')
+        self.assertIn('5 past wins', message)
+        with database() as db:
+            score = {(r[0], r[1]): r[2] for r in db.execute('SELECT * FROM scores WHERE winner=? OR loser=?', (new, new))}
+        self.assertEqual(score, {(new, SEEDS[0][1]): 2, (new, SEEDS[1][1]): 1, (SEEDS[0][1], new): 2})
+        with patch('app.blueprints.clash_royale.api', return_value=own):
+            sync()
+        with database() as db:
+            self.assertEqual(db.execute('SELECT wins FROM scores WHERE winner=? AND loser=?', (new, SEEDS[0][1])).fetchone()[0], 2)
+        runner = self.app.test_cli_runner()
+        with patch('app.blueprints.clash_royale.api', return_value=own):
+            result = runner.invoke(args=['backfill-clash', 'newbie'])
+        self.assertIn('0 past wins', result.output)
+        result = runner.invoke(args=['set-clash-wins', 'Newbie', SEEDS[2][1], '3'])
+        self.assertEqual(result.exit_code, 0, result.output)
+        with database() as db:
+            self.assertEqual(db.execute('SELECT wins FROM scores WHERE winner=? AND loser=?', (new, SEEDS[2][1])).fetchone()[0], 3)
+        self.assertNotEqual(runner.invoke(args=['set-clash-wins', 'nobody', 'Newbie', '1']).exit_code, 0)
 
 
 if __name__ == '__main__':

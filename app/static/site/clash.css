@@ -1,0 +1,96 @@
+/* /scic/clash: the friendly-battle table, read three ways (a ranking, the rivalries, every
+   matchup). Pieces of this page only, built from site.css's voices and from tokens alone: no
+   value here is its own. Template: templates/scic/clash.html. */
+
+.clash-status { margin-top: var(--s6); }
+.clash-status .status { margin-top: var(--s1); }
+
+/* ---------------------------------------------------------------- standings
+   One row a player, best record first: rank, name and tag, won, lost, and the win rate as a
+   number and a hairline that fills. */
+.board { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--rule); }
+.board__head, .board__row {
+  display: grid; grid-template-columns: 4ch minmax(0, 1fr) 7ch 7ch minmax(120px, 220px);
+  column-gap: var(--s3); align-items: baseline;
+}
+.board__head { padding-bottom: var(--s2); color: var(--ink-3); }
+.board__row { padding: var(--s3) 0; border-top: 1px solid var(--rule); }
+.board__no { color: var(--ink-3); }
+.board__who { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s2); min-width: 0; }
+.board__name { color: var(--ink); font-size: var(--h2-size); line-height: var(--h2-lead); font-weight: var(--heading-weight); letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.board__tag { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); }
+.board__n { text-align: right; color: var(--ink); font-size: var(--h2-size); line-height: var(--h2-lead); font-weight: var(--title-weight); }
+.board__head .board__n { font-size: var(--label-size); line-height: var(--label-lead); }
+.board__n.is-lost { color: var(--ink-3); }
+.board__unit { display: none; margin-left: 2px; color: var(--ink-3); font-size: var(--label-size); letter-spacing: var(--track); }
+.board__rate { display: flex; align-items: center; gap: var(--s2); }
+.board__head .board__rate { justify-content: flex-end; }
+.board__pct { min-width: 4ch; text-align: right; color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); }
+.board__none { grid-column: 3 / -1; text-align: right; }
+.board__row.is-idle .board__name { color: var(--ink-2); }
+
+/* A share as a line: the filled part in ink on a rule. */
+.meter, .versus__bar { position: relative; display: block; flex: 1; height: 2px; background: var(--rule); }
+.meter::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--share); background: var(--ink); }
+
+/* ---------------------------------------------------------------- head to head
+   Every pair that has played, most games first; the leader reads first, and the line splits
+   where their share of the games ends. */
+.versus { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--s5) var(--s6); }
+.versus__pair { padding-top: var(--s2); border-top: 1px solid var(--rule); }
+.versus__line { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; gap: var(--s2); }
+.versus__side { display: flex; align-items: baseline; gap: var(--s2); min-width: 0; }
+.versus__side--right { justify-content: flex-end; text-align: right; }
+.versus__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); }
+.versus__n { color: var(--ink); font-size: var(--h2-size); line-height: var(--h2-lead); font-weight: var(--title-weight); }
+.versus__n.is-trail { color: var(--ink-3); }
+.is-even .versus__n.is-trail { color: var(--ink); }
+.versus__games { color: var(--ink-3); }
+.versus__bar { margin-top: var(--s2); background: var(--tick); }
+.versus__bar::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--share) - 2px); background: var(--ink); }
+.versus + .note { margin-top: var(--s5); }
+
+/* ---------------------------------------------------------------- every matchup
+   The full grid. Row player against column player, wins first; a lead in ink, a deficit
+   quiet, a level record between. The names stay put while it scrolls sideways; pointing at a
+   cell keeps its row and column and lets the rest fall back. */
+.matrix { overflow-x: auto; overscroll-behavior-x: contain; }
+.matrix:focus-visible { outline-offset: 2px; }
+.matrix table { border-collapse: separate; border-spacing: 0; font-size: var(--text-size); line-height: var(--text-lead); }
+#matrix-caption + .matrix { margin-top: var(--s3); }
+.matrix th, .matrix td { padding: var(--s2) var(--s3); border-top: 1px solid var(--rule); white-space: nowrap; transition: opacity var(--t-mid) var(--ease), color var(--t-mid) var(--ease); }
+.matrix thead th, .matrix thead td { border-top: 0; padding-top: 0; color: var(--ink-3); font-weight: 400; font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; text-align: center; vertical-align: bottom; }
+.matrix__vs { color: var(--tick); }
+.matrix tbody th { position: sticky; left: 0; z-index: 1; padding-left: 0; background: var(--bg); color: var(--ink); font-weight: 400; text-align: left; }
+.matrix thead .matrix__corner { position: sticky; left: 0; z-index: 1; background: var(--bg); }
+.matrix td { min-width: 9ch; text-align: center; font-weight: var(--title-weight); }
+.matrix td b { font-weight: var(--strong-weight); }
+.matrix__dash { margin: 0 0.2em; color: var(--tick); }
+.matrix td.is-ahead { color: var(--ink); }
+.matrix td.is-behind { color: var(--ink-3); }
+.matrix td.is-behind b { font-weight: 400; }
+.matrix td.is-even { color: var(--ink-2); }
+.matrix td.is-none { color: var(--tick); }
+.matrix td.is-self::before { content: ""; display: inline-block; width: var(--s2); height: 1px; vertical-align: middle; background: var(--hair); }
+.matrix .matrix__total { border-left: 1px solid var(--rule); color: var(--ink); }
+.matrix thead .matrix__total { color: var(--ink-2); }
+.matrix__lost { color: var(--ink-3); }
+.matrix td.is-ahead .matrix__lost, .matrix td.is-even .matrix__lost { color: inherit; }
+
+.matrix table.is-pointing tbody td:not(.is-row):not(.is-col), .matrix table.is-pointing tbody th:not(.is-row) { opacity: 0.32; }
+.matrix table.is-pointing thead th:not(.is-col) { opacity: 0.5; }
+.matrix table.is-pointing thead th.is-col { color: var(--ink); }
+
+@media (max-width: 640px) {
+  .board__head { display: none; }
+  .board__row { grid-template-columns: 3ch minmax(0, 1fr) auto auto; row-gap: var(--s1); padding: var(--s2) 0; }
+  .board__name { font-size: var(--text-size); line-height: var(--text-lead); }
+  .board__n { font-size: var(--text-size); line-height: var(--text-lead); }
+  .board__unit { display: inline; }
+  .board__rate { grid-column: 2 / -1; }
+  .board__none { grid-column: 2 / -1; text-align: left; }
+  .matrix th, .matrix td { padding: var(--s1) var(--s2); }
+  .matrix tbody th { padding-left: 0; }
+  .matrix td { min-width: 7ch; font-size: var(--small-size); }
+}
+@media (prefers-reduced-motion: reduce) { .matrix table.is-pointing * { opacity: 1 !important; } }

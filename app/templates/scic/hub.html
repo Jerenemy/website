@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}SCIC · Jeremy Zay{% endblock %}
+{% block description %}Jeremy Zay's work as a tutor at Wesleyan's Scientific Computing and Informatics Center.{% endblock %}
+{% block content %}
+  {% call ui.head("SCIC", line="What I've built while tutoring at Wesleyan's Scientific Computing and Informatics Center.", where="Wesleyan") %}
+    {{ ui.open("https://www.wesleyan.edu/scic/", "SCIC at Wesleyan", external=True) }}
+  {% endcall %}
+  {{ ui.tabs(scic_tabs('scic.hub'), label="SCIC pages") }}
+
+  {% call ui.sect("01", "About") %}
+    <div class="prose">
+      <p class="lede">The SCIC is Wesleyan's drop-in help for scientific computing.</p>
+      <p>Tutors sit in ESC 105 and help anyone on campus with programming, MATLAB, Mathematica, SQL and the HPC cluster. I've been one since September 2025.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("02", "Pages") %}
+    <ol class="index">
+      {%- for page in pages %}
+      <li><a class="index__row" href="{{ page.href }}">
+        <span class="index__no">{{ '%02d' % loop.index }}</span>
+        <span class="index__title">{{ page.name }}</span>
+        <span class="index__meta">Open</span>
+        <span class="index__line">{{ page.line }}</span>
+      </a></li>
+      {%- endfor %}
+    </ol>
+  {% endcall %}
+{% endblock %}
