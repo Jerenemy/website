@@ -233,6 +233,20 @@
       "kind": "product",
       "line": "An app that tells small businesses what to film, then edits and posts it",
       "href": "/cue"
+    },
+    {
+      "id": "scic",
+      "title": "SCIC",
+      "short_desc": "",
+      "long_desc": "",
+      "image_full": "",
+      "image_thumb": "",
+      "image_alt": "",
+      "sort_order": 16,
+      "is_published": true,
+      "kind": "engineering",
+      "line": "Tutoring at Wesleyan's Scientific Computing and Informatics Center",
+      "href": "/scic"
     }
   ]
 }
