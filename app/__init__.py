@@ -9,7 +9,8 @@ from .blueprints.ear import bp as ear_bp
 from .blueprints.wtt import bp as wtt_bp, init_db_command as init_wtt_command
 from .blueprints.jobbot import bp as jobbot_bp
 from .blueprints.sonar_share import bp as sonar_share_bp
-from .blueprints.clash_royale import bp as clash_bp, init_command, sync_command, verify_command
+from .blueprints.clash_royale import bp as clash_bp, init_command, sync_command, verify_command, backfill_command, set_wins_command
+from .blueprints.scic import bp as scic_bp
 from .portfolio import copy_command as portfolio_copy_command
 from .extensions import mail
 from .config import Config
@@ -39,9 +40,10 @@ def create_app():
     app.register_blueprint(ear_bp, url_prefix="/ear")
     app.register_blueprint(wtt_bp)          # /wtt and /admin/wtt
     app.register_blueprint(jobbot_bp)       # /admin/jobs: redirects to Sisyphus, and texts from companies
-    app.register_blueprint(clash_bp)        # /will-sucks
+    app.register_blueprint(scic_bp)         # /scic: the hub for my SCIC work
+    app.register_blueprint(clash_bp)        # /scic/clash (and the old /will-sucks)
     app.register_blueprint(sonar_share_bp)  # /sonar/{r,e,p,u}/... share pages + apple-app-site-association
-    for command in (init_wtt_command, init_command, sync_command, verify_command, portfolio_copy_command):
+    for command in (init_wtt_command, init_command, sync_command, verify_command, backfill_command, set_wins_command, portfolio_copy_command):
         app.cli.add_command(command)
 
     # the site's look: theme, frame and place in the loop for every template (app/design.py)

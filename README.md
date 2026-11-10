@@ -371,7 +371,8 @@ app/
     ear/                 /ear proxy to the separate ear service (projects/ear)
     wtt/                 /wtt email signup + /admin/wtt export
     jobbot/              /admin/jobs: redirects to Sisyphus, and the texts route
-    clash_royale/        /will-sucks table + its sync CLI commands
+    clash_royale/        /scic/clash table + its sync CLI commands
+    scic/                /scic hub: lists the SCIC pages (PAGES) and gives them their tabs
   blog/  portfolio/  site_settings/    the stores (markdown posts, JSON files)
   blog_posts/            the posts, one .md each
   data/portfolio.seed.json  the works' seed (the live portfolio.json is untracked)
@@ -418,7 +419,14 @@ tests/
 
 ## Clash Royale friendly battle table
 
-`/will-sucks` displays the seeded Jer/Will/Win/Leo head-to-head wins. Anyone can add a player tag or sync; forms use CSRF protection, a 60-second shared sync cooldown, and five add attempts per client IP per ten minutes. Diagonals show a dash. Only completed `friendly` 1v1 matches between registered players count; draws and all other modes are excluded. Initial logs are baselined so existing scores are not counted again.
+`/scic/clash` (formerly `/will-sucks`, which redirects) shows the head-to-head wins three ways: standings, every pair that has played, and the full grid. Players show under their in-game names, refreshed on every sync. Anyone can add a player tag or sync; forms use CSRF protection, a 60-second shared sync cooldown, and five add attempts per client IP per ten minutes. Only completed `friendly` 1v1 matches between registered players count; draws and all other modes are excluded. Initial logs are baselined so existing scores are not counted again.
+
+Adding a player backfills their past friendlies against the table from their own battle log and everyone's stored logs; each battle is fingerprinted, so none counts twice. For wins no log still holds, set a pair by hand (players by tag or name):
+
+```bash
+.venv/bin/flask --app app:create_app backfill-clash tartar        # re-run the backfill from fresh logs
+.venv/bin/flask --app app:create_app set-clash-wins tartar Jerenemy 3
+```
 
 ### Configuration and activation
 

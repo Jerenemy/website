@@ -1,0 +1,158 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Clash · SCIC · Jeremy Zay{% endblock %}
+{% block description %}Standings and head-to-head records from our friendly Clash Royale battles.{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='site/clash.css') }}">{% endblock %}
+{% block content %}
+  {% call ui.head("Clash", line="Every friendly Clash Royale battle between us, counted from the game's own battle logs.", where="SCIC") %}
+    {{ ui.open("#sync", "Sync", quiet=True) }}
+    {{ ui.open("#add", "Add a player", quiet=True) }}
+  {% endcall %}
+  {{ ui.tabs(scic_tabs('clash.page'), label="SCIC pages") }}
+
+  {%- set messages = get_flashed_messages(with_categories=true) %}
+  {%- set flagged = table.ranked | selectattr('error') | list + table.ranked | selectattr('gap') | list %}
+  {%- if messages or not configured or not verified or flagged %}
+  <div class="clash-status" data-reveal>
+    {%- for category, message in messages %}
+    <p class="status {{ category }}" role="status">{{ message }}</p>
+    {%- endfor %}
+    {%- if not configured %}<p class="status" role="status">Tracking is off: the server has no API token. The scores below are kept.</p>
+    {%- elif not verified %}<p class="status" role="status">Scores start counting once a live friendly battle has been verified.</p>{% endif %}
+    {%- for p in table.ranked %}
+    {%- if p.error %}<p class="status" role="status">{{ p.name }}: {{ p.error }}</p>{% endif %}
+    {%- if p.gap %}<p class="status" role="status">{{ p.name }}: some games may be missing from the battle history.</p>{% endif %}
+    {%- endfor %}
+  </div>
+  {%- endif %}
+
+  {% call ui.sect("01", "Standings", wide=True) %}
+    {%- if table.games %}
+    <ol class="board" aria-label="Standings, best record first">
+      <li class="board__head label" aria-hidden="true"><span></span><span>Player</span><span class="board__n">Won</span><span class="board__n">Lost</span><span class="board__rate">Win rate</span></li>
+      {%- for p in table.ranked %}
+      <li class="board__row{% if not p.played %} is-idle{% endif %}">
+        <span class="board__no label">{{ '%02d' % loop.index }}</span>
+        <span class="board__who"><span class="board__name">{{ p.name }}</span><span class="board__tag">{{ p.tag }}</span></span>
+        {%- if p.played %}
+        <span class="board__n"><span class="sr">Won </span>{{ p.won }}<span class="board__unit" aria-hidden="true">W</span></span>
+        <span class="board__n is-lost"><span class="sr">, lost </span>{{ p.lost }}<span class="board__unit" aria-hidden="true">L</span></span>
+        <span class="board__rate"><span class="meter" style="--share: {{ p.rate }}%" aria-hidden="true"></span><span class="board__pct"><span class="sr">, </span>{{ p.rate }}%<span class="sr"> won</span></span></span>
+        {%- else %}
+        <span class="board__none note">No games yet</span>
+        {%- endif %}
+      </li>
+      {%- endfor %}
+    </ol>
+    {%- else %}
+    <p class="note">No battles yet.</p>
+    {%- endif %}
+  {% endcall %}
+
+  {%- if table.pairs or table.unplayed or table.idle %}
+  {% call ui.sect("02", "Head to head", wide=True) %}
+    {%- if table.pairs %}
+    <ul class="versus">
+      {%- for pair in table.pairs %}
+      <li class="versus__pair{% if pair.lw == pair.rw %} is-even{% endif %}">
+        <p class="versus__line">
+          <span class="versus__side"><span class="versus__name">{{ pair.left.name }}</span> <span class="versus__n">{{ pair.lw }}</span></span>
+          <span class="versus__games label">{{ pair.total }} {{ 'game' if pair.total == 1 else 'games' }}</span>
+          <span class="versus__side versus__side--right"><span class="versus__n is-trail">{{ pair.rw }}</span> <span class="versus__name">{{ pair.right.name }}</span></span>
+        </p>
+        <span class="versus__bar" style="--share: {{ pair.share }}%" aria-hidden="true"></span>
+      </li>
+      {%- endfor %}
+    </ul>
+    {%- endif %}
+    {%- if table.unplayed %}
+    <p class="note">Not played yet: {% for a, b in table.unplayed %}{{ a.name }} vs {{ b.name }}{{ ', ' if not loop.last else '.' }}{% endfor %}</p>
+    {%- endif %}
+    {%- if table.idle %}
+    <p class="note">{% for p in table.idle %}{{ p.name }}{{ ' and ' if loop.revindex == 2 else (', ' if not loop.last else '') }}{% endfor %} {{ "hasn't" if table.idle | length == 1 else "haven't" }} played anyone here yet.</p>
+    {%- endif %}
+  {% endcall %}
+  {%- endif %}
+
+  {% call ui.sect("03", "Every matchup", wide=True) %}
+    <p class="note" id="matrix-caption">Read across: each cell is the row player's wins and losses against the column player.</p>
+    <div class="matrix" tabindex="0" role="region" aria-labelledby="matrix-caption">
+      <table aria-labelledby="matrix-caption">
+        <thead><tr>
+          <td class="matrix__corner"></td>
+          {%- for c in table.columns %}<th scope="col" data-col="{{ loop.index }}"><span class="matrix__vs">vs</span> {{ c.name }}</th>{% endfor %}
+          <th scope="col" class="matrix__total" data-col="total">Total</th>
+        </tr></thead>
+        <tbody>
+          {%- for r in table.grid %}
+          <tr>
+            <th scope="row">{{ r.row.name }}</th>
+            {%- for cell in r.cells %}
+            {%- if cell is none %}
+            <td class="is-self" data-col="{{ loop.index }}"><span class="sr">Same player</span></td>
+            {%- else %}
+            {%- set state = 'none' if cell.won + cell.lost == 0 else ('ahead' if cell.won > cell.lost else ('behind' if cell.won < cell.lost else 'even')) %}
+            <td class="is-{{ state }}" data-col="{{ loop.index }}" title="{{ r.row.name }} vs {{ cell.against }}: {{ cell.won }} won, {{ cell.lost }} lost">
+              {%- if state == 'none' %}<span aria-hidden="true">·</span><span class="sr">Not played</span>
+              {%- else %}<b>{{ cell.won }}</b><span class="matrix__dash" aria-hidden="true">–</span><span class="sr"> won, </span><span class="matrix__lost">{{ cell.lost }}</span><span class="sr"> lost</span>{% endif -%}
+            </td>
+            {%- endif %}
+            {%- endfor %}
+            <td class="matrix__total" data-col="total"><b>{{ r.row.won }}</b><span class="matrix__dash" aria-hidden="true">–</span><span class="sr"> won, </span><span class="matrix__lost">{{ r.row.lost }}</span><span class="sr"> lost</span></td>
+          </tr>
+          {%- endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("04", "Sync", id="sync") %}
+    <div class="prose">
+      <p>{% if last_sync %}Last synced <time datetime="{{ last_sync }}" data-ago>{{ last_sync[:16].replace('T', ' ') }} UTC</time>.{% else %}Not synced yet.{% endif %} It also syncs on its own every day at 4 a.m. Eastern.</p>
+      <p class="note">Only 1v1 friendlies between players on this page count. The game keeps about 30 battles per player, so sync after a long session before the older games drop off.</p>
+    </div>
+    <form class="form" method="post" action="{{ url_for('clash.change', action='sync') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="open send" type="submit" {% if not configured %}disabled{% endif %}><span>Sync now</span>{{ ui.arrow() }}</button>
+    </form>
+  {% endcall %}
+
+  {% call ui.sect("05", "Add a player", id="add") %}
+    <p class="note">Your tag is under your name on your in-game profile. Friendlies you've already played against people here count too, as long as the game's battle logs still have them.</p>
+    <form class="form" method="post" action="{{ url_for('clash.change', action='accounts') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <p class="field">
+        <label for="player-tag">Player tag</label>
+        <input id="player-tag" name="tag" placeholder="#2PYLQGRJ" maxlength="16" required autocomplete="off" autocapitalize="characters" spellcheck="false">
+      </p>
+      <button class="open send" type="submit" {% if not configured %}disabled{% endif %}><span>Add player</span>{{ ui.arrow() }}</button>
+    </form>
+  {% endcall %}
+
+  <script>
+    // The matrix's crosshair: pointing at a cell keeps its row and column, and dims the rest.
+    (function () {
+      var m = document.querySelector('.matrix table');
+      if (!m) return;
+      function clear() { m.classList.remove('is-pointing'); m.querySelectorAll('.is-row, .is-col').forEach(function (el) { el.classList.remove('is-row', 'is-col'); }); }
+      m.addEventListener('pointerover', function (e) {
+        var cell = e.target.closest('td, th');
+        clear();
+        if (!cell || !cell.dataset.col && cell.parentNode.parentNode.tagName !== 'TBODY') return;
+        var col = cell.dataset.col;
+        if (cell.parentNode.parentNode.tagName === 'TBODY') cell.parentNode.querySelectorAll('td, th').forEach(function (el) { el.classList.add('is-row'); });
+        if (col) m.querySelectorAll('[data-col="' + col + '"]').forEach(function (el) { el.classList.add('is-col'); });
+        m.classList.add('is-pointing');
+      });
+      m.addEventListener('pointerleave', clear);
+    })();
+    // The last sync in the reader's own clock, and how long ago it was.
+    (function () {
+      var t = document.querySelector('time[data-ago]');
+      if (!t) return;
+      var at = new Date(t.getAttribute('datetime')), mins = Math.round((Date.now() - at) / 60000);
+      var ago = mins < 1 ? 'just now' : mins < 60 ? mins + ' min ago' : mins < 1440 ? Math.round(mins / 60) + ' h ago' : Math.round(mins / 1440) + ' d ago';
+      t.textContent = ago + ' (' + at.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ')';
+    })();
+  </script>
+{% endblock %}

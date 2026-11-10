@@ -25,6 +25,53 @@ class TrackerError(Exception):
     pass
 
 
+def clean_name(value):
+    """An in-game name without its colour markup (`<c7>Helios` is shown as `Helios`)."""
+    return re.sub(r'</?c\d*>', '', value or '').strip()
+
+
+def own_name(log, tag):
+    """The player's current in-game name, as their newest battle records it."""
+    for battle in log:
+        for side in ('team', 'opponent'):
+            for p in battle.get(side) or []:
+                if isinstance(p, dict) and p.get('tag') == tag and isinstance(p.get('name'), str) and clean_name(p['name']):
+                    return clean_name(p['name'])
+    return None
+
+
+def count(db, record):
+    """Record one battle once, by fingerprint; True when it added a win."""
+    fingerprint, _, participants, payload = record
+    if not db.execute('INSERT OR IGNORE INTO matches VALUES (?,?)', (fingerprint, payload)).rowcount:
+        return False
+    if participants[0][1] == participants[1][1]:
+        return False
+    winner, loser = sorted(participants, key=lambda p: p[1], reverse=True)
+    db.execute('INSERT INTO scores VALUES (?,?,1) ON CONFLICT(winner,loser) DO UPDATE SET wins=wins+1', (winner[0], loser[0]))
+    return True
+
+
+def backfill(db, tag, logs):
+    """Count every friendly a newly added player already played against the table.
+
+    `logs` are battle logs (the new player's own first: it holds their latest games, the others'
+    stored logs reach further back). Only 1v1 friendlies between the new player and an account
+    already in the table count, whenever they were played; fingerprints keep any battle that
+    appears in two logs, or that a sync already counted, from counting twice."""
+    registered = {r[0] for r in db.execute('SELECT tag FROM players')}
+    added = 0
+    for log in logs:
+        for battle in log:
+            record = battle_record(battle)
+            if not record:
+                continue
+            tags = [p[0] for p in record[2]]
+            if tag in tags and all(t in registered for t in tags):
+                added += count(db, record)
+    return added
+
+
 def normalize_tag(value):
     tag = '#' + value.strip().upper().lstrip('#')
     if not re.fullmatch(r'#[0289PYLQGRJCUV]{3,15}', tag):
@@ -161,13 +208,9 @@ def sync(manual=False):
                             continue
                         if occurred <= max(max(registered[t]['registered'], registered[t]['baseline']) for t in tags):
                             continue
-                        inserted = db.execute('INSERT OR IGNORE INTO matches VALUES (?,?)', (fingerprint, payload)).rowcount
-                        if inserted and participants[0][1] != participants[1][1]:
-                            winner, loser = sorted(participants, key=lambda p: p[1], reverse=True)
-                            db.execute('INSERT INTO scores VALUES (?,?,1) ON CONFLICT(winner,loser) DO UPDATE SET wins=wins+1', (winner[0], loser[0]))
-                            added += 1
-                db.execute('UPDATE players SET log=?,synced=?,error=NULL,gap=?,baseline=COALESCE(baseline,?) WHERE tag=?',
-                           (json.dumps(log), time.time(), gap, now if verified else None, player['tag']))
+                        added += count(db, record)
+                db.execute('UPDATE players SET name=COALESCE(?,name),log=?,synced=?,error=NULL,gap=?,baseline=COALESCE(baseline,?) WHERE tag=?',
+                           (own_name(log, player['tag']), json.dumps(log), time.time(), gap, now if verified else None, player['tag']))
         with database() as db:
             db.execute("INSERT OR REPLACE INTO state VALUES ('last_sync',?)", (str(time.time()),))
         message = f'Sync complete: {added} new wins.'
@@ -205,21 +248,71 @@ def add_account(value, ip):
         now = time.time()
         position = db.execute('SELECT COALESCE(MAX(position),-1)+1 FROM players').fetchone()[0]
         verified = db.execute("SELECT value FROM state WHERE key='verified'").fetchone()
+        verified = bool(verified and verified[0] == '1')
+        name = clean_name(profile['name']) or tag
+        others = [json.loads(r[0]) for r in db.execute('SELECT log FROM players')]
         db.execute('INSERT INTO players(tag,name,position,registered,baseline,log,synced) VALUES (?,?,?,?,?,?,?)',
-                   (tag, profile['name'], position, now, now if verified and verified[0] == '1' else None, json.dumps(log), now))
-    return profile['name'] + ' added. Future friendly battles will count after tracking is activated.'
+                   (tag, name, position, now, now if verified else None, json.dumps(log), now))
+        if not verified:
+            return name + ' added. Battles will count once tracking is switched on.'
+        found = backfill(db, tag, [log] + others)
+    if found:
+        return f'{name} added, with {found} past {"win" if found == 1 else "wins"} counted.'
+    return name + ' added. No past friendlies with the table turned up, so the count starts now.'
 
 
-@bp.get('/will-sucks', strict_slashes=False)
+def standings(players, scores):
+    """The page's three readings of one score table: a ranking, the rivalries, the grid."""
+    rows = []
+    for p in players:
+        won = sum(scores.get((p['tag'], o['tag']), 0) for o in players if o['tag'] != p['tag'])
+        lost = sum(scores.get((o['tag'], p['tag']), 0) for o in players if o['tag'] != p['tag'])
+        rows.append({'tag': p['tag'], 'name': clean_name(p['name']) or p['tag'], 'won': won, 'lost': lost,
+                     'played': won + lost, 'rate': round(100 * won / (won + lost)) if won + lost else None,
+                     'error': p['error'], 'gap': p['gap']})
+    by_tag = {r['tag']: r for r in rows}
+    # Ranked by share of games won, then by wins; anyone yet to play sits below everyone who has.
+    ranked = sorted(rows, key=lambda r: (r['played'] == 0, -(r['won'] / r['played'] if r['played'] else 0), -r['won'], r['name'].lower()))
+    pairs, unplayed = [], []
+    for i, a in enumerate(players):
+        for b in players[i + 1:]:
+            left, right = by_tag[a['tag']], by_tag[b['tag']]
+            lw, rw = scores.get((a['tag'], b['tag']), 0), scores.get((b['tag'], a['tag']), 0)
+            if lw + rw == 0:
+                if left['played'] and right['played']:  # someone yet to play anyone is named once, below
+                    unplayed.append((left, right))
+                continue
+            if rw > lw:  # the leader reads first
+                left, right, lw, rw = right, left, rw, lw
+            pairs.append({'left': left, 'right': right, 'lw': lw, 'rw': rw, 'total': lw + rw, 'share': round(100 * lw / (lw + rw))})
+    pairs.sort(key=lambda p: (-p['total'], -p['lw']))
+    grid = [{'row': by_tag[p['tag']], 'cells': [None if o['tag'] == p['tag'] else
+             {'won': scores.get((p['tag'], o['tag']), 0), 'lost': scores.get((o['tag'], p['tag']), 0), 'against': by_tag[o['tag']]['name']}
+             for o in players]} for p in players]
+    return {'ranked': ranked, 'pairs': pairs, 'unplayed': unplayed, 'idle': [r for r in ranked if not r['played']], 'grid': grid, 'columns': [by_tag[p['tag']] for p in players],
+            'games': sum(p['total'] for p in pairs)}
+
+
+@bp.get('/scic/clash', strict_slashes=False)
 def page():
     with database() as db:
         players = db.execute('SELECT * FROM players ORDER BY position').fetchall()
         scores = {(r['winner'], r['loser']): r['wins'] for r in db.execute('SELECT * FROM scores')}
         state = dict(db.execute('SELECT key,value FROM state').fetchall())
     last = state.get('last_sync')
-    return render_template('clash_royale/will_sucks.html', players=players, scores=scores, csrf_token=_csrf_token(),
+    return render_template('scic/clash.html', table=standings(players, scores), csrf_token=_csrf_token(),
                            configured=bool(current_app.config.get('CLASH_ROYALE_API_TOKEN')), verified=state.get('verified') == '1',
                            last_sync=datetime.fromtimestamp(float(last), timezone.utc).isoformat() if last else None)
+
+
+@bp.get('/will-sucks', strict_slashes=False)
+def old_page():
+    return redirect(url_for('clash.page'), code=301)
+
+
+@bp.post('/will-sucks/<action>')
+def old_change(action):
+    return redirect(url_for('clash.change', action=action), code=308)
 
 
 def client_ip():
@@ -241,7 +334,7 @@ def fresh_response(response):
     return response
 
 
-@bp.post('/will-sucks/<action>')
+@bp.post('/scic/clash/<action>')
 def change(action):
     if action not in ('accounts', 'sync'):
         return 'Not found', 404
@@ -276,6 +369,48 @@ def sync_command():
     click.echo(message)
     if errors:
         raise click.ClickException('Some accounts failed; see sync output.')
+
+
+def find_player(db, value):
+    """A player by tag or by shown name, for the commands below."""
+    wanted = value.strip().lower()
+    for p in db.execute('SELECT tag,name FROM players'):
+        if wanted.lstrip('#') == p['tag'].lower().lstrip('#') or wanted == clean_name(p['name']).lower():
+            return p
+    raise click.ClickException(f'No player matches {value!r}.')
+
+
+@click.command('backfill-clash')
+@click.argument('player')
+@with_appcontext
+def backfill_command(player):
+    """Count the past friendlies of PLAYER (a tag or name) from everyone's current battle logs."""
+    try:
+        with database() as db:
+            p = find_player(db, player)
+            tags = [r[0] for r in db.execute('SELECT tag FROM players')]
+        logs = [api(p['tag'], '/battlelog')] + [api(t, '/battlelog') for t in tags if t != p['tag']]
+    except TrackerError as exc:
+        raise click.ClickException(str(exc)) from None
+    with database() as db:
+        db.execute('BEGIN IMMEDIATE')
+        found = backfill(db, p['tag'], logs)
+    click.echo(f'{clean_name(p["name"])}: {found} past wins counted.')
+
+
+@click.command('set-clash-wins')
+@click.argument('winner')
+@click.argument('loser')
+@click.argument('wins', type=click.IntRange(min=0))
+@with_appcontext
+def set_wins_command(winner, loser, wins):
+    """Set how many times WINNER has beaten LOSER (tags or names): for wins no battle log still holds."""
+    with database() as db:
+        w, l = find_player(db, winner), find_player(db, loser)
+        if w['tag'] == l['tag']:
+            raise click.ClickException('A player cannot beat themselves.')
+        db.execute('INSERT INTO scores VALUES (?,?,?) ON CONFLICT(winner,loser) DO UPDATE SET wins=excluded.wins', (w['tag'], l['tag'], wins))
+    click.echo(f'{clean_name(w["name"])} over {clean_name(l["name"])}: {wins}.')
 
 
 @click.command('verify-clash-friendly')

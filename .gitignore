@@ -29,13 +29,15 @@
 # blueprints ear
 !app/blueprints/ear
 !app/blueprints/ear/*
-# blueprints that are one module each: wtt signups, the job bot's review pages, the clash table
+# blueprints that are one module each: wtt signups, the job bot's review pages, the clash table, the SCIC hub
 !app/blueprints/wtt/
 !app/blueprints/wtt/__init__.py
 !app/blueprints/jobbot/
 !app/blueprints/jobbot/__init__.py
 !app/blueprints/clash_royale/
 !app/blueprints/clash_royale/__init__.py
+!app/blueprints/scic/
+!app/blueprints/scic/__init__.py
 # Sonar redirects, its apple-app-site-association file and the admin stats page
 !app/blueprints/sonar_share/
 !app/blueprints/sonar_share/*.py
