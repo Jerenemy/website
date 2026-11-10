@@ -38,6 +38,11 @@ class Config:
     SONAR_SITE_URL = os.getenv("SONAR_SITE_URL", "http://127.0.0.1:8002")
     SONAR_STATS_TOKEN = os.getenv("SONAR_STATS_TOKEN")
 
+    # CEO outreach dashboards (/admin/outreach): the Mac's routine POSTs its leads and scoreboard to
+    # /admin/outreach/sync with this token and gets the reply examples back. Data stays in instance/.
+    OUTREACH_SYNC_TOKEN = os.getenv("OUTREACH_SYNC_TOKEN")
+    OUTREACH_DATA_DIR = os.getenv("OUTREACH_DATA_DIR", os.path.join(_project_root, "instance", "outreach"))
+
     SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(32).hex())
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
     ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH")

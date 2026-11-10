@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "admin/_outreach.html" as outreach with context %}
+{% block title %}Outreach · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+{% block content %}
+  {{ outreach.top("emails", "Every CEO email the routine sent, and who wrote back.") }}
+
+  {% call ui.sect("01", "So far", wide=True) %}
+    <dl class="outreach-tiles">
+      <div class="outreach-tile"><dt>Sent</dt><dd>{{ summary.sent }}</dd></div>
+      <div class="outreach-tile"><dt>Replies</dt><dd>{{ summary.replies }}<small>{{ summary.positive }} positive</small></dd></div>
+      <div class="outreach-tile"><dt>Reply rate</dt><dd>{{ "%.1f%%" % (summary.rate * 100) if summary.rate is not none else "–" }}</dd></div>
+      <div class="outreach-tile"><dt>Meetings</dt><dd>{{ summary.meetings }}</dd></div>
+      <div class="outreach-tile"><dt>Bad address</dt><dd>{{ summary.bounced }}<small>bounced or none found</small></dd></div>
+    </dl>
+    {{ outreach.synced(synced_at) }}
+  {% endcall %}
+
+  {% call ui.sect("02", "Emails", wide=True) %}
+    {{ ui.tabs(filter_tabs, label="Show") }}
+    <div class="table admin-table outreach-table">
+      <table>
+        <thead><tr><th>CEO</th><th>Test</th><th>Status</th><th>Sent · last</th><th>Thread</th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td data-label="CEO" class="admin-table__lead">
+              {{ row.name }} · {% if row.company_url %}<a href="{{ row.company_url }}" target="_blank" rel="noopener">{{ row.company }}</a>{% else %}{{ row.company }}{% endif %}
+              <div class="outreach-hook">{{ row.hook }}</div>
+            </td>
+            <td data-label="Test">
+              <span class="outreach-tag">{{ row.variant or "–" }}</span>
+              <div class="note">{{ "with Hi" if row.greeting == "yes" else "no Hi" }}{% if row.nudges %} · {{ row.nudges | join(", ") }}{% endif %}</div>
+            </td>
+            <td data-label="Status">
+              <span class="outreach-tag{% if row.replied %} outreach-tag--on{% endif %}">{{ row.status }}</span>
+              {% if row.replied_after %}<div class="note">after {{ row.replied_after | replace("nudge", "nudge ") }}</div>{% endif %}
+              {% if row.follow_up_on %}<div class="note">follow up {{ row.follow_up_on }}</div>{% endif %}
+            </td>
+            <td data-label="Sent · last" class="num">{{ row.first_contacted or "–" }}<div class="note">{{ row.last_activity }}</div></td>
+            <td data-label="Thread">{% if row.thread_url %}<a href="{{ row.thread_url }}" target="_blank" rel="noopener">Gmail</a>{% else %}–{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">{{ "No emails match." if has_data else "No leads synced yet." }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Replies first, then newest. “Hi” is the greeting test; “after” is the email the CEO answered.</p>
+  {% endcall %}
+{% endblock %}

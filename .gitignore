@@ -38,6 +38,9 @@
 !app/blueprints/clash_royale/__init__.py
 !app/blueprints/scic/
 !app/blueprints/scic/__init__.py
+# CEO outreach dashboards (admin only; their data lives in instance/outreach, untracked)
+!app/blueprints/outreach/
+!app/blueprints/outreach/__init__.py
 # Sonar redirects, its apple-app-site-association file and the admin stats page
 !app/blueprints/sonar_share/
 !app/blueprints/sonar_share/*.py
@@ -164,6 +167,7 @@ app/blog/*.pyc
 # Job application bot review pages (admin): their tests
 !tests/test_jobbot.py
 !tests/test_sonar_moved.py
+!tests/test_outreach.py
 
 # macOS folder metadata, wherever an allowlist above reaches
 .DS_Store

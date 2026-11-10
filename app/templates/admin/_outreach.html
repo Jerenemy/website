@@ -1,0 +1,31 @@
+{#- The outreach pages' shared pieces. Import with: {% import "admin/_outreach.html" as outreach with context %} -#}
+{% import "partials/_ui.html" as ui %}
+{% import "admin/_admin.html" as admin with context %}
+
+{#- Head, the admin tabs, then the outreach tabs (Emails, A/B test, Voice). -#}
+{% macro top(tab, line) -%}
+  {{ ui.head("Outreach", where="Admin", line=line) }}
+  {{ admin.nav("outreach") }}
+  <div class="outreach-tabs">
+  {{ ui.tabs([
+    (url_for("outreach.emails"), "Emails", tab == "emails"),
+    (url_for("outreach.ab_test"), "A/B test", tab == "ab"),
+    (url_for("outreach.voice"), "Voice", tab == "voice"),
+  ], label="Outreach") }}
+  </div>
+{%- endmacro %}
+
+{#- A rate as a number with a thin bar, scaled to `top` (the table's best rate). -#}
+{% macro rate(value, top, title="") -%}
+  {%- if value is none -%}<span class="note">–</span>
+  {%- else -%}
+  <span class="outreach-rate" title="{{ title }}">
+    <span class="outreach-rate__bar" aria-hidden="true"><span style="width: {{ (100 * value / top) | round(1) if top else 0 }}%"></span></span>
+    <span class="outreach-rate__n">{{ "%.1f%%" % (value * 100) }}</span>
+  </span>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro synced(synced_at) -%}
+<p class="note">{% if synced_at %}Last synced from the Mac {{ synced_at | replace("T", " ") | replace("Z", " UTC") }}.{% else %}Nothing synced yet. Run <code>python3 -I tools/sync_dashboard.py</code> in ceo-outreach.{% endif %}</p>
+{%- endmacro %}

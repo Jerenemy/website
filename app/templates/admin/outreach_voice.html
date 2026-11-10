@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "admin/_admin.html" as admin with context %}
+{% import "admin/_outreach.html" as outreach with context %}
+{% block title %}Voice · Outreach · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+
+{#- One example's form. `new` makes it the blank "add one" form. -#}
+{% macro example_form(e, new=False) -%}
+<article class="outreach-example" id="ex-{{ e.id }}">
+  <form method="post" action="{{ url_for('outreach.voice_add') if new else url_for('outreach.voice_save', example_id=e.id) }}" class="admin-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="field">
+      <label for="title-{{ e.id }}">Situation</label>
+      <input type="text" id="title-{{ e.id }}" name="title" value="{{ e.title }}" maxlength="{{ field_max.title }}" placeholder="“Send me your resume”">
+    </div>
+    <div class="field">
+      <label for="context-{{ e.id }}">Context</label>
+      <input type="text" id="context-{{ e.id }}" name="context" value="{{ e.context }}" maxlength="{{ field_max.context }}" placeholder="Hook, kind of company, how deep in the thread">
+    </div>
+    <div class="field outreach-example__ceo">
+      <label for="ceo-{{ e.id }}">The CEO wrote</label>
+      <textarea id="ceo-{{ e.id }}" name="ceo_message" rows="3" maxlength="{{ field_max.ceo_message }}" required>{{ e.ceo_message }}</textarea>
+    </div>
+    <div class="field">
+      <label for="reply-{{ e.id }}">You'd reply</label>
+      <textarea id="reply-{{ e.id }}" name="reply" rows="3" maxlength="{{ field_max.reply }}" placeholder="Exactly as you'd send it, greeting and sign-off included. Write “no reply” if you wouldn't answer.">{{ e.reply }}</textarea>
+    </div>
+    <div class="field">
+      <label for="why-{{ e.id }}">Why <span class="note">(optional)</span></label>
+      <input type="text" id="why-{{ e.id }}" name="why" value="{{ e.why }}" maxlength="{{ field_max.why }}" placeholder="What you were going for">
+    </div>
+    <div class="outreach-example__actions">
+      {{ admin.button("Add example" if new else "Save") }}
+      {% if not new %}<span class="outreach-example__meta">{{ "From a real thread" if e.source == "real" else "Made up" }} · edited {{ e.updated_at[:10] }}</span>{% endif %}
+    </div>
+  </form>
+  {% if not new %}
+  <form method="post" action="{{ url_for('outreach.voice_delete', example_id=e.id) }}" class="outreach-example__actions">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="outreach-example__delete">Delete this example</button>
+  </form>
+  {% endif %}
+</article>
+{%- endmacro %}
+
+{% block content %}
+  {{ outreach.top("voice", "How you answer CEOs. The reply routine copies the closest example before drafting, and an example here beats its general rules.") }}
+
+  {% call ui.sect("01", "Needs your reply", wide=True) %}
+    {% include "admin/_flash.html" %}
+    {% for e in open_examples %}{{ example_form(e) }}{% else %}<p class="note">Every example has your reply.</p>{% endfor %}
+  {% endcall %}
+
+  {% call ui.sect("02", "Answered", wide=True) %}
+    {% for e in done_examples %}{{ example_form(e) }}{% else %}<p class="note">None yet.</p>{% endfor %}
+  {% endcall %}
+
+  {% call ui.sect("03", "Add one", wide=True) %}
+    {{ example_form(blank, new=True) }}
+    <p class="note">Changes reach the routine on its next run, when it syncs. When you rewrite one of its drafts before sending, it adds that pair here by itself (“From a real thread”).</p>
+    {{ outreach.synced(synced_at) }}
+  {% endcall %}
+{% endblock %}
