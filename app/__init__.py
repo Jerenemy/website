@@ -12,6 +12,7 @@ from .blueprints.sonar_share import bp as sonar_share_bp
 from .blueprints.clash_royale import bp as clash_bp, init_command, sync_command, verify_command, backfill_command, set_wins_command
 from .blueprints.scic import bp as scic_bp
 from .blueprints.outreach import bp as outreach_bp
+from .blueprints.blink import bp as blink_bp
 from .portfolio import copy_command as portfolio_copy_command
 from .extensions import mail
 from .config import Config
@@ -45,6 +46,7 @@ def create_app():
     app.register_blueprint(clash_bp)        # /scic/clash (and the old /will-sucks)
     app.register_blueprint(outreach_bp)     # /admin/outreach: CEO outreach dashboards (private)
     app.register_blueprint(sonar_share_bp)  # /sonar/{r,e,p,u}/... share pages + apple-app-site-association
+    app.register_blueprint(blink_bp)        # /blink: Blink's page, support and privacy policy
     for command in (init_wtt_command, init_command, sync_command, verify_command, backfill_command, set_wins_command, portfolio_copy_command):
         app.cli.add_command(command)
 

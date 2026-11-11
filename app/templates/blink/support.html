@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Blink support · Jeremy Zay{% endblock %}
+{% block description %}How to send and open a Blink, answers to common questions, and how to reach Jeremy Zay about the app.{% endblock %}
+{% block content %}
+  {% call ui.head("Blink support", line="How to send and open a Blink, and what to do when something goes wrong.", where="Blink") %}
+    {{ ui.open(url_for('public.contact'), "Contact me") }}
+  {% endcall %}
+  {{ ui.tabs(tabs, label="Blink pages") }}
+
+  {% call ui.sect("01", "Sending a Blink") %}
+    <div class="prose">
+      <ol>
+        <li>Open a conversation in Messages and tap the + button beside the text field. On iPhone, tap More, then Blink.</li>
+        <li>Take a photo. You can retake it before you tap Send. On a Mac, Space takes the photo, Return sends it and Esc starts over.</li>
+        <li>Press send in Messages. Your friend gets a bubble that says "Tap to view".</li>
+      </ol>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("02", "Opening one") %}
+    <div class="prose">
+      <p>Tap the bubble. The photo stays up for six seconds, or twelve with VoiceOver or Switch Control on, and tapping it closes it sooner. After that the bubble only tells you the Blink is gone.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("03", "Questions") %}
+    <div class="prose">
+      <h3>Does the other person need Blink?</h3>
+      <p>Yes. If they don't have it, Messages offers to download it when they tap the bubble.</p>
+
+      <h3>Why does a Blink say it's already gone?</h3>
+      <p>Each Blink opens once. In a one-on-one chat, opening it deletes the photo from iCloud, so it won't open again on any device. In a group chat, each person can open it once on each of their devices. Blinks also expire after seven days.</p>
+
+      <h3>Can I look at a Blink I sent?</h3>
+      <p>No. Only the people you sent it to can open it.</p>
+
+      <h3>Can people save a Blink?</h3>
+      <p>On iPhone and iPad, screenshots and screen recordings of an open Blink come out blank. Mac screenshots aren't blocked, and anyone can point another camera at their screen, so send only what you'd be fine with someone keeping.</p>
+
+      <h3>How do I report or block someone?</h3>
+      <p>While a Blink is open, or right after it closes, tap Report or Block. A report sends me that photo and the reason you picked so I can review it. Blocking hides every Blink that person sends you on that device, and you can unblock them from any of their Blinks.</p>
+
+      <h3>The camera won't open.</h3>
+      <p>Blink needs camera access. Turn it on in Settings › Privacy &amp; Security › Camera, or on a Mac in System Settings › Privacy &amp; Security › Camera. Without it, Blink lets you choose a photo from your library.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("04", "Contact") %}
+    <div class="prose">
+      <p>For bugs, questions or a report you want to follow up on, write to me through the <a href="{{ url_for('public.contact') }}">contact page</a> and mention Blink in the message.</p>
+    </div>
+  {% endcall %}
+{% endblock %}
