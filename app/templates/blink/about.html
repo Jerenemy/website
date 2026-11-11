@@ -3,7 +3,7 @@
 {% block title %}Blink · Jeremy Zay{% endblock %}
 {% block description %}Blink is an iMessage app for photos your friend can open once. Jeremy Zay made it.{% endblock %}
 {% block content %}
-  {% call ui.head("Blink", line="An iMessage app for photos that disappear after one look.", where="iMessage app", mark=url_for('static', filename='img/blink/icon.png'), mark_alt="Blink's icon: a winking face on a pink and orange background") %}
+  {% call ui.head("Blink", line="An iMessage app for photos that disappear after one look.", where="iMessage app", mark=url_for('static', filename='img/blink/icon.png'), mark_alt="Blink's icon: a white chat bubble that winks, with two sparkles, on a pink and purple background") %}
     {{ ui.open(url_for('blink.support'), "Support") }}
   {% endcall %}
   {{ ui.tabs(tabs, label="Blink pages") }}
