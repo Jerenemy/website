@@ -179,6 +179,9 @@ html.gl .head { cursor: pointer; }
 .open::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--hair); transition: background-color 0.25s var(--ease); }
 .open:hover::after, .open:focus-visible::after { background: var(--stone); }
 .open svg { width: 8px; height: 8px; }
+/* A work's second way in (SCIC's Reviews), on OPEN's line: quieter, a plain link to its page. */
+.open--more { margin-left: 24px; color: var(--stone-mid); }
+.open--more[hidden] { display: none; }
 
 html.gl .leader { display: block; position: fixed; z-index: 1; top: var(--rest-y); left: 0; height: 1px; margin-top: -0.5px; background: var(--hair); transform-origin: right center; pointer-events: none; transition: left 0.45s var(--ease), width 0.45s var(--ease); }
 html.gl .caption.is-selected .detail { cursor: default; }
@@ -246,6 +249,7 @@ html.gl.is-tall .caption:not(.is-selected) .detail { pointer-events: none; }
 html.gl.is-tall .line { max-width: none; }
 html.gl.is-tall .open { margin: 2px -16px -10px; padding: 14px 16px; }
 html.gl.is-tall .open::after { left: 16px; right: 16px; bottom: 10px; }
+html.gl.is-tall .open--more { margin-left: 16px; }   /* the two 44 px targets meet without overlapping */
 html.gl.is-tall .leader { left: var(--rest-x) !important; width: 1px !important; height: 36px; top: calc(var(--rest-y) + 20px); margin: 0 0 0 -0.5px; }
 html.gl.is-tall .dock { width: 19px; height: 19px; margin: -9.5px 0 0 -9.5px; }
 /* The narrowest phones: the five links keep one row by tightening their tracking. */

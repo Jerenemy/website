@@ -18,6 +18,7 @@ from ...design import hidden_themes, site_theme, theme_names
 from ...site_settings import get_site_settings_store
 
 LINE_MAX = 72   # characters: the homepage caption wraps it over two or three short lines
+MORE_LABEL_MAX = 16  # characters: the second link sits beside OPEN on one caption line
 TITLE_MAX = 24  # characters: the homepage caption's head is one line, between the edge and the light, on a 320 px phone too
 
 
@@ -326,6 +327,8 @@ def _empty_item_defaults() -> dict:
         "kind": "",
         "line": "",
         "href": "",
+        "more_label": "",
+        "more_href": "",
     }
 
 
@@ -344,6 +347,8 @@ def _item_payload_from_form(req) -> tuple[dict, str | None]:
         "kind": form.get("kind", "").strip().lower(),
         "line": " ".join(form.get("line", "").split()),
         "href": form.get("href", "").strip(),
+        "more_label": " ".join(form.get("more_label", "").split()),
+        "more_href": form.get("more_href", "").strip(),
     }
     errors: list[str] = []
 
@@ -363,6 +368,7 @@ def _item_payload_from_form(req) -> tuple[dict, str | None]:
     href_error = _validate_href(payload["href"])
     if href_error:
         errors.append(href_error)
+    errors.extend(_validate_more(payload["more_label"], payload["more_href"]))
     if has_image and payload["image_alt"] == "":
         errors.append("Image alt text is required with an image.")
 
@@ -459,8 +465,23 @@ def _validate_href(value: str) -> str | None:
     return "Link must be a site path starting with / (like /blog/my-post) or a full https:// URL."
 
 
+def _validate_more(label: str, href: str) -> list[str]:
+    """The caption's optional second link: a label and a link together, or neither."""
+    if not label and not href:
+        return []
+    if not label or not href:
+        return ["The second link needs both a label and a link."]
+    errors = []
+    if len(label) > MORE_LABEL_MAX:
+        errors.append(f"The second link's label must be at most {MORE_LABEL_MAX} characters.")
+    href_error = _validate_href(href)
+    if href_error:
+        errors.append("Second link: " + href_error[0].lower() + href_error[1:])
+    return errors
+
+
 def _item_form_context() -> dict:
-    return {**_upload_context(), "kinds": KINDS, "line_max": LINE_MAX, "title_max": TITLE_MAX}
+    return {**_upload_context(), "kinds": KINDS, "line_max": LINE_MAX, "title_max": TITLE_MAX, "more_label_max": MORE_LABEL_MAX}
 
 
 def _upload_context() -> dict:

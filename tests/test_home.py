@@ -148,7 +148,7 @@ class HomeTests(unittest.TestCase):
         self.assertIsNotNone(page.site_data)
         self.assertEqual([w["id"] for w in page.site_data["works"]], [w["id"] for w in works])
         for sent, item in zip(page.site_data["works"], works):
-            self.assertEqual(sent, {k: item[k] for k in ("id", "title", "kind", "line", "href")})
+            self.assertEqual(sent, {k: item.get(k, "") for k in ("id", "title", "kind", "line", "href", "more_label", "more_href")})
             self.assertIn(sent["kind"], KINDS)
             self.assertTrue(sent["line"])
         self.assertEqual(page.site_data["person"]["name"], "Jeremy Zay")
@@ -250,7 +250,7 @@ class HomeTests(unittest.TestCase):
     def test_every_local_href_resolves(self):
         adapter = self.app.url_map.bind("localhost")
         slugs = {p.stem for p in Path(self.app.config["BLOG_POSTS_DIR"]).glob("*.md")}
-        hrefs = [w["href"] for w in self.published()] + ["/resume", "/blog", "/contact"]
+        hrefs = [w["href"] for w in self.published()] + [w["more_href"] for w in self.published() if w.get("more_href")] + ["/resume", "/blog", "/contact"]
         for href in hrefs:
             if href.startswith("https://") or href == "/cue":   # /cue: Cue, proxied by nginx to its own server
                 continue
@@ -498,12 +498,27 @@ class AdminTests(unittest.TestCase):
         item = self.store.get_item("tribar")
         self.assertEqual((item["kind"], item["line"], item["href"]), ("play", "Still a tribar", "https://example.com/tribar"))
 
+    def test_second_link_saves_and_shows_beside_open(self):
+        response = self.post("/admin/portfolio/new", more_label="Reviews", more_href="/scic/reviews")
+        self.assertEqual(response.status_code, 302)
+        item = self.store.get_item("tribar")
+        self.assertEqual((item["more_label"], item["more_href"]), ("Reviews", "/scic/reviews"))
+        page = parse(self.client.get("/").text)
+        sent = page.site_data["works"][-1]
+        self.assertEqual((sent["more_label"], sent["more_href"]), ("Reviews", "/scic/reviews"))
+        self.assertIn('id="cap-more"', self.client.get("/").text)
+        # Clearing both takes it away again.
+        self.post("/admin/portfolio/tribar/edit", more_label="", more_href="")
+        self.assertEqual(self.store.get_item("tribar")["more_href"], "")
+
     def test_invalid_kind_line_and_href_are_rejected(self):
         before = self.portfolio.read_text()
         cases = [
             {"kind": "sculpture"}, {"kind": ""}, {"line": ""}, {"line": "x" * 73}, {"line": "<b>bold</b>"},
             {"href": ""}, {"href": "blog/tribar"}, {"href": "//evil.example"}, {"href": "javascript:alert(1)"},
             {"href": "/a b"}, {"href": "ftp://example.com"}, {"title": ""}, {"title": "x" * 25},
+            {"more_label": "Reviews"}, {"more_href": "/scic/reviews"}, {"more_label": "x" * 17, "more_href": "/x"},
+            {"more_label": "Reviews", "more_href": "javascript:alert(1)"},
         ]
         for fields in cases:
             with self.subTest(fields=fields):
@@ -525,7 +540,7 @@ class AdminTests(unittest.TestCase):
                 response = self.client.post(f"/admin/portfolio/{item['id']}/edit", data=form.data)
                 self.assertEqual(response.status_code, 302, response.text[:400] if response.status_code != 302 else "")
                 saved = self.store.get_item(item["id"])
-                for key in ("title", "kind", "line", "href", "short_desc", "long_desc", "image_full", "image_thumb",
+                for key in ("title", "kind", "line", "href", "more_label", "more_href", "short_desc", "long_desc", "image_full", "image_thumb",
                             "image_alt", "sort_order", "is_published"):
                     self.assertEqual(saved[key], item[key], key)
 

@@ -11,7 +11,7 @@ from threading import Lock
 
 _STORE_LOCK = Lock()
 # The words of an item, which `flask portfolio-copy` brings over from the seed.
-COPY_FIELDS = ("title", "line", "short_desc", "long_desc", "image_alt")
+COPY_FIELDS = ("title", "line", "short_desc", "long_desc", "image_alt", "more_label", "more_href")
 
 # What a work is, for the homepage's caption and the screen reader ("Title, Kind, line").
 KINDS = ("about", "research", "engineering", "product", "play")   # "about": the page about the person, not a work
@@ -43,6 +43,10 @@ class PortfolioItem:
     kind: str = ""
     line: str = ""
     href: str = ""
+    # An optional second way in, shown beside OPEN in the caption (SCIC's Reviews): a short
+    # label and where it goes. Both set, or neither.
+    more_label: str = ""
+    more_href: str = ""
 
     @classmethod
     def from_dict(cls, data: dict) -> "PortfolioItem":
@@ -61,6 +65,8 @@ class PortfolioItem:
             kind=normalize_kind(data.get("kind")),
             line=str(data.get("line") or ""),
             href=str(data.get("href") or ""),
+            more_label=str(data.get("more_label") or ""),
+            more_href=str(data.get("more_href") or ""),
         )
 
     def to_dict(self) -> dict:
@@ -115,6 +121,8 @@ class PortfolioStore:
                 kind=normalize_kind(payload.get("kind")),
                 line=payload.get("line", ""),
                 href=payload.get("href", ""),
+                more_label=payload.get("more_label", ""),
+                more_href=payload.get("more_href", ""),
             ).to_dict()
 
             items.append(item)
@@ -143,6 +151,8 @@ class PortfolioStore:
                     current.kind = normalize_kind(payload.get("kind"))
                 current.line = payload.get("line", current.line)
                 current.href = payload.get("href", current.href)
+                current.more_label = payload.get("more_label", current.more_label)
+                current.more_href = payload.get("more_href", current.more_href)
                 if payload.get("sort_order") is not None:
                     current.sort_order = int(payload.get("sort_order"))
                 if payload.get("is_published") is not None:

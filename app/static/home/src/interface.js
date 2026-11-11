@@ -48,7 +48,7 @@ export function createInterface({ person, works, scaled, onFocus, onActivate, on
   const soundToggle = $('sound');   // the speaker (src/sound.js), when the page has one
   const leader = $('leader'), dock = $('dock'), tag = $('tag'), tagNo = $('tag-no'), tagTitle = $('tag-title');
   const layers = [$('cap-a'), $('cap-b')].map((el) => ({ el, no: el.querySelector('.no'), title: el.querySelector('.title') }));
-  const detail = $('detail'), capKind = $('cap-kind'), capLine = $('cap-line'), capOpen = $('cap-open'), announcer = $('announce');
+  const detail = $('detail'), capKind = $('cap-kind'), capLine = $('cap-line'), capOpen = $('cap-open'), capMore = $('cap-more'), announcer = $('announce');
   const home = $('home');
   const n = works.length;
   const aside = (e) => e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
@@ -228,6 +228,13 @@ export function createInterface({ person, works, scaled, onFocus, onActivate, on
     capLine.textContent = work.line;
     capOpen.href = work.href;
     capOpen.setAttribute('aria-label', `Open ${work.title}`);
+    // The second way in (SCIC's Reviews) is an ordinary link to its page; most works have none.
+    if (!capMore) return;
+    capMore.hidden = !(work.more_label && work.more_href);
+    if (capMore.hidden) return;
+    capMore.href = work.more_href;
+    capMore.firstElementChild.textContent = work.more_label;
+    capMore.setAttribute('aria-label', `${work.title} ${work.more_label}`);
   }
 
   return {
@@ -306,6 +313,7 @@ export function createInterface({ person, works, scaled, onFocus, onActivate, on
       const work = works[i];
       caption.classList.toggle('is-selected', !!work);
       capOpen.tabIndex = work ? 0 : -1;
+      if (capMore) capMore.tabIndex = work ? 0 : -1;
       if (work) {
         anchors[i].dataset.selected = '1';
         anchors[i].setAttribute('aria-describedby', 'cap-hint');

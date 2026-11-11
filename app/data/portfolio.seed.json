@@ -246,7 +246,9 @@
       "is_published": true,
       "kind": "engineering",
       "line": "Tutoring at Wesleyan's Scientific Computing and Informatics Center",
-      "href": "/scic"
+      "href": "/scic",
+      "more_label": "Reviews",
+      "more_href": "/scic/reviews"
     }
   ]
 }
