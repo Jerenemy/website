@@ -64,6 +64,8 @@ def _home_works() -> list[dict]:
             "kind_label": KIND_LABELS.get(item["kind"], ""),
             "line": item["line"],
             "href": href,
+            "more_label": item["more_label"] if item["more_href"] else "",
+            "more_href": item["more_href"] if item["more_label"] else "",
         })
     return works
 
@@ -75,7 +77,7 @@ def index():
     settings = get_site_settings_store().get_settings()
     site_data = {
         "person": person,
-        "works": [{key: w[key] for key in ("id", "title", "kind", "line", "href")} for w in works],
+        "works": [{key: w[key] for key in ("id", "title", "kind", "line", "href", "more_label", "more_href")} for w in works],
     }
     return render_template("home.html", works=works, person=person, site_settings=settings, site_data=site_data,
                            home_modules=_home_modules(current_app.static_folder))
