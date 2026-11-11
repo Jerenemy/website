@@ -28,6 +28,12 @@ class BlinkPagesTests(unittest.TestCase):
         for path in ("/blink/", "/blink/support/", "/blink/privacy/"):
             self.assertEqual(self.client.get(path).status_code, 200, path)
 
+    def test_blink_links_land_on_a_noindex_page(self):
+        response = self.client.get("/blink/v?id=ABC")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers.get("X-Robots-Tag"), "noindex")
+        self.assertIn("Open this Blink in Messages", response.get_data(as_text=True))
+
     def test_privacy_policy_covers_what_review_checks(self):
         html = self.client.get("/blink/privacy").get_data(as_text=True)
         for phrase in ("encrypt", "CloudKit", "deleted", "report", "camera", "contact page"):

@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Open this Blink · Jeremy Zay{% endblock %}
+{% block description %}A Blink is a photo that opens once, inside Messages.{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+  {% call ui.head("Open this Blink in Messages", line="A Blink is a photo that opens once, and only inside Messages.", where="Blink", mark=url_for('static', filename='img/blink/icon.png'), mark_alt="Blink's icon: a white chat bubble that winks, with two sparkles, on a pink and purple background") %}
+    {{ ui.open(url_for('blink.about'), "What's Blink?") }}
+  {% endcall %}
+
+  {% call ui.sect("01", "How to open it") %}
+    <div class="prose">
+      <ol>
+        <li>Go back to the conversation in Messages on your iPhone, iPad or Mac.</li>
+        <li>Tap the "Tap to view" bubble. If Blink isn't installed yet, Messages offers to download it.</li>
+      </ol>
+      <p>The photo can't be shown on the web. Its key travels only inside the message, and this page never receives it.</p>
+    </div>
+  {% endcall %}
+{% endblock %}
