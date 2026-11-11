@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Blink · Jeremy Zay{% endblock %}
+{% block description %}Blink is an iMessage app for photos your friend can open once. Jeremy Zay made it.{% endblock %}
+{% block content %}
+  {% call ui.head("Blink", line="An iMessage app for photos that disappear after one look.", where="iMessage app", mark=url_for('static', filename='img/blink/icon.png'), mark_alt="Blink's icon: a winking face on a pink and orange background") %}
+    {{ ui.open(url_for('blink.support'), "Support") }}
+  {% endcall %}
+  {{ ui.tabs(tabs, label="Blink pages") }}
+
+  {% call ui.sect("01", "About") %}
+    <div class="prose">
+      <p class="lede">Blink sends a photo your friend can open once.</p>
+      <p>You open it from the app row in Messages, take a photo and send it. Your friend taps the bubble and has six seconds with the picture before it disappears for good.</p>
+      <p>It runs on iPhone and iPad, and on Macs with Apple silicon, where it uses the built-in camera.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("02", "How it works") %}
+    <div class="prose">
+      <ul>
+        <li>Blink encrypts each photo on your device with its own key before uploading it to Apple's iCloud. The key rides inside the message bubble, so only people in the conversation can open the photo. I can't.</li>
+        <li>In a one-on-one chat, opening the photo deletes it from iCloud. In a group chat, each person gets one look.</li>
+        <li>Blinks expire after seven days, opened or not.</li>
+        <li>On iPhone and iPad, an open Blink comes out blank in screenshots and screen recordings. Mac screenshots aren't blocked.</li>
+        <li>If someone sends you something you didn't want, you can report the photo to me or block them from inside the Blink.</li>
+      </ul>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("03", "Getting it") %}
+    <div class="prose">
+      <p>Blink is waiting on App Store review, and I'll link it here once it's out. Until then, the <a href="{{ url_for('blink.support') }}">support page</a> explains how to use it and the <a href="{{ url_for('blink.privacy') }}">privacy policy</a> covers what it stores.</p>
+    </div>
+  {% endcall %}
+{% endblock %}
