@@ -1,8 +1,10 @@
 import re
 import tempfile
 import unittest
+from unittest import mock
 
 from app import create_app
+from app.blueprints.jobbot import JobBotError
 
 LEADS = (
     "name,company,email,company_url,hook,variant,greeting,nudges,replied_after,status,"
@@ -25,7 +27,9 @@ STATS = {
 SEED = [{"id": "s1", "title": "Send me your resume", "context": "quote hook", "ceo_message": "Send your resume.", "reply": "", "why": ""}]
 
 
-class OutreachTests(unittest.TestCase):
+class OutreachCase(unittest.TestCase):
+    """The app on a scratch data folder, with the admin login and the routine's sync."""
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.app = create_app()
@@ -44,6 +48,8 @@ class OutreachTests(unittest.TestCase):
             session["admin_authenticated"] = True
             session["csrf_token"] = "csrf"
 
+
+class OutreachTests(OutreachCase):
     def test_pages_need_the_admin_login(self):
         for path in ("/admin/outreach", "/admin/outreach/ab", "/admin/outreach/voice"):
             response = self.client.get(path)
@@ -108,6 +114,96 @@ class OutreachTests(unittest.TestCase):
 
         self.client.post(f"/admin/outreach/voice/{examples[1]['id']}/delete", data={"csrf_token": "csrf"})
         self.assertEqual([e["id"] for e in self.sync({}).json["examples"]], ["s1"])
+
+
+class FakeResponse:
+    def __init__(self, payload=None, content=b""):
+        self.payload, self.content = payload, content
+
+    def json(self):
+        return self.payload
+
+
+class OutreachResumeTests(OutreachCase):
+    """The Resume tab: the thread goes to the job bot's API, the PDF comes back through here."""
+
+    def setUp(self):
+        super().setUp()
+        self.calls = []
+        self.replies = {}
+        patcher = mock.patch("app.blueprints.outreach._api", side_effect=self.fake_api)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def fake_api(self, method, path, payload=None, timeout=15):
+        self.calls.append((method, path, payload))
+        reply = self.replies.get((method, path))
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+    def test_the_tab_needs_the_admin_login(self):
+        for path in ("/admin/outreach/resume", "/admin/outreach/resume/abc", "/admin/outreach/resume/abc/pdf"):
+            self.assertEqual(self.client.get(path).status_code, 302, path)
+        self.assertEqual(self.calls, [])
+
+    def test_making_one_sends_the_thread_and_follows_it(self):
+        self.login()
+        self.replies[("POST", "/api/reader-resumes")] = FakeResponse({"id": "20261112-1", "status": "running"})
+        response = self.client.post("/admin/outreach/resume", data={
+            "csrf_token": "csrf", "company": "Satlyt", "thread": "Send me your resume. -Rama"})
+        self.assertEqual(response.headers["Location"], "/admin/outreach/resume/20261112-1")
+        self.assertEqual(self.calls[-1], ("POST", "/api/reader-resumes",
+                                          {"thread": "Send me your resume. -Rama", "company": "Satlyt"}))
+
+        self.replies[("GET", "/api/reader-resumes/20261112-1")] = FakeResponse(
+            {"id": "20261112-1", "company": "Satlyt", "status": "running"})
+        page = self.client.get("/admin/outreach/resume/20261112-1").get_data(as_text=True)
+        self.assertIn('http-equiv="refresh"', page)
+
+        self.replies[("GET", "/api/reader-resumes/20261112-1")] = FakeResponse({
+            "id": "20261112-1", "company": "Satlyt", "status": "done", "reading": "On-device ML.",
+            "experience": [{"title": "Founder, Thaw", "why": "ships"}], "projects": [{"title": "Sonar", "why": ""}],
+            "skills": ["C++"], "refused": []})
+        page = self.client.get("/admin/outreach/resume/20261112-1").get_data(as_text=True)
+        self.assertNotIn('http-equiv="refresh"', page)
+        self.assertIn("/admin/outreach/resume/20261112-1/pdf", page)
+        self.assertIn("Founder, Thaw", page)
+
+        self.replies[("GET", "/api/reader-resumes/20261112-1/pdf")] = FakeResponse(content=b"%PDF-1.7")
+        pdf = self.client.get("/admin/outreach/resume/20261112-1/pdf")
+        self.assertEqual(pdf.data, b"%PDF-1.7")
+        self.assertEqual(pdf.headers["Content-Type"], "application/pdf")
+        self.assertIn('attachment; filename="Jeremy Zay Resume.pdf"', pdf.headers["Content-Disposition"])
+
+    def test_a_bad_csrf_or_an_empty_form_sends_nothing(self):
+        self.login()
+        self.client.post("/admin/outreach/resume", data={"csrf_token": "bad", "thread": "x"})
+        self.client.post("/admin/outreach/resume", data={"csrf_token": "csrf", "thread": " "})
+        self.assertEqual([c for c in self.calls if c[0] == "POST"], [])
+
+    def test_the_list_and_a_bot_that_is_down(self):
+        self.sync({"leads_csv": LEADS})
+        self.login()
+        self.replies[("GET", "/api/reader-resumes")] = FakeResponse({"resumes": [
+            {"id": "r1", "company": "Satlyt", "status": "done", "created_at": "2026-11-12T05:00:00+00:00"}]})
+        page = self.client.get("/admin/outreach/resume?company=Acme%20AI").get_data(as_text=True)
+        self.assertIn("/admin/outreach/resume/r1/pdf", page)
+        self.assertIn('value="Acme AI"', page)  # the replied lead's company, from the Emails tab's link
+        self.assertIn('<option value="Acme AI">', page)
+
+        self.replies[("GET", "/api/reader-resumes")] = JobBotError(503, "The job bot is not reachable.")
+        self.assertIn("not reachable", self.client.get("/admin/outreach/resume").get_data(as_text=True))
+        self.replies[("GET", "/api/reader-resumes/r9/pdf")] = JobBotError(404, "not ready")
+        self.assertEqual(self.client.get("/admin/outreach/resume/r9/pdf").status_code, 404)
+        self.assertEqual(self.client.get("/admin/outreach/resume/..%2Fx").status_code, 404)
+
+    def test_replied_rows_link_to_the_resume_tab(self):
+        self.sync({"leads_csv": LEADS})
+        self.login()
+        page = self.client.get("/admin/outreach").get_data(as_text=True)
+        self.assertIn("/admin/outreach/resume?company=Acme+AI", page)
+        self.assertNotIn("company=Beta+Labs", page)
 
 
 if __name__ == "__main__":

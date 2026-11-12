@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "admin/_admin.html" as admin with context %}
+{% import "admin/_outreach.html" as outreach with context %}
+{% block title %}Resume · Outreach · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+{% block content %}
+  {{ outreach.top("resume", "A resume for a CEO who asked for one: the projects that matter to them, laid out for a person to read.") }}
+
+  {% call ui.sect("01", "Make one", wide=True) %}
+    {% include "admin/_flash.html" %}
+    <form method="post" action="{{ url_for('outreach.resume_make') }}" class="admin-form outreach-resume-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="company">Company</label>
+        <input type="text" id="company" name="company" value="{{ company }}" maxlength="200" list="replied-companies" placeholder="Satlyt">
+        <datalist id="replied-companies">{% for c in companies %}<option value="{{ c }}">{% endfor %}</datalist>
+      </div>
+      <div class="field">
+        <label for="thread">The email thread</label>
+        <textarea id="thread" name="thread" rows="12" maxlength="{{ max_thread }}" placeholder="Paste the whole thread from Gmail, their reply on top."></textarea>
+        <p class="note">Only the bot reads it, to pick your projects. It takes about a minute.</p>
+      </div>
+      <div class="outreach-example__actions">{{ admin.button("Make the resume") }}</div>
+    </form>
+  {% endcall %}
+
+  {% call ui.sect("02", "Made so far", wide=True) %}
+    {% if error %}
+      <p class="note">{{ error }}</p>
+    {% else %}
+    <div class="table admin-table outreach-table">
+      <table>
+        <thead><tr><th>Company</th><th>Made</th><th>Status</th><th>PDF</th></tr></thead>
+        <tbody>
+          {% for r in made %}
+          <tr>
+            <td data-label="Company"><a href="{{ url_for('outreach.resume', rid=r.id) }}">{{ r.company or "(from the thread)" }}</a></td>
+            <td data-label="Made" class="num">{{ (r.created_at or "")[:16] | replace("T", " ") }}</td>
+            <td data-label="Status"><span class="outreach-tag{% if r.status == 'done' %} outreach-tag--on{% endif %}">{{ r.status }}</span></td>
+            <td data-label="PDF">{% if r.status == "done" %}<a href="{{ url_for('outreach.resume_pdf', rid=r.id) }}">Download</a>{% else %}–{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4">None yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  {% endcall %}
+{% endblock %}

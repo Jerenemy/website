@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "admin/_admin.html" as admin with context %}
+{% import "admin/_outreach.html" as outreach with context %}
+{% block title %}Resume · Outreach · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+{% if made.status == "running" %}<meta http-equiv="refresh" content="5">{% endif %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
+{% block content %}
+  {{ outreach.top("resume", "Resume for " ~ (made.company or "this thread") ~ ".") }}
+
+  {% call ui.sect("01", made.company or "Resume", wide=True) %}
+    {% include "admin/_flash.html" %}
+    {% if made.status == "running" %}
+      <p>Picking your projects and laying out the page. This refreshes by itself.</p>
+    {% elif made.status == "failed" %}
+      <ul class="admin-flash" role="status"><li class="admin-flash__item admin-flash__item--error"><span class="label">Error</span><span>{{ made.error }}</span></li></ul>
+      {{ ui.open(url_for('outreach.resumes', company=made.company), "Try again", quiet=True) }}
+    {% else %}
+      <div class="outreach-example__actions">
+        {{ ui.open(url_for('outreach.resume_pdf', rid=made.id), "Download PDF") }}
+        {{ ui.open(url_for('outreach.resume_pdf', rid=made.id, view=1), "Open it", external=True, quiet=True) }}
+      </div>
+      {% if made.reading %}<p class="note outreach-resume__reading">{{ made.reading }}</p>{% endif %}
+      <dl class="outreach-resume__picks">
+        {% for title, key in (("Experience", "experience"), ("Projects", "projects")) %}
+        <dt>{{ title }}</dt>
+        <dd><ul>{% for item in made[key] %}<li><b>{{ item.title }}</b>{% if item.why %} <span class="note">· {{ item.why }}</span>{% endif %}</li>{% endfor %}</ul></dd>
+        {% endfor %}
+        {% if made.skills %}<dt>Skills</dt><dd>{{ made.skills | join(", ") }}</dd>{% endif %}
+      </dl>
+      {% if made.refused %}
+      <p class="note">Kept as resume.yaml writes it (the shorter version claimed something the bullet doesn't):</p>
+      <ul class="note">{% for line in made.refused %}<li>{{ line }}</li>{% endfor %}</ul>
+      {% endif %}
+    {% endif %}
+  {% endcall %}
+{% endblock %}

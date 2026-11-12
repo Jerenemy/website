@@ -42,7 +42,7 @@
               {% if row.follow_up_on %}<div class="note">follow up {{ row.follow_up_on }}</div>{% endif %}
             </td>
             <td data-label="Sent · last" class="num">{{ row.first_contacted or "–" }}<div class="note">{{ row.last_activity }}</div></td>
-            <td data-label="Thread">{% if row.thread_url %}<a href="{{ row.thread_url }}" target="_blank" rel="noopener">Gmail</a>{% else %}–{% endif %}</td>
+            <td data-label="Thread">{% if row.thread_url %}<a href="{{ row.thread_url }}" target="_blank" rel="noopener">Gmail</a>{% else %}–{% endif %}{% if row.replied %}<div class="note"><a href="{{ url_for('outreach.resumes', company=row.company) }}">Resume</a></div>{% endif %}</td>
           </tr>
           {% else %}
           <tr><td colspan="5">{{ "No emails match." if has_data else "No leads synced yet." }}</td></tr>
