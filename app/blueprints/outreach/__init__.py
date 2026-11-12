@@ -5,11 +5,16 @@ POSTs leads.csv, bounces.csv and its A/B scoreboard to /admin/outreach/sync with
 and gets back the reply examples, which the Voice tab edits here. So the server holds a copy of
 the leads (read only here) and the one live copy of the examples. Everything lives in
 OUTREACH_DATA_DIR (instance/outreach by default), untracked, so nothing about the leads is in git.
+
+The Resume tab makes a resume for a CEO who asked for one: the pasted thread goes to the job bot's API
+(getmeajob's /api/reader-resumes, through jobbot._api), which picks the projects that matter to them and lays the
+page out for a person to read, not an ATS. The bot keeps the threads and PDFs; nothing of them is stored here.
 """
 import csv
 import io
 import json
 import os
+import re
 import secrets
 import tempfile
 from datetime import datetime, timezone
@@ -19,6 +24,7 @@ from uuid import uuid4
 from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 
 from ..admin.routes import _csrf_token, _validate_csrf, admin_required
+from ..jobbot import JobBotError, _api
 
 bp = Blueprint("outreach", __name__)
 
@@ -29,6 +35,9 @@ FILTERS = [("all", "All"), ("replied", "Replied"), ("waiting", "Waiting"), ("col
 EXAMPLE_FIELDS = ("title", "context", "ceo_message", "reply", "why")
 FIELD_MAX = {"title": 120, "context": 400, "ceo_message": 4000, "reply": 4000, "why": 1000}
 GMAIL_THREAD = "https://mail.google.com/mail/u/jzay@wesleyan.edu/#all/{}"
+RESUME_ID = re.compile(r"[A-Za-z0-9-]{1,64}")
+MAX_THREAD = 60_000
+RESUME_FILE = "Jeremy Zay Resume.pdf"
 
 
 # ---- storage ---------------------------------------------------------------------------------
@@ -232,6 +241,73 @@ def voice_delete(example_id: str):
             save_examples(kept)
             flash("Deleted.", "success")
     return redirect(url_for("outreach.voice"))
+
+
+# ---- resumes for CEOs who ask (the job bot makes them) ---------------------------------------
+
+def _resume_id(rid: str) -> str:
+    if not RESUME_ID.fullmatch(rid):
+        abort(404)
+    return rid
+
+
+@bp.get("/admin/outreach/resume")
+@admin_required
+def resumes():
+    made, error = [], None
+    try:
+        made = _api("GET", "/api/reader-resumes").json().get("resumes", [])
+    except JobBotError as e:
+        error = e.message
+    companies = sorted({l.get("company", "") for l in load_leads() if l.get("status") in REPLIED} - {""})
+    return _page("admin/outreach_resume.html", tab="resume", made=made, error=error, companies=companies,
+                 company=request.args.get("company", "")[:200], max_thread=MAX_THREAD)
+
+
+@bp.post("/admin/outreach/resume")
+@admin_required
+def resume_make():
+    if not _form_ok():
+        return redirect(url_for("outreach.resumes"))
+    thread = (request.form.get("thread") or "").strip()[:MAX_THREAD]
+    company = (request.form.get("company") or "").strip()[:200]
+    if not thread and not company:
+        flash("Paste the email thread, or at least name the company.", "error")
+        return redirect(url_for("outreach.resumes"))
+    try:
+        made = _api("POST", "/api/reader-resumes", {"thread": thread, "company": company}, timeout=30).json()
+    except JobBotError as e:
+        flash(e.message, "error")
+        return redirect(url_for("outreach.resumes", company=company))
+    return redirect(url_for("outreach.resume", rid=made["id"]))
+
+
+@bp.get("/admin/outreach/resume/<rid>")
+@admin_required
+def resume(rid: str):
+    try:
+        made = _api("GET", f"/api/reader-resumes/{_resume_id(rid)}").json()
+    except JobBotError as e:
+        if e.status == 404:
+            abort(404)
+        flash(e.message, "error")
+        return redirect(url_for("outreach.resumes"))
+    return _page("admin/outreach_resume_one.html", tab="resume", made=made)
+
+
+@bp.get("/admin/outreach/resume/<rid>/pdf")
+@admin_required
+def resume_pdf(rid: str):
+    try:
+        data = _api("GET", f"/api/reader-resumes/{_resume_id(rid)}/pdf", timeout=30).content
+    except JobBotError as e:
+        abort(404 if e.status == 404 else 503)
+    response = current_app.make_response(data)
+    response.headers["Content-Type"] = "application/pdf"
+    disposition = "inline" if request.args.get("view") else "attachment"
+    response.headers["Content-Disposition"] = f'{disposition}; filename="{RESUME_FILE}"'
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 # ---- the routine's sync ----------------------------------------------------------------------

@@ -2,7 +2,7 @@
 {% import "partials/_ui.html" as ui %}
 {% import "admin/_admin.html" as admin with context %}
 
-{#- Head, the admin tabs, then the outreach tabs (Emails, A/B test, Voice). -#}
+{#- Head, the admin tabs, then the outreach tabs (Emails, A/B test, Voice, Resume). -#}
 {% macro top(tab, line) -%}
   {{ ui.head("Outreach", where="Admin", line=line) }}
   {{ admin.nav("outreach") }}
@@ -11,6 +11,7 @@
     (url_for("outreach.emails"), "Emails", tab == "emails"),
     (url_for("outreach.ab_test"), "A/B test", tab == "ab"),
     (url_for("outreach.voice"), "Voice", tab == "voice"),
+    (url_for("outreach.resumes"), "Resume", tab == "resume"),
   ], label="Outreach") }}
   </div>
 {%- endmacro %}

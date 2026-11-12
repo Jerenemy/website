@@ -140,3 +140,11 @@
 .outreach-example .admin-flash { margin-bottom: var(--s4); }
 .outreach-table th, .outreach-table td.num, .outreach-table .note { white-space: nowrap; overflow-wrap: normal; }
 .outreach-table .outreach-hook { white-space: normal; }
+/* the Resume tab: a pasted thread in, the bot's picks and a download out */
+.outreach-resume-form .field + .field { margin-top: var(--s4); }
+.outreach-resume-form textarea { min-height: 220px; }
+.outreach-resume__reading { max-width: 64ch; margin-top: var(--s5); }
+.outreach-resume__picks { margin: var(--s5) 0 0; }
+.outreach-resume__picks dt { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
+.outreach-resume__picks dd { margin: var(--s1) 0 var(--s4); }
+.outreach-resume__picks ul { margin: 0; padding-left: 1.1em; }
