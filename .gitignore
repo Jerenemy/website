@@ -41,6 +41,7 @@
 # Blink's page, support page and privacy policy (App Store Connect links to the last two)
 !app/blueprints/blink/
 !app/blueprints/blink/__init__.py
+!app/blueprints/blink/cloudkit.py
 # CEO outreach dashboards (admin only; their data lives in instance/outreach, untracked)
 !app/blueprints/outreach/
 !app/blueprints/outreach/__init__.py

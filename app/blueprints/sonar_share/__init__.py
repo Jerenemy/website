@@ -14,6 +14,9 @@ SONAR_ORIGIN = "https://sonar.show"
 TEAM_ID = "9A9HR6WT4K"
 BUNDLE_ID = "com.jeremyzay.Sonar"
 SHARE_PATHS = ("/sonar/r/*", "/sonar/e/*", "/sonar/p/*", "/sonar/u/*", "/sonar/l/*", "/sonar/i/*")
+# Blink: its links open the app when installed, and its App Clip otherwise.
+BLINK_APP = f"{TEAM_ID}.com.jeremyzay.blink"
+BLINK_CLIP = f"{TEAM_ID}.com.jeremyzay.blink.Clip"
 
 
 @bp.get("/.well-known/apple-app-site-association")
@@ -27,9 +30,14 @@ def apple_app_site_association():
                     {
                         "appIDs": [f"{TEAM_ID}.{BUNDLE_ID}"],
                         "components": [{"/": path} for path in SHARE_PATHS],
-                    }
+                    },
+                    {
+                        "appIDs": [BLINK_APP],
+                        "components": [{"/": "/blink/v*"}],
+                    },
                 ]
-            }
+            },
+            "appclips": {"apps": [BLINK_CLIP]},
         }
     )
     response.headers["Cache-Control"] = "public, max-age=3600"
