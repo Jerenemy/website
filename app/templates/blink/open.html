@@ -2,7 +2,8 @@
 {% import "partials/_ui.html" as ui with context %}
 {% block title %}Open this Blink · Jeremy Zay{% endblock %}
 {% block description %}A Blink is a photo that opens once, inside Messages.{% endblock %}
-{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block head %}<meta name="robots" content="noindex">
+{% if app_store_id %}<meta name="apple-itunes-app" content="app-id={{ app_store_id }}, app-clip-bundle-id=com.jeremyzay.blink.Clip, app-clip-display=card">{% endif %}{% endblock %}
 {% block content %}
   {% call ui.head("Open this Blink in Messages", line="A Blink is a photo that opens once, and only inside Messages.", where="Blink", mark=url_for('static', filename='img/blink/icon.png'), mark_alt="Blink's icon: a white chat bubble that winks, with two sparkles, on a pink and purple background") %}
     {{ ui.open(url_for('blink.about'), "What's Blink?") }}

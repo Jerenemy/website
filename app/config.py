@@ -36,6 +36,16 @@ class Config:
     # only file texts, so the phone never holds the admin login or the bot's own token.
     JOBBOT_TEXT_TOKEN = os.getenv("JOBBOT_TEXT_TOKEN")
 
+    # Blink (/blink): the App Clip can't write to CloudKit, so it asks this site to delete a viewed photo.
+    # The server-to-server key is made in CloudKit Console; the private key file stays on the server.
+    BLINK_CK_CONTAINER = os.getenv("BLINK_CK_CONTAINER", "iCloud.com.jeremyzay.blink")
+    BLINK_CK_ENV = os.getenv("BLINK_CK_ENV", "production")
+    BLINK_CK_KEY_ID = os.getenv("BLINK_CK_KEY_ID")
+    BLINK_CK_KEY_PATH = os.getenv("BLINK_CK_KEY_PATH")
+    # Blink's numeric App Store ID, for the App Clip banner on Blink links (shown only once it's set).
+    BLINK_APP_STORE_ID = os.getenv("BLINK_APP_STORE_ID")
+    BLINK_REPORTS_DIR = os.getenv("BLINK_REPORTS_DIR", os.path.join(_project_root, "instance", "blink_reports"))
+
     # Sonar's own site on this server (sonar.show); /admin/sonar reads its share counts with the token.
     SONAR_SITE_URL = os.getenv("SONAR_SITE_URL", "http://127.0.0.1:8002")
     SONAR_STATS_TOKEN = os.getenv("SONAR_STATS_TOKEN")
