@@ -148,3 +148,8 @@
 .outreach-resume__picks dt { color: var(--ink-3); font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase; }
 .outreach-resume__picks dd { margin: var(--s1) 0 var(--s4); }
 .outreach-resume__picks ul { margin: 0; padding-left: 1.1em; }
+/* one click: the Emails tab's Make resume button on a replied lead */
+.outreach-make-resume { margin: var(--s1) 0 0; }
+.outreach-make-resume button { padding: 0; background: none; border: 0; color: var(--ink); font: inherit; font-size: var(--small-size); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.outreach-make-resume button:hover, .outreach-make-resume button:focus-visible { color: var(--ink-2); }
+.outreach-resume__or { margin-top: var(--s5); }
