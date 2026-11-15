@@ -3,7 +3,7 @@
 {% block title %}Blink privacy policy · Jeremy Zay{% endblock %}
 {% block description %}What Blink stores, who can read it and when it's deleted.{% endblock %}
 {% block content %}
-  {% call ui.head("Blink privacy policy", line="What Blink stores, who can read it and when it's deleted.", where="Updated November 11, 2026") %}
+  {% call ui.head("Blink privacy policy", line="What Blink stores, who can read it and when it's deleted.", where="Updated November 15, 2026") %}
   {% endcall %}
   {{ ui.tabs(tabs, label="Blink pages") }}
 
@@ -42,7 +42,8 @@
 
   {% call ui.sect("06", "Children") %}
     <div class="prose">
-      <p>Blink isn't meant for children under 13, and I don't knowingly handle their data.</p>
+      <p>Blink is rated 4+ and never asks your age. It has no accounts and collects no names, contact details or locations from anyone, children included. A child's photos get the same treatment as everyone else's: encrypted, readable only by the people in the conversation, and deleted when opened or after seven days at most. The one exception is a reported photo, as described above.</p>
+      <p>If you're a parent and want a report that includes your child's photo deleted, or have any other question about how your child uses Blink, use my <a href="{{ url_for('public.contact') }}">contact page</a>.</p>
     </div>
   {% endcall %}
 
