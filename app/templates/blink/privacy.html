@@ -9,45 +9,51 @@
 
   {% call ui.sect("01", "Summary") %}
     <div class="prose">
-      <p class="lede">Blink has no accounts, ads, analytics or tracking. The only thing it stores is the photos you send, encrypted so that nobody but the people in your conversation can read them.</p>
+      <p class="lede">Blink has no accounts, ads, analytics or tracking. The only thing it stores is the photos and videos you send, encrypted so that nobody but the people in your conversation can read them.</p>
     </div>
   {% endcall %}
 
-  {% call ui.sect("02", "Photos you send") %}
+  {% call ui.sect("02", "Photos and videos you send") %}
     <div class="prose">
-      <p>Before a photo leaves your device, Blink shrinks it to at most 1,600 pixels on its longest side and encrypts it with AES-256, using a key made for that photo alone. The encrypted file is uploaded to the public database of Blink's container in Apple's CloudKit. The key goes into the iMessage bubble and nowhere else, and Messages delivers that bubble with its own end-to-end encryption.</p>
-      <p>Without the key, nobody can read the stored file, including me and Apple. Each record holds the encrypted file under a random ID. CloudKit also notes which iCloud user created it, as an anonymous ID that is specific to Blink and doesn't reveal your name, Apple Account or phone number.</p>
-      <p>In a one-on-one conversation, the file is deleted from CloudKit as soon as the other person opens it. In a group conversation it stays, still encrypted, so everyone in the group can open it once. Every Blink expires seven days after it's sent: after that it can't be opened, and the sender's copy of Blink deletes it from CloudKit the next time it runs.</p>
+      <p>Before a Blink leaves your device, Blink shrinks it (photos to at most 1,600 pixels on the longest side, videos to at most 10 seconds) and encrypts it with AES-256, using a key made for that Blink alone. The encrypted file is uploaded to Blink's storage service, which runs on Cloudflare. So that people on older versions of Blink can still open it, a second encrypted copy goes to the public database of Blink's container in Apple's CloudKit.</p>
+      <p>The key goes into the iMessage bubble and nowhere else, and Messages delivers that bubble with its own end-to-end encryption. Your captions and the name you chose at sign-up travel in the bubble too, sealed with the same key. Without the key, nobody can read the stored file, including me, Cloudflare and Apple. Each stored file sits under a random ID. CloudKit also notes which iCloud user created its copy, as an anonymous ID that is specific to Blink and doesn't reveal your name, Apple Account or phone number.</p>
+      <p>In a one-on-one conversation, both copies are deleted as soon as the other person opens the Blink. In a group conversation they stay, still encrypted, until everyone in the group has opened it, and are deleted then. To count opens, each person who opens a group Blink leaves a numbered marker in CloudKit with no name attached; the markers are deleted with the Blink. Every Blink expires seven days after it's sent. After that it can't be opened, the storage service deletes it automatically, and the sender's copy of Blink deletes the CloudKit copy the next time it runs.</p>
     </div>
   {% endcall %}
 
   {% call ui.sect("03", "Reports") %}
     <div class="prose">
-      <p>If you report a Blink, Blink uploads a copy of that photo, unencrypted, together with the reason you picked, to a part of CloudKit that only I can read. I use it only to review the report and delete it once I've dealt with it.</p>
+      <p>If you report a Blink, Blink sends me a still picture of it (a single frame, for a video), unencrypted, together with the reason you picked. From the app it goes to a part of CloudKit that only I can read; from the App Clip it goes to my own web server. I use it only to review the report and delete it once I've dealt with it.</p>
     </div>
   {% endcall %}
 
   {% call ui.sect("04", "On your device") %}
     <div class="prose">
-      <p>Blink keeps a list of the Blinks you've opened and the senders you've blocked. Both lists stay on your device.</p>
-      <p>Blink turns the camera on only while its camera screen is open, to take the photo you send. If you choose a picture from your library instead, Blink receives that one picture and nothing else from your library.</p>
+      <p>The name you enter at sign-up stays on your device, apart from the sealed copy in each Blink you send. Blink also keeps a list of the Blinks you've opened and the senders you've blocked, both only on your device. If a sender allows saving, a Blink you receive is kept on your device for 24 hours so you can look at it again, and you can save it to your photo library.</p>
+      <p>Blink turns the camera on only while its camera screen is open, and the microphone only while you record a video. If you choose a picture from your library instead, Blink receives that one picture and nothing else from your library. If you add a song, your search goes to Apple's music catalog, and the song's catalog number travels in the bubble.</p>
     </div>
   {% endcall %}
 
-  {% call ui.sect("05", "Other companies") %}
+  {% call ui.sect("05", "App Clip and Apple Watch") %}
     <div class="prose">
-      <p>Apple runs the storage (iCloud and CloudKit) and Messages. No other company receives data from Blink. If you've agreed in your device's settings to share analytics with app developers, Apple may pass me crash reports.</p>
+      <p>The App Clip and the Watch app can't reach CloudKit directly. For Blinks stored only there, which come from older versions of Blink, they go through my website instead: it passes on the encrypted file and, once the Blink is opened, asks CloudKit to delete it. The key stays in the link on your device, so my website never sees it.</p>
     </div>
   {% endcall %}
 
-  {% call ui.sect("06", "Children") %}
+  {% call ui.sect("06", "Other companies") %}
     <div class="prose">
-      <p>Blink is rated 4+ and never asks your age. It has no accounts and collects no names, contact details or locations from anyone, children included. A child's photos get the same treatment as everyone else's: encrypted, readable only by the people in the conversation, and deleted when opened or after seven days at most. The one exception is a reported photo, as described above.</p>
+      <p>Two companies handle Blink's data. Apple runs iCloud and CloudKit, Messages and the music catalog. Cloudflare runs Blink's storage service and holds the encrypted files. Like any server, Cloudflare sees your device's IP address when Blink connects to it; Blink's storage service doesn't record it. No other company receives data from Blink. If you've agreed in your device's settings to share analytics with app developers, Apple may pass me crash reports.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("07", "Children") %}
+    <div class="prose">
+      <p>Blink is rated 4+ and never asks your age. It has no accounts, the name entered at sign-up never reaches me, and it collects no contact details or locations from anyone, children included. A child's photos and videos get the same treatment as everyone else's: encrypted, readable only by the people in the conversation, and deleted when opened or after seven days at most. The one exception is a reported Blink, as described above.</p>
       <p>If you're a parent and want a report that includes your child's photo deleted, or have any other question about how your child uses Blink, use my <a href="{{ url_for('public.contact') }}">contact page</a>.</p>
     </div>
   {% endcall %}
 
-  {% call ui.sect("07", "Changes and contact") %}
+  {% call ui.sect("08", "Changes and contact") %}
     <div class="prose">
       <p>If this policy changes, the date at the top changes with it. For questions, or to ask me to delete something, use my <a href="{{ url_for('public.contact') }}">contact page</a>.</p>
     </div>
