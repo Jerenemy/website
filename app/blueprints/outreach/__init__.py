@@ -130,6 +130,7 @@ def email_rows(leads: list[dict], show: str) -> list[dict]:
             continue
         nudges = [n for n in (lead.get("nudges") or "").split("|") if n]
         rows.append({
+            "email": lead.get("email", ""),
             "name": lead.get("name", ""),
             "company": lead.get("company", ""),
             "company_url": lead.get("company_url", ""),
@@ -259,9 +260,43 @@ def resumes():
         made = _api("GET", "/api/reader-resumes").json().get("resumes", [])
     except JobBotError as e:
         error = e.message
-    companies = sorted({l.get("company", "") for l in load_leads() if l.get("status") in REPLIED} - {""})
+    replied = [l for l in load_leads() if l.get("status") in REPLIED and l.get("email")]
+    companies = sorted({l.get("company", "") for l in replied} - {""})
     return _page("admin/outreach_resume.html", tab="resume", made=made, error=error, companies=companies,
-                 company=request.args.get("company", "")[:200], max_thread=MAX_THREAD)
+                 company=request.args.get("company", "")[:200], max_thread=MAX_THREAD,
+                 replied=sorted(replied, key=lambda l: l.get("last_activity", ""), reverse=True))
+
+
+def lead_request(lead: dict) -> dict:
+    """What the bot needs to make a lead's resume: their address (it reads their emails from its inbox), the company
+    and its site, and the routine's research on it (the notes' first part: what it found before the status log)."""
+    research = (lead.get("notes") or "").split(" | ")[0].strip()
+    hook = (lead.get("hook") or "").strip()
+    return {
+        "lead_email": lead.get("email", ""),
+        "company": lead.get("company", ""),
+        "company_url": lead.get("company_url", ""),
+        "notes": " ".join(p for p in (research, f"Hook used in the first email: {hook}" if hook else "") if p)[:4000],
+    }
+
+
+@bp.post("/admin/outreach/resume/lead")
+@admin_required
+def resume_for_lead():
+    """One click: the resume for a CEO who replied, from their emails in the bot's inbox and the routine's notes."""
+    if not _form_ok():
+        return redirect(url_for("outreach.resumes"))
+    email = (request.form.get("email") or "").strip().lower()
+    lead = next((l for l in load_leads() if (l.get("email") or "").lower() == email), None)
+    if lead is None:
+        flash("That lead isn't in the synced leads.", "error")
+        return redirect(url_for("outreach.resumes"))
+    try:
+        made = _api("POST", "/api/reader-resumes", lead_request(lead), timeout=30).json()
+    except JobBotError as e:
+        flash(e.message, "error")
+        return redirect(url_for("outreach.resumes"))
+    return redirect(url_for("outreach.resume", rid=made["id"]))
 
 
 @bp.post("/admin/outreach/resume")

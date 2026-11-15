@@ -198,12 +198,37 @@ class OutreachResumeTests(OutreachCase):
         self.assertEqual(self.client.get("/admin/outreach/resume/r9/pdf").status_code, 404)
         self.assertEqual(self.client.get("/admin/outreach/resume/..%2Fx").status_code, 404)
 
-    def test_replied_rows_link_to_the_resume_tab(self):
+    def test_replied_rows_get_a_make_resume_button(self):
         self.sync({"leads_csv": LEADS})
         self.login()
         page = self.client.get("/admin/outreach").get_data(as_text=True)
-        self.assertIn("/admin/outreach/resume?company=Acme+AI", page)
-        self.assertNotIn("company=Beta+Labs", page)
+        self.assertEqual(page.count("Make resume"), 1)  # Ada replied; Bo and Cy did not
+        self.assertIn('name="email" value="ada@acme.test"', page)
+
+    def test_one_click_sends_the_lead_and_its_research_to_the_bot(self):
+        self.sync({"leads_csv": LEADS})
+        self.login()
+        self.replies[("POST", "/api/reader-resumes")] = FakeResponse({"id": "r7", "status": "running"})
+        response = self.client.post("/admin/outreach/resume/lead", data={"csrf_token": "csrf", "email": "ADA@acme.test"})
+        self.assertEqual(response.headers["Location"], "/admin/outreach/resume/r7")
+        self.assertEqual(self.calls[-1], ("POST", "/api/reader-resumes", {
+            "lead_email": "ada@acme.test", "company": "Acme AI", "company_url": "https://acme.test",
+            "notes": "secret note Hook used in the first email: A tagline."}))
+
+    def test_one_click_refuses_a_bad_csrf_or_an_unknown_lead(self):
+        self.sync({"leads_csv": LEADS})
+        self.login()
+        self.client.post("/admin/outreach/resume/lead", data={"csrf_token": "bad", "email": "ada@acme.test"})
+        self.client.post("/admin/outreach/resume/lead", data={"csrf_token": "csrf", "email": "who@else.test"})
+        self.assertEqual([c for c in self.calls if c[0] == "POST"], [])
+
+    def test_the_resume_tab_offers_the_ceos_who_replied(self):
+        self.sync({"leads_csv": LEADS})
+        self.login()
+        self.replies[("GET", "/api/reader-resumes")] = FakeResponse({"resumes": []})
+        page = self.client.get("/admin/outreach/resume").get_data(as_text=True)
+        self.assertIn('<option value="ada@acme.test">Ada Test · Acme AI</option>', page)
+        self.assertNotIn("bo@beta.test", page)
 
 
 if __name__ == "__main__":

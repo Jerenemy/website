@@ -12,6 +12,20 @@
 
   {% call ui.sect("01", "Make one", wide=True) %}
     {% include "admin/_flash.html" %}
+    {% if replied %}
+    <form method="post" action="{{ url_for('outreach.resume_for_lead') }}" class="admin-form outreach-resume-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="lead">A CEO who replied</label>
+        <select id="lead" name="email">
+          {% for l in replied %}<option value="{{ l.email }}">{{ l.name }} · {{ l.company }}</option>{% endfor %}
+        </select>
+        <p class="note">The bot reads their emails from its inbox and your research notes on the company. Nothing to paste.</p>
+      </div>
+      <div class="outreach-example__actions">{{ admin.button("Make their resume") }}</div>
+    </form>
+    <p class="note outreach-resume__or">Or paste a thread:</p>
+    {% endif %}
     <form method="post" action="{{ url_for('outreach.resume_make') }}" class="admin-form outreach-resume-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="field">
