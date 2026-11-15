@@ -70,7 +70,7 @@ class BlinkAppClipTests(unittest.TestCase):
     def test_association_file_lists_blink_links_and_clip(self):
         data = self.client.get("/.well-known/apple-app-site-association").get_json()
         details = {tuple(d["appIDs"]): d["components"] for d in data["applinks"]["details"]}
-        self.assertEqual(details[("9A9HR6WT4K.com.jeremyzay.blink",)], [{"/": "/blink/v*"}])
+        self.assertEqual(details[("9A9HR6WT4K.com.jeremyzay.blink", "9A9HR6WT4K.com.jeremyzay.blink.watchkitapp")], [{"/": "/blink/v*"}])
         self.assertIn(("9A9HR6WT4K.com.jeremyzay.Sonar",), details)
         self.assertEqual(data["appclips"]["apps"], ["9A9HR6WT4K.com.jeremyzay.blink.Clip"])
 

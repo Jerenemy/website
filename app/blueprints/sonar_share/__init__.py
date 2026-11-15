@@ -17,6 +17,7 @@ SHARE_PATHS = ("/sonar/r/*", "/sonar/e/*", "/sonar/p/*", "/sonar/u/*", "/sonar/l
 # Blink: its links open the app when installed, and its App Clip otherwise.
 BLINK_APP = f"{TEAM_ID}.com.jeremyzay.blink"
 BLINK_CLIP = f"{TEAM_ID}.com.jeremyzay.blink.Clip"
+BLINK_WATCH = f"{TEAM_ID}.com.jeremyzay.blink.watchkitapp"
 
 
 @bp.get("/.well-known/apple-app-site-association")
@@ -32,7 +33,7 @@ def apple_app_site_association():
                         "components": [{"/": path} for path in SHARE_PATHS],
                     },
                     {
-                        "appIDs": [BLINK_APP],
+                        "appIDs": [BLINK_APP, BLINK_WATCH],
                         "components": [{"/": "/blink/v*"}],
                     },
                 ]
