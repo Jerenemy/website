@@ -20,9 +20,14 @@ class BlinkPagesTests(unittest.TestCase):
         self.app.config.update(TESTING=True, SECRET_KEY="test-only")
         self.client = self.app.test_client()
 
+    def test_home_moved_to_iblinked(self):
+        for path in ("/blink", "/blink/"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 301, path)
+            self.assertEqual(response.headers["Location"], "https://iblinked.app/", path)
+
     def test_pages_render_with_their_tabs(self):
         for path, heading in [
-            ("/blink", "Blink"),
             ("/blink/support", "Blink support"),
             ("/blink/privacy", "Blink privacy policy"),
         ]:
@@ -32,9 +37,10 @@ class BlinkPagesTests(unittest.TestCase):
             self.assertIn(f">{heading}</h1>", html, path)
             self.assertIn('aria-label="Blink pages"', html, path)
             self.assertIn('href="/blink/privacy"', html, path)
+            self.assertIn('href="https://iblinked.app/"', html, path)
 
     def test_trailing_slashes_work(self):
-        for path in ("/blink/", "/blink/support/", "/blink/privacy/"):
+        for path in ("/blink/support/", "/blink/privacy/"):
             self.assertEqual(self.client.get(path).status_code, 200, path)
 
     def test_blink_links_land_on_a_noindex_page(self):
