@@ -1,14 +1,16 @@
-"""/blink: the web home of Blink, my iMessage app for photos that disappear once they're opened.
+"""/blink: Blink, my iMessage app for photos that disappear once they're opened.
 
-App Store Connect points at /blink/privacy (privacy policy) and /blink/support (support URL), so
-keep both addresses stable. The app's code lives in the private Jerenemy/blink repo."""
+Blink's home is its own site, https://iblinked.app (in the Jerenemy/blink repo, `site/`), so /blink
+redirects there. App Store Connect points at /blink/privacy (privacy policy) and /blink/support
+(support URL), and Blink's links, App Clip and apple-app-site-association use /blink/v and
+/blink/api, so all of those stay here. The app's code lives in the private Jerenemy/blink repo."""
 import base64
 import json
 import os
 import re
 import time
 
-from flask import Blueprint, current_app, jsonify, render_template, request, url_for
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request, url_for
 
 from . import cloudkit
 
@@ -22,13 +24,17 @@ PAGES = [
 ]
 
 
+HOME = 'https://iblinked.app/'
+
+
 def tabs(current):
-    return [(url_for(endpoint), name, endpoint == current) for endpoint, name in PAGES]
+    return [(HOME if endpoint == 'blink.about' else url_for(endpoint), name, endpoint == current)
+            for endpoint, name in PAGES]
 
 
 @bp.get('/blink', strict_slashes=False)
 def about():
-    return render_template('blink/about.html', tabs=tabs('blink.about'))
+    return redirect(HOME, 301)
 
 
 @bp.get('/blink/support', strict_slashes=False)
