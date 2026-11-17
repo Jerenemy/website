@@ -28,6 +28,10 @@ class Config:
     CLASH_ROYALE_DATABASE_PATH = os.getenv("CLASH_ROYALE_DATABASE_PATH", os.path.join(_project_root, "instance", "clash.sqlite3"))
     # /scic/reviews: what people write about my tutoring (instance/, untracked like the other stores)
     SCIC_REVIEWS_DATABASE_PATH = os.getenv("SCIC_REVIEWS_DATABASE_PATH", os.path.join(_project_root, "instance", "scic_reviews.sqlite3"))
+    # /dont-fret/listening-test: listeners' ratings of Don't Fret's guitar sound
+    DONT_FRET_LISTENING_DATABASE_PATH = os.getenv("DONT_FRET_LISTENING_DATABASE_PATH", os.path.join(_project_root, "instance", "dont_fret_listening.sqlite3"))
+    # which clip is which: never committed (public repo), copied to the server with the clips
+    DONT_FRET_LISTENING_KEY_PATH = os.getenv("DONT_FRET_LISTENING_KEY_PATH", os.path.join(_project_root, "instance", "dont_fret_listening_key.json"))
 
     # Job application bot (getmeajob `serve`): private API on the same machine, same token as its REVIEW_API_TOKEN.
     JOBBOT_API_URL = os.getenv("JOBBOT_API_URL", "http://127.0.0.1:5003")

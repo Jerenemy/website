@@ -42,6 +42,15 @@
 !app/blueprints/blink/
 !app/blueprints/blink/__init__.py
 !app/blueprints/blink/cloudkit.py
+# Don't Fret's guitar listening test: the page, its answers API and admin results. The clips and
+# manifest are public static files; which clip is which lives in instance/ and is never committed
+!app/blueprints/dont_fret/
+!app/blueprints/dont_fret/__init__.py
+!app/static/dont-fret/
+!app/static/dont-fret/listening-test/
+!app/static/dont-fret/listening-test/manifest.json
+!app/static/dont-fret/listening-test/clips/
+!app/static/dont-fret/listening-test/clips/*.mp4
 # CEO outreach dashboards (admin only; their data lives in instance/outreach, untracked)
 !app/blueprints/outreach/
 !app/blueprints/outreach/__init__.py
@@ -175,6 +184,7 @@ app/blog/*.pyc
 !tests/test_blink.py
 !tests/test_outreach.py
 !tests/test_scic_reviews.py
+!tests/test_dont_fret.py
 
 # macOS folder metadata, wherever an allowlist above reaches
 .DS_Store

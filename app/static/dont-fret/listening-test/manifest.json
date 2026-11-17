@@ -1,0 +1,161 @@
+{
+ "version": 1,
+ "seconds": 8.0,
+ "question": "How much does each clip sound like a recording of a real acoustic guitar?",
+ "trials": [
+  {
+   "id": "p1",
+   "kind": "pro",
+   "label": "Singer-songwriter strumming",
+   "source": "GuitarSet 03_SS2-107-Ab_comp (CC BY 4.0)",
+   "stimuli": [
+    {
+     "file": "clips/b60a9e47.mp4"
+    },
+    {
+     "file": "clips/9b7531cf.mp4"
+    },
+    {
+     "file": "clips/896985d4.mp4"
+    },
+    {
+     "file": "clips/277c2425.mp4"
+    }
+   ]
+  },
+  {
+   "id": "p2",
+   "kind": "pro",
+   "label": "Funk strumming",
+   "source": "GuitarSet 00_Funk3-98-A_comp (CC BY 4.0)",
+   "stimuli": [
+    {
+     "file": "clips/4d791d25.mp4"
+    },
+    {
+     "file": "clips/853817a6.mp4"
+    },
+    {
+     "file": "clips/3269de48.mp4"
+    },
+    {
+     "file": "clips/8c890bab.mp4"
+    }
+   ]
+  },
+  {
+   "id": "p3",
+   "kind": "pro",
+   "label": "Bossa nova, fingerstyle",
+   "source": "GuitarSet 03_BN2-131-B_comp (CC BY 4.0)",
+   "stimuli": [
+    {
+     "file": "clips/e52993c2.mp4"
+    },
+    {
+     "file": "clips/bb48f6e1.mp4"
+    },
+    {
+     "file": "clips/2e70c77f.mp4"
+    },
+    {
+     "file": "clips/52577e2d.mp4"
+    }
+   ]
+  },
+  {
+   "id": "p4",
+   "kind": "pro",
+   "label": "Rock strumming",
+   "source": "GuitarSet 00_Rock3-148-C_comp (CC BY 4.0)",
+   "stimuli": [
+    {
+     "file": "clips/30204136.mp4"
+    },
+    {
+     "file": "clips/625a9b45.mp4"
+    },
+    {
+     "file": "clips/a11e313c.mp4"
+    },
+    {
+     "file": "clips/cba96d2f.mp4"
+    }
+   ]
+  },
+  {
+   "id": "p5",
+   "kind": "pro",
+   "label": "Picked melody",
+   "source": "GuitarSet 00_SS3-98-C_solo (CC BY 4.0)",
+   "stimuli": [
+    {
+     "file": "clips/b0b7bd11.mp4"
+    },
+    {
+     "file": "clips/fbad3fbe.mp4"
+    },
+    {
+     "file": "clips/d50e6b56.mp4"
+    },
+    {
+     "file": "clips/08d0a363.mp4"
+    }
+   ]
+  },
+  {
+   "id": "p6",
+   "kind": "pro",
+   "label": "Jazz single-note line",
+   "source": "GuitarSet 03_Jazz2-110-Bb_solo (CC BY 4.0)",
+   "stimuli": [
+    {
+     "file": "clips/ee223031.mp4"
+    },
+    {
+     "file": "clips/df218e8c.mp4"
+    },
+    {
+     "file": "clips/971f70b5.mp4"
+    },
+    {
+     "file": "clips/d51dbc6f.mp4"
+    }
+   ]
+  },
+  {
+   "id": "a1",
+   "kind": "app",
+   "label": "Campfire strum",
+   "source": "Don't Fret demo",
+   "stimuli": [
+    {
+     "file": "clips/8e19f0ef.mp4"
+    },
+    {
+     "file": "clips/a1a27174.mp4"
+    },
+    {
+     "file": "clips/05d1cff6.mp4"
+    }
+   ]
+  },
+  {
+   "id": "a2",
+   "kind": "app",
+   "label": "Fingerpicking",
+   "source": "Don't Fret demo",
+   "stimuli": [
+    {
+     "file": "clips/745121d7.mp4"
+    },
+    {
+     "file": "clips/ecc4a6c7.mp4"
+    },
+    {
+     "file": "clips/14f803d5.mp4"
+    }
+   ]
+  }
+ ]
+}
