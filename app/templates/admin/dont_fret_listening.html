@@ -1,0 +1,88 @@
+{#- /admin/dont-fret/listening-test: the results of Don't Fret's listening test, scored on the server
+    (blueprints/dont_fret: summary). Each chart row is a condition's mean with its 95% interval on
+    the 0-100 MUSHRA scale; positions come from the data, everything else from the tokens. -#}
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% import "admin/_admin.html" as admin with context %}
+{% block title %}Listening test · Admin{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='site/listening-test.css') }}">
+{% endblock %}
+{%- macro chart(rows) %}
+<div class="lt-chart" role="table" aria-label="Mean rating with its 95% confidence interval">
+  <div class="lt-chart__row lt-chart__row--scale" aria-hidden="true">
+    <span></span><div class="lt-chart__track label">{% for b in bands %}<span>{{ b }}</span>{% endfor %}</div><span></span>
+  </div>
+  {%- for row in rows %}
+  <div class="lt-chart__row" role="row">
+    <span class="lt-chart__label" role="rowheader">{{ row.label }}</span>
+    <div class="lt-chart__track" role="cell" aria-hidden="true">
+      {%- if row.n %}
+      <span class="lt-chart__ci" style="left: {{ '%.2f' % row.lo }}%; width: {{ '%.2f' % (row.hi - row.lo) }}%"></span>
+      <span class="lt-chart__mean" style="left: {{ '%.2f' % row.mean }}%"></span>
+      {%- endif %}
+    </div>
+    <span class="lt-chart__value" role="cell">{% if row.n %}{{ '%.0f' % row.mean }} ± {{ '%.0f' % row.ci }}{% else %}–{% endif %}</span>
+  </div>
+  {%- endfor %}
+</div>
+{%- endmacro %}
+{%- macro signed(x) %}{% if x is none %}–{% else %}{{ ('%+.1f' % x) | replace('-', '−') }}{% endif %}{% endmacro %}
+{% block content %}
+  {%- set line = ("%d listener%s, %d finished." % (s.listeners, '' if s.listeners == 1 else 's', s.finished)) if s else ("%d listener%s so far." % (waiting, '' if waiting == 1 else 's')) %}
+  {% call ui.head("Listening test", where="Admin", line=line) %}
+    {{ ui.open(url_for('dont_fret.listening_test'), "Open the test") }}
+    <a class="open" href="{{ url_for('dont_fret.export') }}" download data-no-transition><span>Download CSV</span>{{ ui.arrow() }}</a>
+    {%- if everyone %}
+    {{ ui.open(url_for('dont_fret.results'), "Leave out screened listeners", quiet=True) }}
+    {%- else %}
+    {{ ui.open(url_for('dont_fret.results', everyone=1), "Show everyone", quiet=True) }}
+    {%- endif %}
+  {% endcall %}
+  {{ admin.nav("listening") }}
+
+  {%- if not s %}
+  {% call ui.sect("01", "Answer key missing") %}
+    <div class="prose"><p>Answers are being saved, but the results need the answer key, which isn't on this server yet. Copy <code>instance/dont_fret_listening_key.json</code> from the machine that built the clips into this site's <code>instance/</code> folder.</p></div>
+  {% endcall %}
+  {%- elif not s.listeners %}
+  {% call ui.sect("01", "No answers yet") %}
+    <div class="prose"><p>Nobody has taken the test yet. Share {{ url_for('dont_fret.listening_test', _external=True) }} with your listeners.</p></div>
+  {% endcall %}
+  {%- else %}
+  {% call ui.sect("01", "Studio pieces", wide=True) %}
+    <h2 class="sect__title">How real each version of the GuitarSet pieces sounded.</h2>
+    {{ chart(s.studio) }}
+    <p class="note">Means with 95% confidence intervals on the MUSHRA scale. {% if everyone %}Everyone is included.{% elif s.excluded %}{{ s.excluded }} listener{{ '' if s.excluded == 1 else 's' }} who rated the 3.5 kHz anchor above the real recording in half or more of the studio pieces {{ 'is' if s.excluded == 1 else 'are' }} left out.{% else %}Nobody rated the 3.5 kHz anchor above the real recording in half or more of the studio pieces, so nobody is left out.{% endif %}</p>
+  {% endcall %}
+
+  {% call ui.sect("02", "App demos", wide=True) %}
+    <h2 class="sect__title">The app's own playing, new engine against old.</h2>
+    {{ chart(s.app) }}
+  {% endcall %}
+
+  {% call ui.sect("03", "Comparisons") %}
+    <dl class="facts">
+      <div><dt>New minus old</dt><dd>{{ signed(s.new_vs_old.mean) }}{% if s.new_vs_old.n %} ± {{ '%.1f' % s.new_vs_old.ci }}{% endif %} on the studio pieces, paired by listener and piece.</dd></div>
+      <div><dt>New against the recording</dt><dd>{{ signed(s.new_vs_real.mean) }}{% if s.new_vs_real.n %} ± {{ '%.1f' % s.new_vs_real.ci }}{% endif %}. Zero would mean listeners couldn't tell them apart.</dd></div>
+      <div><dt>At least as real</dt><dd>{% if s.new_vs_real.at_least is not none %}{{ '%.0f' % (100 * s.new_vs_real.at_least) }}%{% else %}–{% endif %} of ratings put the new engine level with or above the real recording.</dd></div>
+      <div><dt>App demos</dt><dd>New minus old: {{ signed(s.app_new_vs_old.mean) }}{% if s.app_new_vs_old.n %} ± {{ '%.1f' % s.app_new_vs_old.ci }}{% endif %}.</dd></div>
+    </dl>
+  {% endcall %}
+
+  {% call ui.sect("04", "Piece by piece", wide=True) %}
+    <div class="table">
+      <table>
+        <thead><tr><th>Piece</th>{% for c, label in conditions %}<th class="lt-num">{{ label }}</th>{% endfor %}<th class="lt-num">Listeners</th></tr></thead>
+        <tbody>
+          {%- for p in s.pieces %}
+          <tr><td>{{ p.label }}</td>{% for c, _ in conditions %}<td class="lt-num">{% if p.cells[c] is not none %}{{ '%.0f' % p.cells[c] }}{% else %}–{% endif %}</td>{% endfor %}<td class="lt-num">{{ p.listeners }}</td></tr>
+          {%- endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endcall %}
+  {%- endif %}
+{% endblock %}

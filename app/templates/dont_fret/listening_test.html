@@ -1,0 +1,66 @@
+{#- /dont-fret/listening-test: a blind listening test of Don't Fret's guitar sound. The page is the
+    site's; static/site/listening-test.js runs the test inside #lt (the clips play in sync through
+    Web Audio, answers post to dont_fret.save_answers) and static/site/listening-test.css draws its
+    faders. Which clip is which stays on the server (blueprints/dont_fret). -#}
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Guitar listening test · Jeremy Zay{% endblock %}
+{% block description %}A blind listening test of the guitar sound in Don't Fret, my Mac app that teaches guitar.{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ url_for('static', filename='site/listening-test.css') }}">
+{% endblock %}
+{% block content %}
+  {% call ui.head("Guitar listening test", where="Don't Fret", line="Eight short pieces of guitar, each played a few different ways. Rate how real each one sounds. It takes about ten minutes, and headphones help.") %}{% endcall %}
+
+  {% call ui.sect("01", "The test", id="test") %}
+    <div class="lt" id="lt" data-manifest="{{ manifest_url }}" data-answers="{{ url_for('dont_fret.save_answers') }}">
+      <div class="lt-intro">
+        <div class="prose">
+          <p class="lede">Some of these clips are studio recordings of a real guitarist. The others come from Don't Fret, my Mac app that teaches guitar, which builds its sound from a model of a real guitar. Play each clip, then move its slider to how much it sounds like a recording of a real acoustic guitar.</p>
+        </div>
+        <dl class="facts">
+          <div><dt>Time</dt><dd>About ten minutes: {{ seconds }} seconds a clip, as many listens as you like.</dd></div>
+          <div><dt>Listen on</dt><dd>Headphones, somewhere quiet, at a comfortable volume.</dd></div>
+          <div><dt>Switch freely</dt><dd>The clips play together, so switching between them keeps your place in the music.</dd></div>
+        </dl>
+        <form class="form lt-form" id="lt-form">
+          <div class="field">
+            <label for="lt-experience">Your guitar experience</label>
+            <select id="lt-experience" name="experience">
+              <option value="">Choose…</option>
+              <option value="none">I don't play</option>
+              <option value="some">I play a little</option>
+              <option value="regular">I play regularly</option>
+              <option value="pro">Professionally: player, engineer or producer</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="lt-playback">What you're listening on</label>
+            <select id="lt-playback" name="playback">
+              <option value="">Choose…</option>
+              <option value="headphones">Headphones or earbuds</option>
+              <option value="speakers">Studio or hi-fi speakers</option>
+              <option value="laptop">Laptop or phone speakers</option>
+            </select>
+          </div>
+          <div class="actions">
+            <button type="submit" class="open" id="lt-start" disabled><span>Start the test</span></button>
+          </div>
+          <p class="status" id="lt-status" role="status"></p>
+        </form>
+      </div>
+      <noscript><p class="note">The test needs JavaScript to play the clips.</p></noscript>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("02", "About") %}
+    <h2 class="sect__title">How the test works.</h2>
+    <div class="prose">
+      <p>Every piece is the same {{ seconds }} seconds played several ways, matched in loudness and put in a different order for each listener, so only the sound tells them apart. The test follows MUSHRA, the method in ITU-R BS.1534 that audio researchers use to compare sound quality.</p>
+      <p>Your ratings are stored on this site with your guitar experience and what you listened on, under a random number. I don't keep your name or email, and your network address is kept only as a one-way hash that limits how many tests one network can start in a day.</p>
+      <p>The studio recordings come from <a href="https://zenodo.org/records/3371780" rel="noopener">GuitarSet</a> (Xi, Bittner, Pauwels, Ye and Bello, ISMIR 2018), shared under <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>.</p>
+    </div>
+  {% endcall %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='site/listening-test.js') }}" defer></script>{% endblock %}

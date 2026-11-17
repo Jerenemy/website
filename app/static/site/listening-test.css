@@ -1,0 +1,92 @@
+/* Don't Fret's listening test (/dont-fret/listening-test) and its results (/admin/dont-fret/
+   listening-test), in the site's language: tokens only, lines instead of boxes, the label voice
+   for controls, square faders like a mixing desk's. */
+
+.lt { display: grid; gap: var(--s5); }
+.lt-intro { display: grid; gap: var(--s5); }
+
+.lt-form { max-width: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--inset)), 1fr)); gap: var(--s3) var(--s5); align-items: end; }
+.lt-form .field + .field { margin-top: 0; }
+.lt-form .actions, .lt-form .status { grid-column: 1 / -1; }
+.lt-form .status { margin-top: 0; }
+
+/* a piece: where we are, the transport, one row per clip */
+.lt-piece { display: grid; gap: var(--s4); }
+.lt-piece__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--s2) var(--s4); }
+.lt-piece__title { margin-top: var(--s1); color: var(--ink); font-size: var(--h2-size); font-weight: var(--title-weight); letter-spacing: var(--title-track); }
+.lt-dots { display: flex; gap: var(--s1); }
+.lt-dots i { width: var(--s2); height: 1px; background: var(--rule); }
+.lt-dots i.is-done { background: var(--ink-3); }
+.lt-dots i.is-now { background: var(--ink); }
+
+.lt-transport { display: flex; align-items: center; gap: var(--s3); }
+.lt-bar { position: relative; flex: 1; min-width: 0; height: var(--s3); cursor: pointer; }
+.lt-bar::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--hair); }
+.lt-bar__fill { position: absolute; left: 0; top: 50%; width: 0; height: 1px; background: var(--ink); }
+.lt-time { min-width: calc(var(--s12) - var(--s1)); text-align: right; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+/* one row per clip: on a wide screen the rows share the strip's columns (clip, fader, score) */
+.lt-strip { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 7fr) minmax(0, 1fr); gap: var(--s2) var(--s4); align-items: center; }
+.lt-row { display: contents; }
+.lt-scale { grid-column: 2; display: grid; grid-template-columns: repeat(5, 1fr); color: var(--ink-3); }
+.lt-scale span { padding-bottom: var(--s1); border-left: 1px solid var(--rule); text-align: center; }
+.lt-scale span:last-child { border-right: 1px solid var(--rule); }
+
+.lt-clip {
+  display: flex; align-items: center; gap: var(--s1); padding: var(--s1) 0; color: var(--ink-3); background: none;
+  border: 0; border-bottom: 1px solid var(--rule); border-radius: var(--radius); cursor: pointer; text-align: left;
+  font: inherit; font-size: var(--label-size); line-height: var(--label-lead); letter-spacing: var(--track); text-transform: uppercase;
+  transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.lt-clip:hover { color: var(--ink-2); border-bottom-color: var(--hair); }
+.lt-clip.is-on { color: var(--ink); border-bottom-color: var(--ink); }
+.lt-dot { width: calc(var(--s1) / 2); height: calc(var(--s1) / 2); background: var(--tick); }
+.lt-clip.is-heard .lt-dot { background: var(--ink-3); }
+.lt-clip.is-on .lt-dot { background: var(--ink); }
+
+/* the fader: a hairline with a square cap; hollow until it's been set */
+.lt-range { -webkit-appearance: none; appearance: none; width: 100%; height: var(--s4); margin: 0; background: none; cursor: pointer; }
+.lt-range:disabled { cursor: not-allowed; }
+.lt-range::-webkit-slider-runnable-track { height: 1px; background: var(--hair); }
+.lt-range::-moz-range-track { height: 1px; background: var(--hair); }
+.lt-range::-webkit-slider-thumb { -webkit-appearance: none; width: var(--s1); height: var(--s3); margin-top: calc(var(--s3) / -2); border: 1px solid var(--ink-2); border-radius: var(--radius); background: var(--bg); }
+.lt-range::-moz-range-thumb { width: var(--s1); height: var(--s3); border: 1px solid var(--ink-2); border-radius: var(--radius); background: var(--bg); }
+.lt-range.is-set::-webkit-slider-thumb { border-color: var(--ink); background: var(--ink); }
+.lt-range.is-set::-moz-range-thumb { border-color: var(--ink); background: var(--ink); }
+.lt-range:disabled::-webkit-slider-runnable-track { background: var(--rule); }
+.lt-range:disabled::-moz-range-track { background: var(--rule); }
+.lt-range:disabled::-webkit-slider-thumb { border-color: var(--tick); }
+.lt-range:disabled::-moz-range-thumb { border-color: var(--tick); }
+
+.lt-score { color: var(--ink); font-size: var(--text-size); line-height: var(--text-lead); text-align: right; font-variant-numeric: tabular-nums; }
+.lt-score.is-empty { color: var(--ink-3); }
+
+.lt-clip:focus-visible, .lt-range:focus-visible, .lt-bar:focus-visible { outline: 1px solid var(--ink); outline-offset: calc(var(--s1) / 2); }
+
+/* on a phone each clip is its own block: name and score, then the fader across the width */
+@media (max-width: 640px) {
+  .lt-strip { grid-template-columns: minmax(0, 1fr); gap: var(--s3); }
+  .lt-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "clip score" "range range"; gap: 0 var(--s2); align-items: center; }
+  .lt-row .lt-clip { grid-area: clip; }
+  .lt-row .lt-score { grid-area: score; }
+  .lt-row .lt-range { grid-area: range; }
+  .lt-row--scale { display: block; }
+  .lt-row--scale > span { display: none; }
+}
+
+/* results (admin): each condition's mean on the 0-100 scale, with its 95% interval */
+.lt-chart { display: grid; gap: var(--s2); }
+.lt-chart__row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 7fr) minmax(0, 1fr); gap: var(--s4); align-items: center; }
+.lt-chart__label { color: var(--ink-2); font-size: var(--small-size); line-height: var(--small-lead); }
+.lt-chart__track { position: relative; height: var(--s3); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: linear-gradient(to right, var(--rule) 1px, transparent 1px) 0 0 / 20% 100%; }
+.lt-chart__ci { position: absolute; top: 50%; height: 1px; background: var(--ink-2); }
+.lt-chart__mean { position: absolute; top: 50%; width: var(--s1); height: var(--s1); margin: calc(var(--s1) / -2) 0 0 calc(var(--s1) / -2); background: var(--ink); }
+.lt-chart__value { color: var(--ink); font-size: var(--small-size); line-height: var(--small-lead); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lt-chart__row--scale .lt-chart__track { height: auto; border: 0; background: none; display: grid; grid-template-columns: repeat(5, 1fr); color: var(--ink-3); }
+.lt-chart__row--scale .lt-chart__track span { text-align: center; }
+.lt-chart + .lt-chart { margin-top: var(--s6); }
+@media (max-width: 640px) {
+  .lt-chart__row { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; gap: var(--s2); }
+  .lt-chart__row--scale .lt-chart__track span, .lt-scale span { letter-spacing: 0; }
+}
+.table td.lt-num, .table th.lt-num { text-align: right; font-variant-numeric: tabular-nums; }
