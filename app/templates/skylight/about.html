@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Skylight · Jeremy Zay{% endblock %}
+{% block description %}Skylight is a fast, light Mac app for reading Markdown, Jupyter notebooks, CSV, JSON and source code.{% endblock %}
+{% block content %}
+  {% call ui.head("Skylight", line="A fast, light Mac app for reading Markdown, notebooks, data and code.", where="macOS 14 and later") %}
+    {{ ui.open(url_for('skylight.support'), "Support") }}
+  {% endcall %}
+  {{ ui.tabs(tabs, label="Skylight pages") }}
+
+  {% call ui.sect("01", "What it opens") %}
+    <div class="prose">
+      <p class="lede">Markdown (including R Markdown and Quarto files), Jupyter notebooks, CSV and TSV tables, JSON, YAML, TOML and source code.</p>
+      <p>Markdown gets tables, task lists, footnotes, callouts, math and Mermaid diagrams. Notebooks show their cells, outputs, plots and tables. A CSV file opens as a table you can sort.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("02", "Reading") %}
+    <div class="prose">
+      <ul>
+        <li>An outline in the sidebar follows you as you scroll.</li>
+        <li>Find in page shows how many matches there are.</li>
+        <li>Light, sepia and dark themes, a choice of sans, serif or mono type, and adjustable text size and line width.</li>
+        <li>When you save a file in another editor, Skylight reloads it and keeps your place.</li>
+        <li>Press Space on a Markdown file or notebook in Finder to preview it with Quick Look.</li>
+      </ul>
+      <p>It's a native Mac app with a single web view inside, so it sits at 0% CPU while you read.</p>
+    </div>
+  {% endcall %}
+{% endblock %}

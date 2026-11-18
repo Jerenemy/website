@@ -42,6 +42,9 @@
 !app/blueprints/blink/
 !app/blueprints/blink/__init__.py
 !app/blueprints/blink/cloudkit.py
+# Skylight's page, support page and privacy policy (App Store Connect links to the last two)
+!app/blueprints/skylight/
+!app/blueprints/skylight/__init__.py
 # Don't Fret's guitar listening test: the page, its answers API and admin results. The clips and
 # manifest are public static files; which clip is which lives in instance/ and is never committed
 !app/blueprints/dont_fret/
@@ -182,6 +185,7 @@ app/blog/*.pyc
 !tests/test_jobbot.py
 !tests/test_sonar_moved.py
 !tests/test_blink.py
+!tests/test_skylight.py
 !tests/test_outreach.py
 !tests/test_scic_reviews.py
 !tests/test_dont_fret.py
