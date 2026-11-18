@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Skylight privacy policy · Jeremy Zay{% endblock %}
+{% block description %}Skylight collects no data. What it keeps on your Mac, and when it connects to the internet.{% endblock %}
+{% block content %}
+  {% call ui.head("Skylight privacy policy", line="Skylight collects no data.", where="Updated November 17, 2026") %}
+  {% endcall %}
+  {{ ui.tabs(tabs, label="Skylight pages") }}
+
+  {% call ui.sect("01", "Summary") %}
+    <div class="prose">
+      <p class="lede">Skylight has no accounts, ads, analytics or tracking. It doesn't send your files or anything about you to me or anyone else.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("02", "On your Mac") %}
+    <div class="prose">
+      <p>Skylight reads only the files you open, and the Quick Look preview reads only the file you're previewing. Its settings, the list of recent files and the folders you've let it read stay on your Mac.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("03", "Images from the web") %}
+    <div class="prose">
+      <p>If a document you open includes an image hosted on the web, Skylight downloads that image from the site hosting it, the same way a browser would. That site sees your IP address and can keep its own logs. Skylight sends it nothing else. To stop this, turn off "Load images from the web" in Skylight's Settings. Everything else, including math and diagrams, is drawn by Skylight itself without connecting to anything.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("04", "Crash reports") %}
+    <div class="prose">
+      <p>If you've agreed in your Mac's settings to share analytics with app developers, Apple may pass me crash reports. They don't include your files.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("05", "Changes and contact") %}
+    <div class="prose">
+      <p>If this policy changes, the date at the top changes with it. For questions, use my <a href="{{ url_for('public.contact') }}">contact page</a>.</p>
+    </div>
+  {% endcall %}
+{% endblock %}

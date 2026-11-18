@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Skylight support · Jeremy Zay{% endblock %}
+{% block description %}Answers to common questions about Skylight, and how to reach Jeremy Zay about the app.{% endblock %}
+{% block content %}
+  {% call ui.head("Skylight support", line="Answers to common questions, and how to reach me.", where="Skylight") %}
+    {{ ui.open(url_for('public.contact'), "Contact me") }}
+  {% endcall %}
+  {{ ui.tabs(tabs, label="Skylight pages") }}
+
+  {% call ui.sect("01", "Questions") %}
+    <div class="prose">
+      <h3>How do I make Markdown files open in Skylight?</h3>
+      <p>Open Skylight's Settings and click Make Default. You can also do it in Finder: select a Markdown file, choose File › Get Info, pick Skylight under "Open with" and click Change All.</p>
+
+      <h3>Quick Look doesn't use Skylight.</h3>
+      <p>Open System Settings › General › Login Items &amp; Extensions, find Quick Look and turn on Skylight. If the preview still looks the same, open Skylight once, then try again.</p>
+
+      <h3>Images next to my document don't show up.</h3>
+      <p>Skylight can only read files you open. The first time a document points at images in its folder, Skylight asks for access to that folder. Allow it and Skylight will remember the folder for later.</p>
+
+      <h3>Images from the web don't show up.</h3>
+      <p>Check that "Load images from the web" is on in Skylight's Settings.</p>
+
+      <h3>Can I edit files in Skylight?</h3>
+      <p>No, Skylight only reads. Keep it open next to your editor: when you save, it reloads and stays at the same spot.</p>
+    </div>
+  {% endcall %}
+
+  {% call ui.sect("02", "Contact") %}
+    <div class="prose">
+      <p>For bugs, questions or a file that doesn't look right, write to me through the <a href="{{ url_for('public.contact') }}">contact page</a> and mention Skylight in the message.</p>
+    </div>
+  {% endcall %}
+{% endblock %}
