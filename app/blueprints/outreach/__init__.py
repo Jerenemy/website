@@ -10,6 +10,7 @@ The Resume tab makes a resume for a CEO who asked for one: the pasted thread goe
 (getmeajob's /api/reader-resumes, through jobbot._api), which picks the projects that matter to them and lays the
 page out for a person to read, not an ATS. The bot keeps the threads and PDFs; nothing of them is stored here.
 """
+import base64
 import csv
 import io
 import json
@@ -299,6 +300,23 @@ def resume_for_lead():
     return redirect(url_for("outreach.resume", rid=made["id"]))
 
 
+MAX_REFERENCE_FILES = 6
+REFERENCE_SUFFIXES = (".pdf", ".txt", ".md", ".html", ".htm", ".csv", ".json", ".eml")
+
+
+def reference_files(uploads) -> list[dict]:
+    """The uploaded reference files (a posting, notes, a page about the company) as the bot's API takes them."""
+    files = []
+    for upload in uploads[:MAX_REFERENCE_FILES]:
+        name = Path(upload.filename or "").name
+        if not name:
+            continue
+        if not name.lower().endswith(REFERENCE_SUFFIXES):
+            raise ValueError(f"{name}: give a PDF or a text file (save it as PDF first).")
+        files.append({"name": name, "data": base64.b64encode(upload.read()).decode()})
+    return files
+
+
 @bp.post("/admin/outreach/resume")
 @admin_required
 def resume_make():
@@ -306,11 +324,20 @@ def resume_make():
         return redirect(url_for("outreach.resumes"))
     thread = (request.form.get("thread") or "").strip()[:MAX_THREAD]
     company = (request.form.get("company") or "").strip()[:200]
-    if not thread and not company:
-        flash("Paste the email thread, or at least name the company.", "error")
-        return redirect(url_for("outreach.resumes"))
+    purpose = (request.form.get("purpose") or "").strip()[:600]
+    site = (request.form.get("site") or "").strip()[:200]
     try:
-        made = _api("POST", "/api/reader-resumes", {"thread": thread, "company": company}, timeout=30).json()
+        files = reference_files(request.files.getlist("files"))
+    except ValueError as e:
+        flash(str(e), "error")
+        return redirect(url_for("outreach.resumes", company=company))
+    if not (thread or company or purpose or files):
+        flash("Paste the email thread, add a file, say what it's for, or at least name the company.", "error")
+        return redirect(url_for("outreach.resumes"))
+    payload = {"thread": thread, "company": company}
+    payload.update({k: v for k, v in (("purpose", purpose), ("company_url", site), ("files", files)) if v})
+    try:
+        made = _api("POST", "/api/reader-resumes", payload, timeout=60).json()
     except JobBotError as e:
         flash(e.message, "error")
         return redirect(url_for("outreach.resumes", company=company))
