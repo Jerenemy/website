@@ -1,3 +1,5 @@
+import base64
+import io
 import re
 import tempfile
 import unittest
@@ -146,6 +148,22 @@ class OutreachResumeTests(OutreachCase):
         for path in ("/admin/outreach/resume", "/admin/outreach/resume/abc", "/admin/outreach/resume/abc/pdf"):
             self.assertEqual(self.client.get(path).status_code, 302, path)
         self.assertEqual(self.calls, [])
+
+    def test_files_and_a_purpose_go_to_the_bot(self):
+        self.login()
+        self.replies[("POST", "/api/reader-resumes")] = FakeResponse({"id": "20261118-1", "status": "running"})
+        response = self.client.post("/admin/outreach/resume", data={
+            "csrf_token": "csrf", "company": "Cosmon", "site": "https://www.cosmon.com/",
+            "purpose": "Winter internship", "files": [(io.BytesIO(b"Five workstreams"), "work.html")]},
+            content_type="multipart/form-data")
+        self.assertEqual(response.headers["Location"], "/admin/outreach/resume/20261118-1")
+        self.assertEqual(self.calls[-1], ("POST", "/api/reader-resumes", {
+            "thread": "", "company": "Cosmon", "purpose": "Winter internship", "company_url": "https://www.cosmon.com/",
+            "files": [{"name": "work.html", "data": base64.b64encode(b"Five workstreams").decode()}]}))
+
+        self.client.post("/admin/outreach/resume", data={
+            "csrf_token": "csrf", "files": [(io.BytesIO(b"PK"), "cv.docx")]}, content_type="multipart/form-data")
+        self.assertEqual(len([c for c in self.calls if c[0] == "POST"]), 1)
 
     def test_making_one_sends_the_thread_and_follows_it(self):
         self.login()

@@ -24,9 +24,9 @@
       </div>
       <div class="outreach-example__actions">{{ admin.button("Make their resume") }}</div>
     </form>
-    <p class="note outreach-resume__or">Or paste a thread:</p>
+    <p class="note outreach-resume__or">Or for anyone else: paste a thread, add files, or say what it's for.</p>
     {% endif %}
-    <form method="post" action="{{ url_for('outreach.resume_make') }}" class="admin-form outreach-resume-form">
+    <form method="post" action="{{ url_for('outreach.resume_make') }}" class="admin-form outreach-resume-form" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="field">
         <label for="company">Company</label>
@@ -34,7 +34,21 @@
         <datalist id="replied-companies">{% for c in companies %}<option value="{{ c }}">{% endfor %}</datalist>
       </div>
       <div class="field">
-        <label for="thread">The email thread</label>
+        <label for="site">Company website</label>
+        <input type="url" id="site" name="site" maxlength="200" placeholder="https://www.cosmon.com/">
+      </div>
+      <div class="field">
+        <label for="purpose">What it's for</label>
+        <input type="text" id="purpose" name="purpose" maxlength="600" placeholder="Their winter internship; a recruiter from the career fair will forward it">
+        <p class="note">Leave it empty when it answers a CEO's email.</p>
+      </div>
+      <div class="field">
+        <label for="files">Reference files</label>
+        <input type="file" id="files" name="files" multiple accept=".pdf,.txt,.md,.html,.htm,.csv,.json,.eml">
+        <p class="note">A posting, your notes, a page about the team. PDF or text, up to six.</p>
+      </div>
+      <div class="field">
+        <label for="thread">The email thread (optional)</label>
         <textarea id="thread" name="thread" rows="12" maxlength="{{ max_thread }}" placeholder="Paste the whole thread from Gmail, their reply on top."></textarea>
         <p class="note">Only the bot reads it, to pick your projects. It takes about a minute.</p>
       </div>
